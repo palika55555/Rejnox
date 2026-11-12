@@ -2,4 +2,6 @@
 <resources>
     <!-- Pozadie Rejnox (AppColors.bg): splash bez bieleho bliknutia. -->
     <color name="rejnox_bg">#06061A</color>
+    <!-- Pozadie adaptívnej ikony aplikácie. -->
+    <color name="ic_launcher_background">#0D0B2A</color>
 </resources>
