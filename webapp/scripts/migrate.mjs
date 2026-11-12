@@ -1,6 +1,7 @@
 // Migrácie pri builde na Cloudflare (Workers Builds nastaví WORKERS_CI=1).
 // Lokálne sa pri `npm run build` nespúšťajú, aby build omylom nezmenil
-// produkčnú databázu. Ručne: `npm run db:deploy`.
+// produkčnú databázu. Nasadenie z počítača (`npm run deploy`) ich spustí
+// samo cez `npm run db:deploy`.
 // Adresu databázy nikdy nevypisuj do logu, je v nej heslo.
 import { execSync } from "node:child_process";
 

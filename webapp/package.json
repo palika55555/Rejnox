@@ -10,7 +10,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "npm run build && opennextjs-cloudflare deploy",
+    "deploy": "npm run db:deploy && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "db:status": "prisma migrate status",
     "db:deploy": "prisma migrate deploy",
     "db:new": "node scripts/new-migration.mjs"
