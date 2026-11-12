@@ -35,20 +35,38 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> _restore() async {
+    String? token;
+    AuthUser? cached;
     try {
-      final token = await _tokens.read();
-      if (token == null) {
-        state = const SignedOut();
-        return;
-      }
+      token = await _tokens.read();
+      cached = token == null ? null : await _tokens.readUser();
+    } on Object {
+      token = null;
+    }
+    if (token == null) {
+      state = const SignedOut();
+      return;
+    }
+
+    // So zapamätaným profilom appka naskočí hneď, aj bez internetu.
+    if (cached != null) state = SignedIn(user: cached, token: token);
+
+    try {
       final user = await _repository.me(token);
+      await _tokens.writeUser(user);
       state = SignedIn(user: user, token: token);
     } on ApiError catch (e) {
-      // Neplatný token zahodíme. Pri výpadku spojenia ho necháme na ďalší pokus.
-      if (e.isUnauthorized) await _tokens.clear();
-      state = const SignedOut();
+      if (e.isUnauthorized) {
+        // Token už neplatí (odhlásenie inde, zmazaný účet): preč s ním.
+        await _tokens.clear();
+        state = const SignedOut();
+      } else if (cached == null) {
+        // Bez spojenia a bez profilu nevieme, kto je prihlásený.
+        // Token ostáva na ďalší pokus.
+        state = const SignedOut();
+      }
     } on Exception {
-      state = const SignedOut();
+      if (cached == null) state = const SignedOut();
     }
   }
 
@@ -88,6 +106,7 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> _signIn(AuthSession session) async {
     await _tokens.write(session.token);
+    await _tokens.writeUser(session.user);
     state = SignedIn(user: session.user, token: session.token);
   }
 }

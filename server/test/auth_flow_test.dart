@@ -8,6 +8,7 @@ import 'package:rejnox_server/src/auth/auth_service.dart';
 import 'package:rejnox_server/src/config.dart';
 import 'package:rejnox_server/src/db.dart';
 import 'package:rejnox_server/src/http/rate_limiter.dart';
+import 'package:rejnox_server/src/training/training_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
 
@@ -45,6 +46,7 @@ void main() {
     app = buildApp(
       // Nižší počet kôl bcrypt, aby boli testy rýchle.
       auth: AuthService(db, bcryptRounds: 4),
+      training: TrainingService(db),
       corsOrigins: const {'http://localhost:5173'},
       loginLimiter: RateLimiter(maxAttempts: 4, window: const Duration(minutes: 5)),
       onError: (e, _) => errors.add(e),

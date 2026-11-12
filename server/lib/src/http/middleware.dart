@@ -14,11 +14,14 @@ Response jsonResponse(int status, Object? body) => Response(
 );
 
 /// Načíta telo požiadavky ako JSON objekt, s limitom veľkosti.
-Future<Map<String, dynamic>> readJsonBody(Request request) async {
+Future<Map<String, dynamic>> readJsonBody(
+  Request request, {
+  int maxBytes = _maxBodyBytes,
+}) async {
   final bytes = <int>[];
   await for (final chunk in request.read()) {
     bytes.addAll(chunk);
-    if (bytes.length > _maxBodyBytes) {
+    if (bytes.length > maxBytes) {
       throw const ApiException(413, 'body_too_large', 'Požiadavka je príliš veľká.');
     }
   }

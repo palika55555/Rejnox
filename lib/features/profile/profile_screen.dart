@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/tm_card.dart';
 import '../auth/presentation/auth_controller.dart';
+import '../reminders/reminder_card.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -88,6 +89,8 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            const ReminderCard(),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: () =>

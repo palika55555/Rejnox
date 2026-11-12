@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -68,6 +70,12 @@ class HttpAuthRepository implements AuthRepository {
 abstract interface class TokenStore {
   Future<String?> read();
   Future<void> write(String token);
+
+  /// Posledný známy profil, aby appka fungovala aj pri štarte bez internetu.
+  Future<AuthUser?> readUser();
+  Future<void> writeUser(AuthUser user);
+
+  /// Zmaže token aj profil.
   Future<void> clear();
 }
 
@@ -77,6 +85,7 @@ class SecureTokenStore implements TokenStore {
 
   static const _storage = FlutterSecureStorage();
   static const _key = 'rejnox_session_token';
+  static const _userKey = 'rejnox_session_user';
 
   @override
   Future<String?> read() => _storage.read(key: _key);
@@ -85,7 +94,25 @@ class SecureTokenStore implements TokenStore {
   Future<void> write(String token) => _storage.write(key: _key, value: token);
 
   @override
-  Future<void> clear() => _storage.delete(key: _key);
+  Future<AuthUser?> readUser() async {
+    final raw = await _storage.read(key: _userKey);
+    if (raw == null) return null;
+    try {
+      return AuthUser.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } on Object {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> writeUser(AuthUser user) =>
+      _storage.write(key: _userKey, value: jsonEncode(user.toJson()));
+
+  @override
+  Future<void> clear() async {
+    await _storage.delete(key: _key);
+    await _storage.delete(key: _userKey);
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>(

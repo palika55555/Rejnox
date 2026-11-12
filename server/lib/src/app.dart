@@ -6,6 +6,7 @@ import 'auth/validators.dart';
 import 'http/api_exception.dart';
 import 'http/middleware.dart';
 import 'http/rate_limiter.dart';
+import 'training/training_service.dart';
 
 const _tooManyAttempts = ApiException(
   429,
@@ -18,6 +19,7 @@ const _unauthorized = ApiException(401, 'unauthorized', 'Prihlás sa, prosím.')
 /// Poskladá celý server: cesty + ochranné vrstvy.
 Handler buildApp({
   required AuthService auth,
+  required TrainingService training,
   required Set<String> corsOrigins,
   RateLimiter? loginLimiter,
   RateLimiter? registerLimiter,
@@ -75,6 +77,19 @@ Handler buildApp({
       final (_, user) = await requireUser(request);
       await auth.deleteAccount(user.id);
       return Response(204);
+    })
+    ..get('/exercises', (Request request) async {
+      final (_, user) = await requireUser(request);
+      return jsonResponse(200, {
+        'exercises': await training.exercises(user.id),
+      });
+    })
+    ..post('/sets/sync', (Request request) async {
+      final (_, user) = await requireUser(request);
+      final body = await readJsonBody(request, maxBytes: 64 * 1024);
+      final (sets, rejected) = parseSets(body);
+      final result = await training.syncSets(user.id, sets, rejected);
+      return jsonResponse(200, result.toJson());
     })
     ..all(
       '/<ignored|.*>',

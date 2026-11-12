@@ -4,6 +4,7 @@ import 'package:rejnox_server/src/app.dart';
 import 'package:rejnox_server/src/auth/auth_service.dart';
 import 'package:rejnox_server/src/config.dart';
 import 'package:rejnox_server/src/db.dart';
+import 'package:rejnox_server/src/training/training_service.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
 Future<void> main() async {
@@ -11,6 +12,7 @@ Future<void> main() async {
   final db = Database.connect(config.databaseUrl);
   final app = buildApp(
     auth: AuthService(db, sessionTtl: config.sessionTtl),
+    training: TrainingService(db),
     corsOrigins: config.corsOrigins,
     onError: (error, stack) => stderr.writeln('CHYBA: $error\n$stack'),
   );

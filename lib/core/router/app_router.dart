@@ -7,6 +7,7 @@ import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/shell/app_shell.dart';
+import '../../features/training/presentation/workout_log_screen.dart';
 import '../widgets/app_background.dart';
 import '../widgets/rejnox_mark.dart';
 
@@ -57,18 +58,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ],
             ),
           ),
-          branch(
-            '/workout',
-            const PlaceholderScreen(
-              title: 'Tréning',
-              icon: Icons.fitness_center_rounded,
-              features: [
-                'Zapisovanie cvikov, sérií a váh',
-                'Plány od tvojho trénera',
-                'Progres a osobné rekordy',
-              ],
-            ),
-          ),
+          branch('/workout', const WorkoutLogScreen()),
           branch(
             '/chat',
             const PlaceholderScreen(

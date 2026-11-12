@@ -33,6 +33,13 @@ class AuthUser {
   final String displayName;
   final UserRole role;
 
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'email': email,
+    'displayName': displayName,
+    'role': role.apiValue,
+  };
+
   /// Krstné meno do pozdravu.
   String get firstName => displayName.trim().split(RegExp(r'\s+')).first;
 }

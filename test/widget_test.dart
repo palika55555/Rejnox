@@ -7,7 +7,13 @@ import 'package:rejnox/features/auth/data/auth_repository.dart';
 import 'package:rejnox/features/auth/domain/auth_models.dart';
 import 'package:rejnox/features/auth/presentation/auth_controller.dart';
 import 'package:rejnox/features/home/domain/home_overview.dart';
+import 'package:rejnox/features/reminders/reminder_service.dart';
+import 'package:rejnox/features/training/application/workout_log_controller.dart';
+import 'package:rejnox/features/training/data/set_storage.dart';
 import 'package:rejnox/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'fakes.dart';
 
 const _pavol = AuthUser(
   id: 'u1',
@@ -27,8 +33,19 @@ class _MemoryTokenStore implements TokenStore {
   @override
   Future<void> write(String token) async => this.token = token;
 
+  AuthUser? user;
+
   @override
-  Future<void> clear() async => token = null;
+  Future<AuthUser?> readUser() async => user;
+
+  @override
+  Future<void> writeUser(AuthUser user) async => this.user = user;
+
+  @override
+  Future<void> clear() async {
+    token = null;
+    user = null;
+  }
 }
 
 /// Falošný server: platný je len token "ok" a heslo "spravne-heslo".
@@ -84,7 +101,9 @@ Future<void> _pumpApp(
   WidgetTester tester, {
   required _MemoryTokenStore tokens,
   _FakeAuthRepository? repository,
+  FakeTrainingApi? trainingApi,
 }) async {
+  SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -95,6 +114,12 @@ Future<void> _pumpApp(
         authRepositoryProvider.overrideWithValue(
           repository ?? _FakeAuthRepository(),
         ),
+        localSetStoreProvider.overrideWithValue(MemorySetStore()),
+        trainingApiProvider.overrideWithValue(
+          trainingApi ?? (FakeTrainingApi()..online = true),
+        ),
+        connectivityProvider.overrideWithValue(const Stream<bool>.empty()),
+        reminderSchedulerProvider.overrideWithValue(FakeReminderScheduler()),
       ],
       child: const RejnoxApp(webFonts: false),
     ),
@@ -205,6 +230,27 @@ void main() {
     expect(tokens.token, 'ok');
   });
 
+  testWidgets('bez internetu so zapamätaným profilom ostane prihlásený', (
+    tester,
+  ) async {
+    final tokens = _MemoryTokenStore('ok')..user = _pavol;
+    final repository = _FakeAuthRepository()
+      ..meError = const ApiError.network();
+    await _pumpApp(tester, tokens: tokens, repository: repository);
+
+    expect(find.text('Pavol'), findsOneWidget);
+    expect(tokens.token, 'ok');
+  });
+
+  testWidgets('neplatný token zmaže aj zapamätaný profil', (tester) async {
+    final tokens = _MemoryTokenStore('stary-token')..user = _pavol;
+    await _pumpApp(tester, tokens: tokens);
+
+    expect(find.text('VITAJ SPÄŤ'), findsOneWidget);
+    expect(tokens.token, isNull);
+    expect(tokens.user, isNull);
+  });
+
   testWidgets('zlé heslo ukáže chybu, správne prihlási', (tester) async {
     final tokens = _MemoryTokenStore();
     await _pumpApp(tester, tokens: tokens);
@@ -276,5 +322,58 @@ void main() {
     expect(find.text('VITAJ SPÄŤ'), findsOneWidget);
     expect(tokens.token, isNull);
     expect(repository.loggedOut, ['ok']);
+  });
+
+  testWidgets('zápis série online: uloží sa a odošle', (tester) async {
+    final api = FakeTrainingApi()..online = true;
+    await _pumpApp(tester, tokens: _MemoryTokenStore('ok'), trainingApi: api);
+
+    await tester.tap(find.text('Tréning'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Zapísať sériu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('8 × 20 kg'), findsOneWidget);
+    expect(find.text('Všetko uložené'), findsOneWidget);
+    expect(api.received, hasLength(1));
+  });
+
+  testWidgets('zápis série bez internetu: čaká v telefóne', (tester) async {
+    final api = FakeTrainingApi();
+    await _pumpApp(tester, tokens: _MemoryTokenStore('ok'), trainingApi: api);
+
+    await tester.tap(find.text('Tréning'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), '5');
+    await tester.enterText(find.byType(TextFormField).at(1), '102,5');
+    await tester.tap(find.text('Zapísať sériu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('5 × 102,5 kg'), findsOneWidget);
+    expect(find.text('Offline · čaká 1'), findsOneWidget);
+    expect(find.textContaining('bezpečne uložené v telefóne'), findsOneWidget);
+  });
+
+  testWidgets('neplatné opakovania sa nezapíšu', (tester) async {
+    await _pumpSignedIn(tester);
+
+    await tester.tap(find.text('Tréning'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).at(0), '0');
+    await tester.tap(find.text('Zapísať sériu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Zadaj 1 až 1000.'), findsOneWidget);
+    expect(find.textContaining('Zatiaľ žiadne série'), findsOneWidget);
+  });
+
+  testWidgets('v profile je pripomienka, na webe vysvetlenie', (tester) async {
+    await _pumpSignedIn(tester);
+
+    await tester.tap(find.text('Profil'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pripomienka tréningu'), findsOneWidget);
+    expect(find.textContaining('fungujú v mobilnej appke'), findsOneWidget);
   });
 }
