@@ -12,12 +12,18 @@ Matcher throwsApi(int status, String code) => throwsA(
 void main() {
   group('validátory', () {
     test('e-mail sa oreže a zmení na malé písmená', () {
-      expect(validateEmail({'email': '  Pavol@Example.COM '}), 'pavol@example.com');
+      expect(
+        validateEmail({'email': '  Pavol@Example.COM '}),
+        'pavol@example.com',
+      );
     });
 
     test('neplatný e-mail sa odmietne', () {
       for (final bad in ['', 'bez-zavinaca', 'a@b', 'a b@c.sk', 42, null]) {
-        expect(() => validateEmail({'email': bad}), throwsApi(400, 'invalid_email'));
+        expect(
+          () => validateEmail({'email': bad}),
+          throwsApi(400, 'invalid_email'),
+        );
       }
     });
 
@@ -46,7 +52,10 @@ void main() {
       );
       expect(validateRole({}), 'member');
       expect(validateRole({'role': 'trainer'}), 'trainer');
-      expect(() => validateRole({'role': 'admin'}), throwsApi(400, 'invalid_role'));
+      expect(
+        () => validateRole({'role': 'admin'}),
+        throwsApi(400, 'invalid_role'),
+      );
     });
   });
 
@@ -62,14 +71,21 @@ void main() {
       expect(limiter.tryAcquire('a'), isTrue);
       expect(limiter.tryAcquire('a'), isTrue);
       expect(limiter.tryAcquire('a'), isFalse);
-      expect(limiter.tryAcquire('b'), isTrue, reason: 'iný kľúč má vlastný limit');
+      expect(
+        limiter.tryAcquire('b'),
+        isTrue,
+        reason: 'iný kľúč má vlastný limit',
+      );
 
       now = now.add(const Duration(minutes: 5));
       expect(limiter.tryAcquire('a'), isTrue);
     });
 
     test('reset limit vynuluje', () {
-      final limiter = RateLimiter(maxAttempts: 1, window: const Duration(hours: 1));
+      final limiter = RateLimiter(
+        maxAttempts: 1,
+        window: const Duration(hours: 1),
+      );
       expect(limiter.tryAcquire('a'), isTrue);
       expect(limiter.tryAcquire('a'), isFalse);
       limiter.reset('a');

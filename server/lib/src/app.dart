@@ -6,6 +6,8 @@ import 'auth/validators.dart';
 import 'http/api_exception.dart';
 import 'http/middleware.dart';
 import 'http/rate_limiter.dart';
+import 'trainer/trainer_routes.dart';
+import 'trainer/trainer_service.dart';
 import 'training/training_service.dart';
 
 const _tooManyAttempts = ApiException(
@@ -20,9 +22,11 @@ const _unauthorized = ApiException(401, 'unauthorized', 'Prihlás sa, prosím.')
 Handler buildApp({
   required AuthService auth,
   required TrainingService training,
+  required TrainerService trainers,
   required Set<String> corsOrigins,
   RateLimiter? loginLimiter,
   RateLimiter? registerLimiter,
+  RateLimiter? inviteLimiter,
   void Function(Object, StackTrace)? onError,
 }) {
   final logins =
@@ -90,11 +94,21 @@ Handler buildApp({
       final (sets, rejected) = parseSets(body);
       final result = await training.syncSets(user.id, sets, rejected);
       return jsonResponse(200, result.toJson());
-    })
-    ..all(
-      '/<ignored|.*>',
-      (Request _) => throw const ApiException(404, 'not_found', 'Nenájdené.'),
-    );
+    });
+
+  addTrainerRoutes(
+    router,
+    service: trainers,
+    requireUser: requireUser,
+    inviteLimiter:
+        inviteLimiter ??
+        RateLimiter(maxAttempts: 10, window: const Duration(hours: 1)),
+  );
+
+  router.all(
+    '/<ignored|.*>',
+    (Request _) => throw const ApiException(404, 'not_found', 'Nenájdené.'),
+  );
 
   return const Pipeline()
       .addMiddleware(securityHeaders(corsOrigins))

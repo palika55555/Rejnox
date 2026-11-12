@@ -8,6 +8,7 @@ import 'package:rejnox_server/src/auth/auth_service.dart';
 import 'package:rejnox_server/src/config.dart';
 import 'package:rejnox_server/src/db.dart';
 import 'package:rejnox_server/src/http/rate_limiter.dart';
+import 'package:rejnox_server/src/trainer/trainer_service.dart';
 import 'package:rejnox_server/src/training/training_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -37,7 +38,9 @@ void main() {
     final text = await response.readAsString();
     return (
       response.statusCode,
-      text.isEmpty ? <String, dynamic>{} : jsonDecode(text) as Map<String, dynamic>,
+      text.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(text) as Map<String, dynamic>,
     );
   }
 
@@ -47,8 +50,12 @@ void main() {
       // Nižší počet kôl bcrypt, aby boli testy rýchle.
       auth: AuthService(db, bcryptRounds: 4),
       training: TrainingService(db),
+      trainers: TrainerService(db),
       corsOrigins: const {'http://localhost:5173'},
-      loginLimiter: RateLimiter(maxAttempts: 4, window: const Duration(minutes: 5)),
+      loginLimiter: RateLimiter(
+        maxAttempts: 4,
+        window: const Duration(minutes: 5),
+      ),
       onError: (e, _) => errors.add(e),
     );
   });
@@ -71,7 +78,12 @@ void main() {
     var (status, body) = await call(
       'POST',
       '/auth/register',
-      body: {'email': email, 'password': password, 'displayName': 'Test', 'role': 'trainer'},
+      body: {
+        'email': email,
+        'password': password,
+        'displayName': 'Test',
+        'role': 'trainer',
+      },
     );
     expect(status, 201);
     final firstToken = body['token'] as String;
@@ -83,7 +95,11 @@ void main() {
     (status, body) = await call(
       'POST',
       '/auth/register',
-      body: {'email': email.toUpperCase(), 'password': password, 'displayName': 'X'},
+      body: {
+        'email': email.toUpperCase(),
+        'password': password,
+        'displayName': 'X',
+      },
     );
     expect(status, 409);
     expect(body['error']['code'], 'email_taken');
@@ -160,7 +176,11 @@ void main() {
   });
 
   test('neplatné vstupy vrátia 400 a neznáma cesta 404', () async {
-    var (status, body) = await call('POST', '/auth/register', rawBody: '{nie json');
+    var (status, body) = await call(
+      'POST',
+      '/auth/register',
+      rawBody: '{nie json',
+    );
     expect(status, 400);
     expect(body['error']['code'], 'invalid_json');
 

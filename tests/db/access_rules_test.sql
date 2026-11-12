@@ -68,6 +68,44 @@ BEGIN
   ASSERT n = 1, 'klient nevidí cviky';
   SELECT count(*) INTO n FROM set_logs;
   ASSERT n = 1, 'klient nevidí svoje série';
+
+  -- 4a. Plány a série od trénera klient len číta.
+  UPDATE workouts SET title = 'prepísané' WHERE id = w;
+  DELETE FROM set_logs WHERE trainer_client_id = tc;
+  DELETE FROM workout_exercises WHERE workout_id = w;
+  SELECT count(*) INTO n FROM workouts WHERE title = 'Nohy';
+  ASSERT n = 1, 'klient prepísal plán od trénera';
+  SELECT count(*) INTO n FROM set_logs WHERE trainer_client_id = tc;
+  ASSERT n = 1, 'klient zmazal série od trénera';
+  SELECT count(*) INTO n FROM workout_exercises WHERE workout_id = w;
+  ASSERT n = 1, 'klient zmazal cviky z plánu';
+  BEGIN
+    INSERT INTO workouts (trainer_client_id, title) VALUES (tc, 'od klienta');
+    RAISE EXCEPTION 'FAIL: klient zapísal plán za trénera';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO trainer_clients (trainer_id, client_name) VALUES (a, 'Nie som tréner');
+    RAISE EXCEPTION 'FAIL: člen si pridal klienta';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  -- Vlastný záznam nesmie niesť ID spolupráce (inak by sa "prilepil"
+  -- k cudzej spolupráci). Chráni to obmedzenie num_nonnulls v tabuľkách.
+  BEGIN
+    INSERT INTO set_logs (user_id, trainer_client_id, exercise_id, reps, weight_kg)
+    VALUES (a, tc, ex, 1, 1);
+    RAISE EXCEPTION 'FAIL: séria s vlastníkom aj spoluprácou';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO workouts (user_id, trainer_client_id, title) VALUES (a, tc, 'x');
+    RAISE EXCEPTION 'FAIL: plán s vlastníkom aj spoluprácou';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  -- Vlastný tréning si klient spravuje sám.
+  INSERT INTO workouts (user_id, title) VALUES (a, 'Môj tréning');
+  DELETE FROM workouts WHERE user_id = a;
+
   INSERT INTO member_passes (user_id, label, code) VALUES (a, 'Gym Fit', '123456');
   conv := start_conversation(t);
   INSERT INTO messages (conversation_id, sender_id, body) VALUES (conv, a, 'Ahoj');
@@ -207,6 +245,12 @@ BEGIN
   ASSERT n = 0, 'tréner vidí tréningy po ukončení';
   SELECT count(*) INTO n FROM set_logs;
   ASSERT n = 0, 'tréner vidí série po ukončení';
+  BEGIN
+    INSERT INTO set_logs (trainer_client_id, exercise_id, reps, weight_kg, logged_by)
+    VALUES (tc, ex, 1, 999, t);
+    RAISE EXCEPTION 'FAIL: tréner zapisuje klientovi po ukončení';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
   BEGIN
     UPDATE trainer_clients SET status = 'linked' WHERE id = tc;
     RAISE EXCEPTION 'FAIL: tréner obnovil ukončenú spoluprácu';

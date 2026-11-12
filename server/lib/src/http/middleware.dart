@@ -22,7 +22,11 @@ Future<Map<String, dynamic>> readJsonBody(
   await for (final chunk in request.read()) {
     bytes.addAll(chunk);
     if (bytes.length > maxBytes) {
-      throw const ApiException(413, 'body_too_large', 'Požiadavka je príliš veľká.');
+      throw const ApiException(
+        413,
+        'body_too_large',
+        'Požiadavka je príliš veľká.',
+      );
     }
   }
   try {
@@ -66,25 +70,26 @@ Middleware errorHandler({void Function(Object, StackTrace)? onError}) =>
     };
 
 /// Bezpečnostné hlavičky a CORS len pre povolené adresy.
-Middleware securityHeaders(Set<String> allowedOrigins) => (inner) => (request) async {
-  final origin = request.headers['origin'];
-  final cors = <String, String>{
-    if (origin != null && allowedOrigins.contains(origin)) ...{
-      'access-control-allow-origin': origin,
-      'access-control-allow-headers': 'authorization, content-type',
-      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
-      'vary': 'origin',
-    },
-  };
-  if (request.method == 'OPTIONS') {
-    return Response(204, headers: cors);
-  }
-  final response = await inner(request);
-  return response.change(
-    headers: {
-      ...cors,
-      'x-content-type-options': 'nosniff',
-      'cache-control': 'no-store',
-    },
-  );
-};
+Middleware securityHeaders(Set<String> allowedOrigins) =>
+    (inner) => (request) async {
+      final origin = request.headers['origin'];
+      final cors = <String, String>{
+        if (origin != null && allowedOrigins.contains(origin)) ...{
+          'access-control-allow-origin': origin,
+          'access-control-allow-headers': 'authorization, content-type',
+          'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+          'vary': 'origin',
+        },
+      };
+      if (request.method == 'OPTIONS') {
+        return Response(204, headers: cors);
+      }
+      final response = await inner(request);
+      return response.change(
+        headers: {
+          ...cors,
+          'x-content-type-options': 'nosniff',
+          'cache-control': 'no-store',
+        },
+      );
+    };

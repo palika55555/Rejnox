@@ -114,8 +114,7 @@ class TrainingService {
           'SELECT id::text, name, muscle_group FROM exercises ORDER BY name',
         );
         return [
-          for (final r in rows)
-            {'id': r[0], 'name': r[1], 'muscleGroup': r[2]},
+          for (final r in rows) {'id': r[0], 'name': r[1], 'muscleGroup': r[2]},
         ];
       });
 
@@ -132,9 +131,7 @@ class TrainingService {
       Sql.named(
         'SELECT id::text FROM exercises WHERE id = ANY(CAST(@ids AS uuid[]))',
       ),
-      parameters: {
-        'ids': sets.map((s) => s.exerciseId).toSet().toList(),
-      },
+      parameters: {'ids': sets.map((s) => s.exerciseId).toSet().toList()},
     );
     final knownIds = {for (final r in known) r[0] as String};
 

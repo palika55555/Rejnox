@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rejnox/core/api/api_client.dart';
 import 'package:rejnox/core/router/app_router.dart';
+import 'package:rejnox/features/coaching/data/coaching_api.dart';
+import 'package:rejnox/features/coaching/domain/coaching_models.dart';
+import 'package:rejnox/features/training/domain/training_models.dart';
 import 'package:rejnox/features/auth/data/auth_repository.dart';
 import 'package:rejnox/features/auth/domain/auth_models.dart';
 import 'package:rejnox/features/auth/presentation/auth_controller.dart';
@@ -50,6 +53,9 @@ class _MemoryTokenStore implements TokenStore {
 
 /// Falošný server: platný je len token "ok" a heslo "spravne-heslo".
 class _FakeAuthRepository implements AuthRepository {
+  _FakeAuthRepository({this.user = _pavol});
+
+  final AuthUser user;
   final loggedOut = <String>[];
   Object? meError;
 
@@ -59,7 +65,7 @@ class _FakeAuthRepository implements AuthRepository {
     if (token != 'ok') {
       throw const ApiError(401, 'unauthorized', 'Prihlás sa, prosím.');
     }
-    return _pavol;
+    return user;
   }
 
   @override
@@ -102,6 +108,7 @@ Future<void> _pumpApp(
   required _MemoryTokenStore tokens,
   _FakeAuthRepository? repository,
   FakeTrainingApi? trainingApi,
+  FakeCoachingApi? coachingApi,
 }) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = const Size(390, 844);
@@ -120,6 +127,7 @@ Future<void> _pumpApp(
         ),
         connectivityProvider.overrideWithValue(const Stream<bool>.empty()),
         reminderSchedulerProvider.overrideWithValue(FakeReminderScheduler()),
+        coachingApiProvider.overrideWithValue(coachingApi ?? FakeCoachingApi()),
       ],
       child: const RejnoxApp(webFonts: false),
     ),
@@ -375,5 +383,111 @@ void main() {
 
     expect(find.text('Pripomienka tréningu'), findsOneWidget);
     expect(find.textContaining('fungujú v mobilnej appke'), findsOneWidget);
+  });
+
+  group('tréner a klienti', () {
+    const marek = AuthUser(
+      id: 't1',
+      email: 'marek@test.sk',
+      displayName: 'Marek Tréner',
+      role: UserRole.trainer,
+    );
+
+    Future<FakeCoachingApi> pumpTrainer(WidgetTester tester) async {
+      final api = FakeCoachingApi();
+      await _pumpApp(
+        tester,
+        tokens: _MemoryTokenStore('ok'),
+        repository: _FakeAuthRepository(user: marek),
+        coachingApi: api,
+      );
+      return api;
+    }
+
+    testWidgets('tréner má v menu Klientov namiesto Mapy', (tester) async {
+      await pumpTrainer(tester);
+      expect(find.text('Klienti'), findsOneWidget);
+      expect(find.text('Mapa'), findsNothing);
+    });
+
+    testWidgets('člen má v menu Mapu, nie Klientov', (tester) async {
+      await _pumpSignedIn(tester);
+      expect(find.text('Mapa'), findsOneWidget);
+      expect(find.text('Klienti'), findsNothing);
+    });
+
+    testWidgets('pridanie klienta a pozvánka s kódom', (tester) async {
+      final api = await pumpTrainer(tester);
+
+      await tester.tap(find.text('Klienti'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Zatiaľ nemáš klientov'), findsOneWidget);
+
+      await tester.tap(find.text('Pridať'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField).first, 'Jana Nová');
+      await tester.tap(find.text('Pridať klienta'));
+      await tester.pumpAndSettle();
+
+      expect(api.clientsList.single.name, 'Jana Nová');
+      expect(find.text('JANA NOVÁ'), findsOneWidget);
+      expect(find.text('Bez appky'), findsOneWidget);
+
+      await tester.tap(find.text('Pozvať do appky'));
+      await tester.pumpAndSettle();
+      expect(find.text('K7QM-4XPA'), findsOneWidget);
+    });
+
+    testWidgets('klient zadá kód: zlý odmietne, správny prepojí', (
+      tester,
+    ) async {
+      final api = FakeCoachingApi();
+      await _pumpApp(tester, tokens: _MemoryTokenStore('ok'), coachingApi: api);
+
+      await tester.tap(find.text('Profil'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Zatiaľ nemáš trénera'), findsOneWidget);
+
+      await tester.tap(find.text('Mám kód od trénera'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, 'AAAA-BBBB');
+      await tester.tap(find.text('Prepojiť'));
+      await tester.pumpAndSettle();
+      expect(find.text('Kód neplatí alebo už vypršal.'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).last, 'k7qm-4xpa');
+      await tester.tap(find.text('Prepojiť'));
+      await tester.pumpAndSettle();
+      expect(find.text('Marek'), findsOneWidget);
+      expect(api.trainers, hasLength(1));
+    });
+
+    testWidgets('klient vidí plán od trénera na karte Tréning', (tester) async {
+      final api = FakeCoachingApi()
+        ..plans.add(
+          const Plan(
+            id: 'p1',
+            title: 'Nohy A',
+            trainerName: 'Marek',
+            items: [
+              PlanItem(
+                exerciseId: 'e1',
+                name: 'Drep s činkou',
+                group: MuscleGroup.legs,
+                sets: 4,
+                reps: 6,
+                weightKg: 80,
+              ),
+            ],
+          ),
+        );
+      await _pumpApp(tester, tokens: _MemoryTokenStore('ok'), coachingApi: api);
+
+      await tester.tap(find.text('Tréning'));
+      await tester.pumpAndSettle();
+      expect(find.text('NOHY A'), findsOneWidget);
+      expect(find.text('od Marek'), findsOneWidget);
+      expect(find.text('4×6 · 80 kg'), findsOneWidget);
+    });
   });
 }

@@ -57,11 +57,16 @@ class PrimaryButton extends StatelessWidget {
                   Icon(icon, color: Colors.white, size: compact ? 16 : 22),
                   const SizedBox(width: 8),
                 ],
-                Text(
-                  label,
-                  style: (compact ? text.bodySmall : text.labelLarge)!.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: (compact ? text.bodySmall : text.labelLarge)!
+                        .copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
               ],

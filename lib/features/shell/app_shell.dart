@@ -1,27 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_background.dart';
 import '../../core/widgets/tm_card.dart';
+import '../auth/domain/auth_models.dart';
+import '../auth/presentation/auth_controller.dart';
 
 /// Rám appky: žiariace pozadie, obsah a plávajúca spodná navigácia.
 /// Na webe drží šírku telefónu.
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
-  static const _items = [
-    (icon: Icons.home_rounded, label: 'Domov'),
-    (icon: Icons.map_outlined, label: 'Mapa'),
-    (icon: Icons.fitness_center_rounded, label: 'Tréning'),
-    (icon: Icons.chat_bubble_outline_rounded, label: 'Správy'),
-    (icon: Icons.person_outline_rounded, label: 'Profil'),
+  /// Poradie vetiev v routeri: 0 Domov, 1 Mapa, 2 Tréning, 3 Správy,
+  /// 4 Profil, 5 Klienti (len tréner).
+  static const _member = [
+    (branch: 0, icon: Icons.home_rounded, label: 'Domov'),
+    (branch: 1, icon: Icons.map_outlined, label: 'Mapa'),
+    (branch: 2, icon: Icons.fitness_center_rounded, label: 'Tréning'),
+    (branch: 3, icon: Icons.chat_bubble_outline_rounded, label: 'Správy'),
+    (branch: 4, icon: Icons.person_outline_rounded, label: 'Profil'),
+  ];
+  static const _trainer = [
+    (branch: 0, icon: Icons.home_rounded, label: 'Domov'),
+    (branch: 5, icon: Icons.groups_rounded, label: 'Klienti'),
+    (branch: 2, icon: Icons.fitness_center_rounded, label: 'Tréning'),
+    (branch: 3, icon: Icons.chat_bubble_outline_rounded, label: 'Správy'),
+    (branch: 4, icon: Icons.person_outline_rounded, label: 'Profil'),
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authControllerProvider);
+    final isTrainer = auth is SignedIn && auth.user.role == UserRole.trainer;
+    final items = isTrainer ? _trainer : _member;
+    final current = items.indexWhere((i) => i.branch == shell.currentIndex);
+
     return AppBackground(
       child: Scaffold(
         body: Center(
@@ -34,12 +51,17 @@ class AppShell extends StatelessWidget {
                   top: false,
                   minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                   child: _NavBar(
-                    items: _items,
-                    current: shell.currentIndex,
-                    onTap: (i) => shell.goBranch(
-                      i,
-                      initialLocation: i == shell.currentIndex,
-                    ),
+                    items: [
+                      for (final i in items) (icon: i.icon, label: i.label),
+                    ],
+                    current: current,
+                    onTap: (index) {
+                      final branch = items[index].branch;
+                      shell.goBranch(
+                        branch,
+                        initialLocation: branch == shell.currentIndex,
+                      );
+                    },
                   ),
                 ),
               ],

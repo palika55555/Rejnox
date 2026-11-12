@@ -8,6 +8,7 @@ import 'package:rejnox_server/src/auth/auth_service.dart';
 import 'package:rejnox_server/src/config.dart';
 import 'package:rejnox_server/src/db.dart';
 import 'package:rejnox_server/src/http/api_exception.dart';
+import 'package:rejnox_server/src/trainer/trainer_service.dart';
 import 'package:rejnox_server/src/training/training_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:test/test.dart';
@@ -118,6 +119,7 @@ void main() {
       app = buildApp(
         auth: auth,
         training: TrainingService(db),
+        trainers: TrainerService(db),
         corsOrigins: const {},
       );
       final result = await auth.register(

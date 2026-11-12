@@ -168,7 +168,8 @@ class AuthService {
     ),
   );
 
-  Future<String> _hash(String password) => _hashPassword(password, bcryptRounds);
+  Future<String> _hash(String password) =>
+      _hashPassword(password, bcryptRounds);
 
   static String _tokenHash(String token) =>
       sha256.convert(utf8.encode(token)).toString();
