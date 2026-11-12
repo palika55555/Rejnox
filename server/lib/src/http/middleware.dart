@@ -47,9 +47,23 @@ String? bearerToken(Request request) {
 }
 
 /// IP adresa klienta (pre obmedzenie počtu pokusov).
-String clientAddress(Request request) {
+///
+/// Ak požiadavka prišla z dôveryhodnej proxy (webová appka volá API zo
+/// svojho servera), platí prvá adresa z hlavičky x-forwarded-for. Od iných
+/// adries sa hlavičke neverí, inak by si ju ktokoľvek mohol podvrhnúť.
+String clientAddress(Request request, {Set<String> trustedProxies = const {}}) {
   final info = request.context['shelf.io.connection_info'];
-  return info is HttpConnectionInfo ? info.remoteAddress.address : 'unknown';
+  final remote = info is HttpConnectionInfo
+      ? info.remoteAddress.address
+      : 'unknown';
+  if (trustedProxies.contains(remote)) {
+    final forwarded = request.headers['x-forwarded-for']
+        ?.split(',')
+        .first
+        .trim();
+    if (forwarded != null && forwarded.isNotEmpty) return forwarded;
+  }
+  return remote;
 }
 
 /// Chyby premení na JSON. Nečakané chyby zapíše do logu a klientovi nič neprezradí.

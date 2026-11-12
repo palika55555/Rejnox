@@ -24,7 +24,9 @@ Handler buildApp({
   required TrainingService training,
   required TrainerService trainers,
   required Set<String> corsOrigins,
+  Set<String> trustedProxies = const {},
   RateLimiter? loginLimiter,
+  RateLimiter? loginEmailLimiter,
   RateLimiter? registerLimiter,
   RateLimiter? inviteLimiter,
   void Function(Object, StackTrace)? onError,
@@ -32,9 +34,17 @@ Handler buildApp({
   final logins =
       loginLimiter ??
       RateLimiter(maxAttempts: 10, window: const Duration(minutes: 5));
+  // Limit na samotný e-mail platí bez ohľadu na IP, takže ho neobíde ani
+  // útočník, ktorý strieda (alebo podvrhuje) adresy.
+  final emailLogins =
+      loginEmailLimiter ??
+      RateLimiter(maxAttempts: 30, window: const Duration(minutes: 15));
   final registrations =
       registerLimiter ??
       RateLimiter(maxAttempts: 20, window: const Duration(hours: 1));
+
+  String ip(Request request) =>
+      clientAddress(request, trustedProxies: trustedProxies);
 
   Future<(String, AuthUser)> requireUser(Request request) async {
     final token = bearerToken(request);
@@ -46,7 +56,7 @@ Handler buildApp({
   final router = Router()
     ..get('/health', (Request _) => jsonResponse(200, {'status': 'ok'}))
     ..post('/auth/register', (Request request) async {
-      if (!registrations.tryAcquire(clientAddress(request))) {
+      if (!registrations.tryAcquire(ip(request))) {
         throw _tooManyAttempts;
       }
       final body = await readJsonBody(request);
@@ -62,10 +72,13 @@ Handler buildApp({
       final body = await readJsonBody(request);
       final email = validateEmail(body);
       final password = validateLoginPassword(body);
-      final key = '${clientAddress(request)}|$email';
-      if (!logins.tryAcquire(key)) throw _tooManyAttempts;
+      final key = '${ip(request)}|$email';
+      if (!logins.tryAcquire(key) || !emailLogins.tryAcquire(email)) {
+        throw _tooManyAttempts;
+      }
       final result = await auth.login(email: email, password: password);
       logins.reset(key);
+      emailLogins.reset(email);
       return jsonResponse(200, result.toJson());
     })
     ..post('/auth/logout', (Request request) async {

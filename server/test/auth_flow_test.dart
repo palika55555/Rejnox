@@ -26,13 +26,17 @@ void main() {
     Map<String, dynamic>? body,
     String? token,
     String? rawBody,
+    String? forwardedFor,
   }) async {
     final response = await app(
       Request(
         method,
         Uri.parse('http://localhost$path'),
         body: rawBody ?? (body == null ? null : jsonEncode(body)),
-        headers: {if (token != null) 'authorization': 'Bearer $token'},
+        headers: {
+          if (token != null) 'authorization': 'Bearer $token',
+          'x-forwarded-for': ?forwardedFor,
+        },
       ),
     );
     final text = await response.readAsString();
@@ -52,9 +56,16 @@ void main() {
       training: TrainingService(db),
       trainers: TrainerService(db),
       corsOrigins: const {'http://localhost:5173'},
+      // Testovacie požiadavky nemajú spojenie, ich adresa je 'unknown'.
+      // Ako dôveryhodná proxy môžu preto posielať x-forwarded-for.
+      trustedProxies: const {'unknown'},
       loginLimiter: RateLimiter(
         maxAttempts: 4,
         window: const Duration(minutes: 5),
+      ),
+      loginEmailLimiter: RateLimiter(
+        maxAttempts: 6,
+        window: const Duration(minutes: 15),
       ),
       onError: (e, _) => errors.add(e),
     );
@@ -173,6 +184,21 @@ void main() {
       statuses.add(status);
     }
     expect(statuses, [401, 401, 401, 401, 429, 429]);
+  });
+
+  test('menenie IP neobíde limit pokusov na jeden e-mail', () async {
+    final target = 'rotate-$email';
+    final statuses = <int>[];
+    for (var i = 0; i < 8; i++) {
+      final (status, _) = await call(
+        'POST',
+        '/auth/login',
+        body: {'email': target, 'password': 'pokus-cislo-$i'},
+        forwardedFor: '198.51.100.$i',
+      );
+      statuses.add(status);
+    }
+    expect(statuses, [401, 401, 401, 401, 401, 401, 429, 429]);
   });
 
   test('neplatné vstupy vrátia 400 a neznáma cesta 404', () async {
