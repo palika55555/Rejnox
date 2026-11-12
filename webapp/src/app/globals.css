@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* Farby Rejnox – rovnaké ako v mobilnej appke (lib/core/theme/app_colors.dart). */
+@theme {
+  --color-night: #06061a;
+  --color-surface: #12112d;
+  --color-surface-hi: #1e1b45;
+  --color-line: rgb(169 155 255 / 0.14);
+  --color-ink: #f4f3ff;
+  --color-muted: #8b88b5;
+  --color-accent: #a48bff;
+  --color-brand-blue: #5468ff;
+  --color-brand-violet: #9b5cff;
+  --color-flame: #ff8a3d;
+
+  /* Farby olympijských kotúčov – svalové partie. */
+  --color-plate-red: #ff4d6a;
+  --color-plate-blue: #4d8bff;
+  --color-plate-yellow: #ffc542;
+  --color-plate-green: #2bd98b;
+}
+
+@theme inline {
+  --font-display: var(--font-montserrat), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background-color: var(--color-night);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(155 92 255 / 0.45);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Hlavná akcia: prechod modrá → fialová ako na logu. */
+.btn-action {
+  background-image: linear-gradient(90deg, var(--color-brand-blue), var(--color-brand-violet));
+}
+
+/* Žiara a jemná mriežka za hero sekciou (ako AppBackground v appke). */
+.hero-glow {
+  background:
+    radial-gradient(60% 55% at 78% 30%, rgb(155 92 255 / 0.22), transparent 70%),
+    radial-gradient(45% 40% at 10% 0%, rgb(84 104 255 / 0.16), transparent 70%);
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(70% 70% at 60% 30%, black, transparent);
+}
+
+/* Nový kotúč sa nasunie na tyč. */
+@keyframes plate-on {
+  from {
+    transform: translateX(28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.plate-on {
+  transform-box: fill-box;
+  animation: plate-on 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .plate-on {
+    animation: none;
+  }
+}
