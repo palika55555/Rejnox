@@ -4,6 +4,7 @@ import 'package:rejnox_server/src/app.dart';
 import 'package:rejnox_server/src/auth/auth_service.dart';
 import 'package:rejnox_server/src/config.dart';
 import 'package:rejnox_server/src/db.dart';
+import 'package:rejnox_server/src/gyms/gym_service.dart';
 import 'package:rejnox_server/src/trainer/trainer_service.dart';
 import 'package:rejnox_server/src/training/training_service.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -15,6 +16,7 @@ Future<void> main() async {
     auth: AuthService(db, sessionTtl: config.sessionTtl),
     training: TrainingService(db),
     trainers: TrainerService(db),
+    gyms: GymService(db),
     corsOrigins: config.corsOrigins,
     trustedProxies: config.trustedProxies,
     clientIpHeader: config.clientIpHeader,

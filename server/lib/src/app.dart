@@ -3,6 +3,7 @@ import 'package:shelf_router/shelf_router.dart';
 
 import 'auth/auth_service.dart';
 import 'auth/validators.dart';
+import 'gyms/gym_service.dart';
 import 'http/api_exception.dart';
 import 'http/middleware.dart';
 import 'http/rate_limiter.dart';
@@ -23,6 +24,9 @@ Handler buildApp({
   required AuthService auth,
   required TrainingService training,
   required TrainerService trainers,
+
+  /// Mapa fitiek (/gyms). Testy iných častí ho nemusia zapájať.
+  GymService? gyms,
   required Set<String> corsOrigins,
   Set<String> trustedProxies = const {},
   String? clientIpHeader,
@@ -121,6 +125,10 @@ Handler buildApp({
         inviteLimiter ??
         RateLimiter(maxAttempts: 10, window: const Duration(hours: 1)),
   );
+
+  if (gyms != null) {
+    addGymRoutes(router, service: gyms, requireUser: requireUser);
+  }
 
   router.all(
     '/<ignored|.*>',
