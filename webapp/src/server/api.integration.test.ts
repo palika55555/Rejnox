@@ -113,6 +113,17 @@ describe.skipIf(!url)("API proti databáze", () => {
       expect(last).toBe(429);
     });
 
+    it("jedna IP neoskúša heslá na veľa rôznych e-mailoch", async () => {
+      const ip = freshIp();
+      let last = 0;
+      for (let i = 0; i < 51; i++) {
+        last = (
+          await call("POST", "/auth/login", { ip, body: { email: `sprej-${i}-${run}@test.local`, password: "zleheslo1" } })
+        ).status;
+      }
+      expect(last).toBe(429);
+    }, 60_000);
+
     it("neplatné vstupy vrátia 400 a neznáma cesta 404", async () => {
       expect((await call("POST", "/auth/register", { body: { email: "x" } })).status).toBe(400);
       const res = await call("GET", "/neexistuje");
@@ -206,6 +217,16 @@ describe.skipIf(!url)("API proti databáze", () => {
       expect((await call("DELETE", `/clients/${linkId}`, { token: stranger.token })).status).toBe(409);
       // Klient bez účtu sa zmazať dá.
       expect((await call("DELETE", `/clients/${linkId}`, { token: coach.token })).status).toBe(204);
+    });
+
+    it("hádanie pozývacích kódov sa zablokuje a platný kód limit nevynuluje", async () => {
+      const guesser = await register("hadac");
+      const statuses: number[] = [];
+      for (let i = 0; i < 11; i++) {
+        statuses.push((await call("POST", "/invites/accept", { token: guesser.token, body: { code: "ZZZZ-ZZZZ" } })).status);
+      }
+      expect(statuses.slice(0, 10).every((s) => s === 404)).toBe(true);
+      expect(statuses[10]).toBe(429);
     });
 
     it("neplatné vstupy", async () => {

@@ -220,10 +220,14 @@ const routes: Route[] = [
     pattern: "/invites/accept",
     async handler(ctx) {
       const me = await ctx.user();
-      if (!(await ctx.limiter.tryAcquire(limits.invite, me.id))) throw tooManyAttempts();
+      if (
+        !(await ctx.limiter.tryAcquire(limits.invite, me.id)) ||
+        !(await ctx.limiter.tryAcquire(limits.inviteIp, ctx.ip))
+      ) {
+        throw tooManyAttempts();
+      }
       const body = await readJsonBody(ctx.request);
       const link = await trainer.acceptInvite(ctx.db, me.id, normalizeInviteCode(body.code));
-      await ctx.limiter.reset(limits.invite, me.id);
       return json(200, link);
     },
   },

@@ -9,8 +9,13 @@ export const limits = {
   // Limit na samotný e-mail platí bez ohľadu na IP, takže ho neobíde ani
   // útočník, ktorý strieda adresy.
   loginEmail: { name: "login-email", max: 30, windowSeconds: 15 * 60 },
+  // Jedna IP skúšajúca veľa rôznych e-mailov (password spraying). Pri úspechu sa nenuluje.
+  loginIp: { name: "login-ip", max: 50, windowSeconds: 15 * 60 },
   register: { name: "register", max: 20, windowSeconds: 60 * 60 },
+  // Hádanie pozývacích kódov: na účet aj na IP, pri úspechu sa nenuluje
+  // (inak by si útočník počítadlo vynuloval vlastnou platnou pozvánkou).
   invite: { name: "invite", max: 10, windowSeconds: 60 * 60 },
+  inviteIp: { name: "invite-ip", max: 30, windowSeconds: 60 * 60 },
   // Fitká: zoznam vracia až 5000 riadkov a hodnotenia by sa dali "klikať" v slučke.
   gymRead: { name: "gym-read", max: 60, windowSeconds: 60 },
   gymWrite: { name: "gym-write", max: 30, windowSeconds: 60 },

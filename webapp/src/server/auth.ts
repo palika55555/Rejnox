@@ -81,7 +81,11 @@ export async function login(
   input: { email: string; password: string },
 ): Promise<AuthResult> {
   const key = `${ip}|${input.email}`;
-  if (!(await limiter.tryAcquire(limits.login, key)) || !(await limiter.tryAcquire(limits.loginEmail, input.email))) {
+  if (
+    !(await limiter.tryAcquire(limits.loginIp, ip)) ||
+    !(await limiter.tryAcquire(limits.login, key)) ||
+    !(await limiter.tryAcquire(limits.loginEmail, input.email))
+  ) {
     throw tooManyAttempts();
   }
 
