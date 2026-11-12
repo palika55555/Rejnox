@@ -17,7 +17,7 @@ export function IntroSplash() {
     } catch {
       // Bez úložiska sa úvod ukáže pri každom otvorení, nič viac.
     }
-    const timer = setTimeout(() => setDone(true), 2600);
+    const timer = setTimeout(() => setDone(true), 2400);
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDone(true);
     };

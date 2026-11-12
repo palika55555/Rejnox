@@ -5,10 +5,11 @@ import { useCallback, useEffect, useState, type CSSProperties } from "react";
 
 // Kotúče od najväčšieho po najmenší, farby svalových partií z appky.
 const plates = [
+  // Rovnaký pomer výšok ako v appke (118/100/82/64).
   { color: "#FF4D6A", height: 170 },
-  { color: "#4D8BFF", height: 148 },
-  { color: "#FFC542", height: 126 },
-  { color: "#2BD98B", height: 104 },
+  { color: "#4D8BFF", height: 144 },
+  { color: "#FFC542", height: 118 },
+  { color: "#2BD98B", height: 92 },
 ];
 
 const PLATE_W = 18;
@@ -31,7 +32,7 @@ export function WelcomeBurst({ title, subtitle }: Props) {
   }, [router, pathname]);
 
   useEffect(() => {
-    const timer = setTimeout(finish, 3300);
+    const timer = setTimeout(finish, 2900);
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") finish();
     };
@@ -59,7 +60,7 @@ export function WelcomeBurst({ title, subtitle }: Props) {
           <rect x={LEFT_START + PLATE_W + 4} y="80" width="12" height="40" rx="3" fill="#8B88B5" />
           <rect x={RIGHT_START - 16} y="80" width="12" height="40" rx="3" fill="#8B88B5" />
           {plates.map((plate, i) => {
-            const style = { "--delay": `${0.25 + i * 0.22}s` } as CSSProperties;
+            const style = { "--delay": `${0.2 + i * 0.18}s` } as CSSProperties;
             const y = 100 - plate.height / 2;
             return (
               <g key={plate.color}>
