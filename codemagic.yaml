@@ -13,8 +13,8 @@
 #
 # Workflow ios-sideload (bez platenej Apple Developer účtu a bez App Store
 # Connect kľúča): zostaví nepodpísanú .ipa, stiahneš ju z Artifacts a podpíšeš
-# v Sideloadly svojím Apple ID. Potrebuje len premennú API_URL (skupina
-# rejnox_signing alebo priamo v aplikácii).
+# v Sideloadly svojím Apple ID. Adresa API je v premennej API_URL nižšie,
+# v Codemagicu sa nič nastavovať nemusí.
 workflows:
   ios-sideload:
     name: iOS → nepodpísaná IPA (Sideloadly)
@@ -24,8 +24,9 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      groups:
-        - rejnox_signing
+      vars:
+        # Verejná adresa API (nie je tajná), preto je priamo tu.
+        API_URL: https://rejnox.sk/api
     scripts:
       - name: Balíčky
         script: flutter pub get
@@ -33,7 +34,7 @@ workflows:
       - name: Zostavenie nepodpísanej IPA
         script: |
           flutter build ios --release --no-codesign \
-            --dart-define=API_URL="${API_URL:?Chýba API_URL v Codemagic (skupina rejnox_signing)}"
+            --dart-define=API_URL="$API_URL"
           mkdir -p build/ios/ipa Payload
           cp -R build/ios/iphoneos/Runner.app Payload/
           zip -qry build/ios/ipa/Rejnox-unsigned.ipa Payload
