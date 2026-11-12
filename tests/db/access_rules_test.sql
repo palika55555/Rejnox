@@ -7,6 +7,7 @@ DECLARE
   t uuid := gen_random_uuid();   -- tréner
   a uuid := gen_random_uuid();   -- klient A
   b uuid := gen_random_uuid();   -- cudzí používateľ B
+  x uuid := gen_random_uuid();   -- iný tréner X
   tc uuid := gen_random_uuid();
   ex uuid := gen_random_uuid();
   w uuid := gen_random_uuid();
@@ -16,7 +17,8 @@ BEGIN
   INSERT INTO users (id, email, password_hash, display_name, role) VALUES
     (t, 't@test.local', 'x', 'Tréner', 'trainer'),
     (a, 'a@test.local', 'x', 'Klient A', 'member'),
-    (b, 'b@test.local', 'x', 'Cudzí B', 'member');
+    (b, 'b@test.local', 'x', 'Cudzí B', 'member'),
+    (x, 'x@test.local', 'x', 'Tréner X', 'trainer');
 
   -- 1. Bez prihlásenia nevidno nič.
   SELECT count(*) INTO n FROM users;
@@ -69,6 +71,75 @@ BEGIN
   INSERT INTO member_passes (user_id, label, code) VALUES (a, 'Gym Fit', '123456');
   conv := start_conversation(t);
   INSERT INTO messages (conversation_id, sender_id, body) VALUES (conv, a, 'Ahoj');
+
+  -- 4b. Klient si žiada termín: len u svojho trénera a potvrdiť si ho nevie sám.
+  BEGIN
+    INSERT INTO bookings (trainer_id, trainer_client_id, during)
+    VALUES (x, tc, tstzrange('2030-02-01 10:00+00', '2030-02-01 11:00+00'));
+    RAISE EXCEPTION 'FAIL: klient založil termín cudziemu trénerovi';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO bookings (trainer_id, trainer_client_id, during, status)
+    VALUES (t, tc, tstzrange('2030-02-01 10:00+00', '2030-02-01 11:00+00'), 'confirmed');
+    RAISE EXCEPTION 'FAIL: klient si sám potvrdil termín';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  INSERT INTO bookings (trainer_id, trainer_client_id, during)
+  VALUES (t, tc, tstzrange('2030-02-01 10:00+00', '2030-02-01 11:00+00'));
+  BEGIN
+    UPDATE bookings SET status = 'confirmed' WHERE trainer_client_id = tc;
+    RAISE EXCEPTION 'FAIL: klient potvrdil termín úpravou';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  -- 4c. Tréner nevie prepojeného klienta znova pozvať ani mu zmazať históriu.
+  PERFORM set_config('app.user_id', t::text, true);
+  BEGIN
+    UPDATE trainer_clients
+    SET status = 'invited', invite_token_hash = 'hash-unos',
+        invite_expires_at = now() + interval '1 day'
+    WHERE id = tc;
+    RAISE EXCEPTION 'FAIL: tréner znova pozval prepojeného klienta';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  DELETE FROM trainer_clients WHERE id = tc;
+  SELECT count(*) INTO n FROM trainer_clients WHERE id = tc;
+  ASSERT n = 1, 'tréner zmazal prepojeného klienta aj s históriou';
+  UPDATE bookings SET status = 'confirmed' WHERE trainer_client_id = tc
+    AND during = tstzrange('2030-02-01 10:00+00', '2030-02-01 11:00+00');
+  SELECT count(*) INTO n FROM bookings WHERE status = 'confirmed';
+  ASSERT n = 1, 'tréner nevie potvrdiť termín';
+  PERFORM set_config('app.user_id', a::text, true);
+
+  -- 4d. Klient nevie presunúť potvrdený termín, len ho zrušiť.
+  BEGIN
+    UPDATE bookings
+    SET during = tstzrange('2030-03-01 10:00+00', '2030-03-01 11:00+00')
+    WHERE status = 'confirmed';
+    RAISE EXCEPTION 'FAIL: klient presunul potvrdený termín';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE bookings
+    SET status = 'cancelled',
+        during = tstzrange('2030-03-01 10:00+00', '2030-03-01 11:00+00')
+    WHERE status = 'confirmed';
+    RAISE EXCEPTION 'FAIL: klient pri zrušení zmenil čas';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  -- Nepotvrdenú žiadosť si posunúť môže.
+  UPDATE bookings
+  SET during = tstzrange('2030-01-02 10:00+00', '2030-01-02 11:00+00')
+  WHERE status = 'requested';
+  UPDATE bookings SET status = 'cancelled' WHERE status = 'confirmed';
+  SELECT count(*) INTO n FROM bookings WHERE status = 'cancelled';
+  ASSERT n = 1, 'klient nevie zrušiť termín';
+  BEGIN
+    UPDATE bookings SET status = 'requested' WHERE status = 'cancelled';
+    RAISE EXCEPTION 'FAIL: klient obnovil zrušený termín';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
 
   -- 5. Cudzí používateľ B nevidí nič z toho a nevie sa nikam dostať.
   PERFORM set_config('app.user_id', b::text, true);
