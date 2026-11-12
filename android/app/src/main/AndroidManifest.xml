@@ -2,8 +2,10 @@
     <!-- Pripomienky tréningu: zobrazenie notifikácií a obnova po reštarte. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <!-- Spojenie so serverom Rejnox. -->
+    <!-- Mapa fitiek: dlaždice mapy z internetu a poloha na fitká v okolí. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <!-- Zdravie (Health Connect): len čítanie. -->
     <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE"/>
@@ -78,6 +80,11 @@
         <package android:name="com.google.android.apps.healthdata"/>
         <intent>
             <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+        </intent>
+        <!-- Detail fitka: navigácia v mapách a web fitka. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
         </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

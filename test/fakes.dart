@@ -1,6 +1,12 @@
+import 'dart:ui';
+
 import 'package:rejnox/core/api/api_client.dart';
 import 'package:rejnox/features/coaching/data/coaching_api.dart';
 import 'package:rejnox/features/coaching/domain/coaching_models.dart';
+import 'package:rejnox/features/gyms/application/gym_actions.dart';
+import 'package:rejnox/features/gyms/application/user_location.dart';
+import 'package:rejnox/features/gyms/data/gym_repository.dart';
+import 'package:rejnox/features/gyms/domain/gym.dart';
 import 'package:rejnox/features/reminders/reminder_service.dart';
 import 'package:rejnox/features/training/data/set_storage.dart';
 import 'package:rejnox/features/training/domain/training_models.dart';
@@ -180,4 +186,84 @@ class FakeCoachingApi implements CoachingApi {
 
   @override
   Future<List<Plan>> myPlans(String token) async => [...plans];
+}
+
+class FakeLocationSource implements LocationSource {
+  FakeLocationSource([
+    this.result = const LocationFound(GeoPoint(48.3, 18.08)),
+  ]);
+
+  UserLocation result;
+  int calls = 0;
+  final opened = <LocationIssue>[];
+
+  @override
+  Future<UserLocation> current() async {
+    calls++;
+    return result;
+  }
+
+  @override
+  Future<void> openSettings(LocationIssue issue) async => opened.add(issue);
+}
+
+class FakeExternalActions implements ExternalActions {
+  final opened = <Uri>[];
+  final shared = <String>[];
+  bool canOpen = true;
+
+  @override
+  Future<bool> openUrl(Uri url) async {
+    opened.add(url);
+    return canOpen;
+  }
+
+  @override
+  Future<void> share(String text, {String? subject, Rect? origin}) async =>
+      shared.add(text);
+}
+
+class FakeGymRepository implements GymRepository {
+  FakeGymRepository(this.gyms);
+
+  List<Gym> gyms;
+  bool fail = false;
+  final ratings = <String, int?>{};
+
+  @override
+  Future<List<Gym>> fetchGyms(String token) async {
+    if (fail) throw const ApiError.network();
+    return gyms;
+  }
+
+  Gym _withMine(String gymId, int? stars) {
+    if (fail) throw const ApiError.network();
+    ratings[gymId] = stars;
+    final gym = gyms.firstWhere((g) => g.id == gymId);
+    final counts = [
+      ...gym.rating?.stars ?? [0, 0, 0, 0, 0],
+    ];
+    if (gym.myStars != null) counts[gym.myStars! - 1]--;
+    if (stars != null) counts[stars - 1]++;
+    final updated = Gym(
+      id: gym.id,
+      name: gym.name,
+      city: gym.city,
+      location: gym.location,
+      openingHours: gym.openingHours,
+      tags: gym.tags,
+      rating: GymRating(stars: counts),
+      myStars: stars,
+    );
+    gyms = [for (final g in gyms) g.id == gymId ? updated : g];
+    return updated;
+  }
+
+  @override
+  Future<Gym> rate(String token, String gymId, int stars) async =>
+      _withMine(gymId, stars);
+
+  @override
+  Future<Gym> unrate(String token, String gymId) async =>
+      _withMine(gymId, null);
 }

@@ -7,6 +7,8 @@ import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/auth/presentation/welcome_screen.dart';
 import '../../features/coaching/presentation/client_detail_screen.dart';
 import '../../features/coaching/presentation/clients_screen.dart';
+import '../../features/gyms/presentation/gym_detail_screen.dart';
+import '../../features/gyms/presentation/gym_map_screen.dart';
 import '../../features/health/health_screen.dart';
 import '../../features/health/heart_rate_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -59,22 +61,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/heart-rate',
         builder: (context, state) => const HeartRateScreen(),
       ),
+      GoRoute(
+        path: '/gym/:id',
+        builder: (context, state) =>
+            GymDetailScreen(gymId: state.pathParameters['id']!),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),
         branches: [
           branch('/home', const HomeScreen()),
-          branch(
-            '/map',
-            const PlaceholderScreen(
-              title: 'Mapa fitiek',
-              icon: Icons.map_outlined,
-              features: [
-                'Fitká v okolí na mape',
-                'Cenník permanentiek a produktov od používateľov',
-                'Kto hľadá parťáka na tréning',
-              ],
-            ),
-          ),
+          branch('/map', const GymMapScreen()),
           branch('/workout', const WorkoutLogScreen()),
           branch(
             '/chat',

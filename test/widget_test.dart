@@ -5,6 +5,9 @@ import 'package:rejnox/core/api/api_client.dart';
 import 'package:rejnox/core/router/app_router.dart';
 import 'package:rejnox/features/coaching/data/coaching_api.dart';
 import 'package:rejnox/features/coaching/domain/coaching_models.dart';
+import 'package:rejnox/features/gyms/application/user_location.dart';
+import 'package:rejnox/features/gyms/data/gym_repository.dart';
+import 'package:rejnox/features/gyms/presentation/map_style.dart';
 import 'package:rejnox/features/training/domain/training_models.dart';
 import 'package:rejnox/features/auth/data/auth_repository.dart';
 import 'package:rejnox/features/auth/domain/auth_models.dart';
@@ -128,6 +131,9 @@ Future<void> _pumpApp(
         connectivityProvider.overrideWithValue(const Stream<bool>.empty()),
         reminderSchedulerProvider.overrideWithValue(FakeReminderScheduler()),
         coachingApiProvider.overrideWithValue(coachingApi ?? FakeCoachingApi()),
+        locationSourceProvider.overrideWithValue(FakeLocationSource()),
+        mapTilesEnabledProvider.overrideWithValue(false),
+        gymRepositoryProvider.overrideWithValue(FakeGymRepository(const [])),
       ],
       child: const RejnoxApp(webFonts: false),
     ),
