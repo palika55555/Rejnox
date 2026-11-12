@@ -17,6 +17,7 @@ Future<void> main() async {
     trainers: TrainerService(db),
     corsOrigins: config.corsOrigins,
     trustedProxies: config.trustedProxies,
+    clientIpHeader: config.clientIpHeader,
     onError: (error, stack) => stderr.writeln('CHYBA: $error\n$stack'),
   );
 

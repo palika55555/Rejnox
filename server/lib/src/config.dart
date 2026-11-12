@@ -9,6 +9,7 @@ class AppConfig {
     this.corsOrigins = const {'http://localhost:5173'},
     this.sessionTtl = const Duration(days: 30),
     this.trustedProxies = const {},
+    this.clientIpHeader,
   });
 
   final Uri databaseUrl;
@@ -21,6 +22,10 @@ class AppConfig {
 
   /// Adresy, ktorým server verí hlavičku x-forwarded-for (napr. Next.js web).
   final Set<String> trustedProxies;
+
+  /// Hlavička s IP klienta od dôveryhodnej proxy, napr. cf-connecting-ip za
+  /// Cloudflare Tunnel. Null = len x-forwarded-for.
+  final String? clientIpHeader;
 
   factory AppConfig.load({Map<String, String>? environment}) {
     final env = {..._readEnvFile(), ...(environment ?? Platform.environment)};
@@ -39,7 +44,14 @@ class AppConfig {
           ? const {'http://localhost:5173'}
           : origins.split(',').map((o) => o.trim()).toSet(),
       trustedProxies: _list(env['TRUSTED_PROXIES']),
+      clientIpHeader: _header(env['CLIENT_IP_HEADER']),
     );
+  }
+
+  /// Názov hlavičky malými písmenami (shelf ich tak porovnáva), prázdny = null.
+  static String? _header(String? value) {
+    final name = value?.trim().toLowerCase();
+    return name == null || name.isEmpty ? null : name;
   }
 
   static Set<String> _list(String? value) {

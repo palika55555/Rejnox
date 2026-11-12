@@ -25,6 +25,7 @@ Handler buildApp({
   required TrainerService trainers,
   required Set<String> corsOrigins,
   Set<String> trustedProxies = const {},
+  String? clientIpHeader,
   RateLimiter? loginLimiter,
   RateLimiter? loginEmailLimiter,
   RateLimiter? registerLimiter,
@@ -43,8 +44,11 @@ Handler buildApp({
       registerLimiter ??
       RateLimiter(maxAttempts: 20, window: const Duration(hours: 1));
 
-  String ip(Request request) =>
-      clientAddress(request, trustedProxies: trustedProxies);
+  String ip(Request request) => clientAddress(
+    request,
+    trustedProxies: trustedProxies,
+    ipHeader: clientIpHeader,
+  );
 
   Future<(String, AuthUser)> requireUser(Request request) async {
     final token = bearerToken(request);

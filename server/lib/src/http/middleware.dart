@@ -48,22 +48,33 @@ String? bearerToken(Request request) {
 
 /// IP adresa klienta (pre obmedzenie počtu pokusov).
 ///
-/// Ak požiadavka prišla z dôveryhodnej proxy (webová appka volá API zo
-/// svojho servera), platí prvá adresa z hlavičky x-forwarded-for. Od iných
-/// adries sa hlavičke neverí, inak by si ju ktokoľvek mohol podvrhnúť.
-String clientAddress(Request request, {Set<String> trustedProxies = const {}}) {
+/// Hlavičkám sa verí len vtedy, keď požiadavka prišla z dôveryhodnej proxy
+/// (Next.js web, Cloudflare Tunnel). Potom platí:
+/// - [ipHeader] (napr. cf-connecting-ip), ak je nastavená a prišla. Cloudflare
+///   ju vždy prepíše, takže ju klient nepodvrhne. Bez Cloudflare ju nezapínaj.
+/// - inak posledná adresa z x-forwarded-for. Tú pripísala proxy, kým ľavú
+///   časť mohol poslať sám klient.
+String clientAddress(
+  Request request, {
+  Set<String> trustedProxies = const {},
+  String? ipHeader,
+}) {
   final info = request.context['shelf.io.connection_info'];
   final remote = info is HttpConnectionInfo
       ? info.remoteAddress.address
       : 'unknown';
-  if (trustedProxies.contains(remote)) {
-    final forwarded = request.headers['x-forwarded-for']
-        ?.split(',')
-        .first
-        .trim();
-    if (forwarded != null && forwarded.isNotEmpty) return forwarded;
-  }
-  return remote;
+  if (!trustedProxies.contains(remote)) return remote;
+
+  final fromHeader = ipHeader == null
+      ? null
+      : request.headers[ipHeader]?.trim();
+  if (fromHeader != null && fromHeader.isNotEmpty) return fromHeader;
+
+  final forwarded = (request.headers['x-forwarded-for'] ?? '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .where((entry) => entry.isNotEmpty);
+  return forwarded.isEmpty ? remote : forwarded.last;
 }
 
 /// Chyby premení na JSON. Nečakané chyby zapíše do logu a klientovi nič neprezradí.
