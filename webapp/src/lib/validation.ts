@@ -1,6 +1,6 @@
 /**
  * Kontrola formulárov prihlásenia a registrácie. Pravidlá sú rovnaké ako na
- * serveri (server/lib/src/auth/validators.dart), aby používateľ videl chybu
+ * serveri (src/server/validate.ts), aby používateľ videl chybu
  * hneď a server ju nemusel vracať. Server ich aj tak overuje znova.
  */
 
@@ -49,7 +49,7 @@ export function validateRegister(form: FormData): Validated<RegisterInput> {
     errors.displayName = "Zadaj meno (najviac 60 znakov).";
   }
   if (error) errors.email = error;
-  // bcrypt na serveri spracuje najviac 72 bajtov.
+  // bcrypt spracuje najviac 72 bajtov.
   if (password.length < 8 || encoder.encode(password).length > 72) {
     errors.password = "Heslo musí mať 8 až 72 znakov.";
   }

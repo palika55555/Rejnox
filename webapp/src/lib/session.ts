@@ -2,13 +2,13 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { cache } from "react";
-import { ApiError, api, type User } from "./api";
+import { SESSION_TTL_SECONDS, userForToken, type AuthUser } from "@/server/auth";
+import { withDb } from "@/server/db";
+
+export type User = AuthUser;
 
 /** Názov cookie s tokenom relácie. Používa ho aj src/proxy.ts. */
 export const SESSION_COOKIE = "rejnox_session";
-
-/** Rovnaká platnosť ako relácia na serveri (AuthService.sessionTtl). */
-const MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 export async function saveSession(token: string): Promise<void> {
   (await cookies()).set(SESSION_COOKIE, token, {
@@ -16,7 +16,7 @@ export async function saveSession(token: string): Promise<void> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: MAX_AGE_SECONDS,
+    maxAge: SESSION_TTL_SECONDS,
   });
 }
 
@@ -29,16 +29,11 @@ export async function clearSession(): Promise<void> {
 }
 
 /**
- * Prihlásený používateľ podľa servera, alebo null. Platnosť tokenu overuje
- * Dart server, takže odhlásenie v mobile alebo zmazanie účtu platí aj tu.
+ * Prihlásený používateľ podľa databázy, alebo null. Relácie sú spoločné
+ * s mobilnou appkou, takže odhlásenie v mobile alebo zmazanie účtu platí aj tu.
  */
 export const currentUser = cache(async (): Promise<User | null> => {
   const token = await sessionToken();
   if (!token) return null;
-  try {
-    return await api<User>("/me", { token });
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 401) return null;
-    throw error;
-  }
+  return withDb((db) => userForToken(db, token));
 });

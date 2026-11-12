@@ -1,0 +1,11 @@
+// Rejnox: Prisma slúži len na migrácie (prisma/migrations/*/migration.sql).
+// Schéma je písaná ručne v SQL, lebo stojí na Row Level Security, triggeroch
+// a funkciách, ktoré Prisma vo svojich modeloch neopíše. API sa na databázu
+// pripája cez knižnicu pg (src/server/db.ts) ako rola rejnox_app.
+//
+// Novú migráciu vytvor cez `npm run db:new -- nazov` a SQL napíš ručne.
+// NEPOUŽÍVAJ `prisma migrate dev`: bez modelov by navrhla zmazať všetky tabuľky.
+
+datasource db {
+  provider = "postgresql"
+}

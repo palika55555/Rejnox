@@ -44,9 +44,29 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Tajné údaje
+# Tajné údaje – nikdy do gitu
 .env
+.env.*
+!.env.example
 config/.env
+*.pem
+*.p12
+*.p8
+*.key
+*.keystore
+*.jks
+*.mobileprovision
+key.properties
+**/android/key.properties
+**/google-services.json
+**/GoogleService-Info.plist
+service-account*.json
+*credentials*.json
+.pgpass
+pgpass.conf
+# Lokálny Prisma config s heslom k databáze v koreni repa. Skutočný config je
+# webapp/prisma.config.ts: heslo nemá, číta ho z prostredia, preto je v gite.
+/prisma*.config.ts
 
 # Lokálne nástroje a pracovné súbory
 .superpowers/

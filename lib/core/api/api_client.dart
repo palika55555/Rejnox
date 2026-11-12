@@ -4,10 +4,12 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-/// Adresa servera. Pri builde sa dá zmeniť cez --dart-define=API_URL=...
+/// Adresa API (Next.js vo webapp/, cesty pod /api). Lokálne `npm run dev`.
+/// Pre ostrú appku sa zadá pri builde, napr.
+/// `--dart-define=API_URL=https://rejnox.sk/api`.
 const apiBaseUrl = String.fromEnvironment(
   'API_URL',
-  defaultValue: 'http://localhost:8080',
+  defaultValue: 'http://localhost:3000/api',
 );
 
 /// Chyba zo servera alebo zo spojenia, so správou pre používateľa.

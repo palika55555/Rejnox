@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Rýchla kontrola pred vykreslením: bez cookie s reláciou ide návštevník
- * rovno na prihlásenie. Platnosť tokenu overí až stránka cez Dart server.
+ * rovno na prihlásenie. Platnosť tokenu overí až stránka (src/lib/session.ts).
  */
 export function proxy(request: NextRequest) {
   // Názov musí sedieť so SESSION_COOKIE v src/lib/session.ts.

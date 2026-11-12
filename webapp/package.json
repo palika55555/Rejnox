@@ -4,13 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/migrate.mjs && opennextjs-cloudflare build",
+    "build:next": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "npm run build && opennextjs-cloudflare deploy",
+    "db:status": "prisma migrate status",
+    "db:deploy": "prisma migrate deploy",
+    "db:new": "node scripts/new-migration.mjs"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.17",
+    "bcryptjs": "^3.0.3",
     "next": "16.4.6",
+    "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "^0.0.1"
@@ -18,12 +27,16 @@
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^18.0.10",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "prisma": "^7.10.1",
     "tailwindcss": "4.3.3",
     "typescript": "^5",
-    "vitest": "^4.1.12"
+    "vitest": "^4.1.12",
+    "wrangler": "^4.161.0"
   }
 }

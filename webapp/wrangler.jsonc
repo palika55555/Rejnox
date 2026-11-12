@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Názov musí sedieť s názvom projektu v Cloudflare (Workers & Pages).
+  "name": "rejnox",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-12-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // Tajné hodnoty (DATABASE_URL) sú Secrets v dashboarde, nikdy nie tu.
+  // Pri nasadení sa nesmú zmazať.
+  "keep_vars": true,
+  "observability": { "enabled": true },
+  // Blízko databázy (Supabase eu-west-1).
+  "placement": { "region": "aws:eu-west-1" }
+}
