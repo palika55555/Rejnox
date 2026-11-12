@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Montserrat } from "next/font/google";
+import { CookieNotice } from "@/components/legal/CookieNotice";
 import "./globals.css";
 import "./motion.css";
+import "./landing.css";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -35,7 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     // suppressHydrationWarning: skript úvodu pridá na <html> atribút ešte pred Reactom.
     <html lang="sk" className={`${montserrat.variable} ${inter.variable} h-full`} suppressHydrationWarning>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        <CookieNotice />
+      </body>
     </html>
   );
 }

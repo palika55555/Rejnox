@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { RejnoxMark } from "./RejnoxMark";
 
 export function SiteFooter() {
@@ -8,16 +9,22 @@ export function SiteFooter() {
           <RejnoxMark className="w-6" title="" />
           <span>© 2026 Rejnox</span>
         </div>
-        <nav aria-label="Odkazy v pätičke" className="flex gap-6">
-          <a href="#na-pocitaci" className="hover:text-ink">
+        <nav aria-label="Odkazy v pätičke" className="flex flex-wrap gap-x-6 gap-y-2">
+          <Link href="/#na-pocitaci" className="hover:text-ink">
             Mobil a počítač
-          </a>
-          <a href="#pre-trenerov" className="hover:text-ink">
+          </Link>
+          <Link href="/#pre-trenerov" className="hover:text-ink">
             Pre trénerov
-          </a>
-          <a href="#otazky" className="hover:text-ink">
+          </Link>
+          <Link href="/#otazky" className="hover:text-ink">
             Otázky
-          </a>
+          </Link>
+          <Link href="/ochrana-osobnych-udajov" className="hover:text-ink">
+            Ochrana osobných údajov
+          </Link>
+          <Link href="/cookies" className="hover:text-ink">
+            Cookies
+          </Link>
         </nav>
       </div>
     </footer>

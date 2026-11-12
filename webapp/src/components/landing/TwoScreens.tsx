@@ -17,10 +17,10 @@ export function TwoScreens() {
   return (
     <section id="na-pocitaci" className="border-t border-line">
       <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:py-32">
-        <h2 className="max-w-3xl font-display text-[clamp(2rem,4.6vw,3.5rem)] leading-[1.02] font-black tracking-[-0.03em]">
+        <h2 className="reveal max-w-3xl font-display text-[clamp(2rem,4.6vw,3.5rem)] leading-[1.02] font-black tracking-[-0.03em]">
           Vo fitku v mobile. Doma na počítači.
         </h2>
-        <p className="mt-5 max-w-[38rem] text-lg leading-relaxed text-muted">
+        <p className="reveal mt-5 max-w-[38rem] text-lg leading-relaxed text-muted">
           V gyme potrebuješ zapísať sériu za pár sekúnd. Plánovať týždeň, skladať jedálniček a pozerať progres je
           pohodlnejšie na veľkej obrazovke. Jeden účet, rovnaké dáta.
         </p>
@@ -28,7 +28,7 @@ export function TwoScreens() {
         <div className="mt-16 grid gap-14 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
           <div>
             <h3 className="font-display text-xl font-extrabold">V mobile</h3>
-            <dl className="mt-6 space-y-6">
+            <dl className="reveal-stagger mt-6 space-y-6">
               {phone.map((item) => (
                 <div key={item.title} className="border-l-2 border-brand-violet pl-4">
                   <dt className="font-semibold">{item.title}</dt>
@@ -45,10 +45,10 @@ export function TwoScreens() {
                 Pripravujeme
               </span>
             </div>
-            <div className="mt-6">
+            <div className="reveal mt-6">
               <DesktopMock />
             </div>
-            <dl className="mt-8 grid gap-6 sm:grid-cols-3">
+            <dl className="reveal-stagger mt-8 grid gap-6 sm:grid-cols-3">
               {desktop.map((item) => (
                 <div key={item.title}>
                   <dt className="font-semibold">{item.title}</dt>

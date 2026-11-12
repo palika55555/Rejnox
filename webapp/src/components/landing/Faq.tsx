@@ -25,10 +25,10 @@ export function Faq() {
   return (
     <section id="otazky" className="border-t border-line">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-24 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:py-32">
-        <h2 className="font-display text-[clamp(2rem,4.6vw,3.5rem)] leading-[1.02] font-black tracking-[-0.03em]">
+        <h2 className="reveal font-display text-[clamp(2rem,4.6vw,3.5rem)] leading-[1.02] font-black tracking-[-0.03em]">
           Časté otázky
         </h2>
-        <div className="divide-y divide-line border-y border-line">
+        <div className="reveal-stagger divide-y divide-line border-y border-line">
           {questions.map((item) => (
             <details key={item.q} className="group py-5">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-semibold [&::-webkit-details-marker]:hidden">

@@ -2,6 +2,7 @@ import { Faq } from "@/components/landing/Faq";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { ForTrainers } from "@/components/landing/ForTrainers";
 import { Hero } from "@/components/landing/Hero";
+import { Marquee } from "@/components/landing/Marquee";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 import { TwoScreens } from "@/components/landing/TwoScreens";
@@ -16,6 +17,7 @@ export default function LandingPage() {
       <SiteHeader />
       <main>
         <Hero />
+        <Marquee />
         <TwoScreens />
         <ForTrainers />
         <Faq />

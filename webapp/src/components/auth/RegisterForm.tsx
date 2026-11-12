@@ -70,6 +70,13 @@ export function RegisterForm() {
       </fieldset>
 
       <SubmitButton pending={pending} label="Vytvoriť účet" />
+      <p className="text-center text-xs leading-relaxed text-muted">
+        Vytvorením účtu berieš na vedomie, ako spracúvame tvoje údaje podľa{" "}
+        <Link href="/ochrana-osobnych-udajov" className="text-ink underline underline-offset-4">
+          zásad ochrany osobných údajov
+        </Link>
+        .
+      </p>
       <p className="text-center text-sm text-muted">
         Už máš účet?{" "}
         <Link href="/prihlasenie" className="font-semibold text-ink underline-offset-4 hover:underline">

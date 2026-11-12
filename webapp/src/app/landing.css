@@ -1,0 +1,366 @@
+/*
+ * Animácie úvodnej stránky: telefón (iPhone 18 Pro), obrazovky appky v ňom,
+ * nábeh hero sekcie, pás s funkciami a odhaľovanie sekcií pri scrollovaní.
+ * Všetko rešpektuje prefers-reduced-motion (na konci súboru).
+ */
+
+/* ------------------------------------------------------------- iPhone */
+
+.iphone {
+  --frame: 3rem;
+  position: relative;
+  aspect-ratio: 9 / 19.5;
+  width: 100%;
+  border-radius: var(--frame);
+  padding: 5px;
+  /* Titánový rám: jemný kovový prechod s lesklou hranou. */
+  background:
+    linear-gradient(145deg, #5d5a6e 0%, #2a2836 22%, #6f6b80 48%, #24222f 70%, #55526a 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.18),
+    inset 0 0 2px 2px rgb(0 0 0 / 0.5),
+    0 50px 120px -30px rgb(155 92 255 / 0.55),
+    0 30px 60px -30px rgb(0 0 0 / 0.8);
+}
+
+.iphone__body {
+  height: 100%;
+  border-radius: calc(var(--frame) - 5px);
+  padding: 6px;
+  background: #000;
+}
+
+.iphone__screen {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: calc(var(--frame) - 11px);
+  background:
+    radial-gradient(120% 50% at 80% 0%, rgb(155 92 255 / 0.18), transparent 60%),
+    var(--color-night);
+  color: var(--color-ink);
+}
+
+.iphone__btn {
+  position: absolute;
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #3a3848, #77738a);
+}
+
+.iphone__btn--action { left: -3px; top: 17%; height: 4.5%; }
+.iphone__btn--vol-up { left: -3px; top: 24.5%; height: 8%; }
+.iphone__btn--vol-down { left: -3px; top: 34%; height: 8%; }
+.iphone__btn--power { right: -3px; top: 27%; height: 12%; background: linear-gradient(270deg, #3a3848, #77738a); }
+/* Ovládanie fotoaparátu: zapustené, so zafírovým leskom. */
+.iphone__btn--camera { right: -2px; top: 58%; height: 7%; width: 3px; background: linear-gradient(#8f8ba6, #3b3950); }
+
+/* Menší Dynamic Island, ktorý sa pri živej aktivite roztiahne. */
+.iphone__island {
+  position: absolute;
+  z-index: 30;
+  top: 10px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  width: 92px;
+  height: 27px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  background: #000;
+  transform: translateX(-50%);
+  transition:
+    width 0.55s cubic-bezier(0.3, 1.4, 0.4, 1),
+    height 0.55s cubic-bezier(0.3, 1.4, 0.4, 1);
+}
+
+.iphone__island.is-open {
+  width: 82%;
+  height: 34px;
+}
+
+.iphone__lens {
+  position: absolute;
+  right: 10px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #3b4a7a, #0b0d1a 60%);
+  transition: opacity 0.2s;
+}
+
+.iphone__island.is-open .iphone__lens {
+  opacity: 0;
+}
+
+.iphone__island-content {
+  width: 100%;
+  min-width: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.iphone__island.is-open .iphone__island-content {
+  opacity: 1;
+  transition-delay: 0.25s;
+}
+
+.iphone__home {
+  position: absolute;
+  z-index: 30;
+  bottom: 7px;
+  left: 50%;
+  width: 36%;
+  height: 4px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.55);
+  transform: translateX(-50%);
+}
+
+.iphone__glare {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: linear-gradient(115deg, rgb(255 255 255 / 0.07), transparent 32%);
+}
+
+/* Náklon za myšou (premenné nastavuje HeroPhone). */
+.tilt {
+  transform: perspective(1400px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.hero-phone {
+  animation: phone-float 7s ease-in-out infinite;
+}
+
+@keyframes phone-float {
+  50% { transform: translateY(-12px); }
+}
+
+/* ------------------------------------------------ obrazovky v telefóne */
+
+.app-screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(14%) scale(0.96);
+  filter: blur(6px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 0.5s ease;
+}
+
+.app-screen.is-active {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.app-screen.is-active .bar-grow { animation: bar-grow 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
+.app-screen.is-active .pop-in { animation: pop-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+.app-screen.is-active .ring-draw { animation: ring-draw 1.1s cubic-bezier(0.3, 0.8, 0.2, 1) 0.15s both; }
+.app-screen.is-active .pin-drop { animation: pin-drop 0.55s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.app-screen.is-active .route-draw { animation: dash-move 1s linear infinite; }
+.app-screen.is-active .sheet-up { animation: sheet-up 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.8s both; }
+.app-screen.is-active .ecg-draw { animation: ecg-draw 2.2s linear infinite; }
+.app-screen.is-active .notif-drop { animation: notif-drop 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) 1.1s both; }
+
+.ring-draw { stroke-dashoffset: var(--ring-to); }
+.ecg-draw { stroke-dasharray: 1; }
+.bar-grow { transform-origin: bottom; }
+
+.me-pulse { animation: me-pulse 1.8s ease-out infinite; }
+.heart-beat { display: inline-block; animation: heart-beat 0.85s ease-in-out infinite; }
+.row-in { animation: pop-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+
+@keyframes bar-grow { from { transform: scaleY(0); } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(10px) scale(0.94); } }
+@keyframes ring-draw { from { stroke-dashoffset: var(--ring-from); } }
+/* Posun na hrot špendlíka rieši Tailwind cez vlastnosť translate, tu je len pád. */
+@keyframes pin-drop { from { opacity: 0; transform: translateY(-160%); } }
+@keyframes dash-move { to { stroke-dashoffset: -8; } }
+@keyframes sheet-up { from { opacity: 0; transform: translateY(110%); } }
+@keyframes notif-drop { from { opacity: 0; transform: translateY(-24px) scale(0.95); } }
+@keyframes ecg-draw {
+  0% { stroke-dashoffset: 1; }
+  70% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0.2; }
+}
+@keyframes me-pulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(4); opacity: 0; } }
+@keyframes heart-beat { 15% { transform: scale(1.35); } 30% { transform: scale(1); } 45% { transform: scale(1.2); } 60% { transform: scale(1); } }
+
+/* Karta aktuálnej obrazovky ukazuje, kedy príde ďalšia. */
+.screen-tab { position: relative; overflow: hidden; }
+.screen-tab.is-running::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--color-brand-blue), var(--color-brand-violet));
+  transform-origin: left;
+  animation: tab-progress var(--auto-ms) linear both;
+}
+@keyframes tab-progress { from { transform: scaleX(0); } }
+
+/* Plávajúce karty okolo telefónu. */
+.float-card {
+  position: absolute;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--color-line);
+  border-radius: 1rem;
+  background: rgb(18 17 45 / 0.82);
+  backdrop-filter: blur(12px);
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: var(--color-muted);
+  white-space: nowrap;
+  box-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.8);
+  animation: card-float 6s ease-in-out var(--float-delay, 0s) infinite;
+}
+@keyframes card-float { 50% { transform: translateY(-14px) rotate(-1.5deg); } }
+
+/* ---------------------------------------------------------------- hero */
+
+.hero-line { display: block; overflow: hidden; padding-bottom: 0.06em; }
+.hero-line > .hero-in { display: inline-block; }
+
+.hero-in { animation: hero-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0ms) both; }
+.hero-line .hero-in { animation-name: hero-line-in; }
+.hero-in--phone { animation-name: hero-phone-in; animation-duration: 1.1s; }
+
+/* Kým beží úvod so znakom, hero počká. */
+:root:not([data-intro-seen]) .hero-in { animation-delay: calc(var(--d, 0ms) + 1.8s); }
+
+@keyframes hero-in { from { opacity: 0; transform: translateY(24px); filter: blur(6px); } }
+@keyframes hero-line-in { from { transform: translateY(105%); } }
+@keyframes hero-phone-in { from { opacity: 0; transform: translateY(60px) rotate(4deg) scale(0.92); } }
+
+.text-shimmer {
+  background: linear-gradient(90deg, #5468ff, #a48bff, #ff8a3d, #a48bff, #5468ff);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    hero-line-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0ms) both,
+    shimmer 6s linear infinite;
+}
+:root:not([data-intro-seen]) .text-shimmer { animation-delay: calc(var(--d, 0ms) + 1.8s), 0s; }
+@keyframes shimmer { to { background-position: -300% 0; } }
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-plate-green);
+  box-shadow: 0 0 0 0 rgb(43 217 139 / 0.6);
+  animation: live-dot 1.8s ease-out infinite;
+}
+@keyframes live-dot { to { box-shadow: 0 0 0 10px rgb(43 217 139 / 0); } }
+
+/* Pomaly sa prelievajúce farebné škvrny za hero. */
+.aurora { overflow: hidden; filter: blur(60px); opacity: 0.55; }
+.aurora__blob { position: absolute; border-radius: 50%; }
+.aurora__blob--a { width: 40vw; height: 40vw; left: 50%; top: -10%; background: #5468ff; animation: blob-a 18s ease-in-out infinite; }
+.aurora__blob--b { width: 32vw; height: 32vw; left: 70%; top: 30%; background: #9b5cff; animation: blob-b 22s ease-in-out infinite; }
+.aurora__blob--c { width: 22vw; height: 22vw; left: 10%; top: 60%; background: #ff8a3d; opacity: 0.35; animation: blob-a 26s ease-in-out infinite reverse; }
+@keyframes blob-a { 50% { transform: translate(-18vw, 12vh) scale(1.2); } }
+@keyframes blob-b { 50% { transform: translate(-25vw, -10vh) scale(0.85); } }
+
+/* Lesk, ktorý prebehne po hlavnom tlačidle. */
+.btn-shine { position: relative; overflow: hidden; }
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.35) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: shine 3.2s ease-in-out 1s infinite;
+}
+@keyframes shine { 40%, 100% { transform: translateX(120%); } }
+
+/* -------------------------------------------------------------- marquee */
+
+.marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent); }
+.marquee__track { display: flex; width: max-content; animation: marquee 32s linear infinite; }
+.marquee:hover .marquee__track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* --------------------------------------------- odhalenie pri scrollovaní */
+
+/* Čisté CSS (scroll-driven animations). Prehliadač bez podpory ukáže obsah hneď. */
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 55%;
+  }
+  .reveal-stagger > * {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 5% entry 70%;
+  }
+}
+@keyframes reveal { from { opacity: 0; transform: translateY(48px) scale(0.98); } }
+
+.glow-card { transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+.glow-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 60px -30px rgb(155 92 255 / 0.5);
+}
+
+/* Kód od trénera: blikajúci kurzor. */
+.code-caret::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 4px;
+  vertical-align: -0.1em;
+  background: currentColor;
+  animation: caret 1s steps(1) infinite;
+}
+@keyframes caret { 50% { opacity: 0; } }
+
+/* --------------------------------------------------------- znížený pohyb */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-phone,
+  .float-card,
+  .aurora__blob,
+  .marquee__track,
+  .btn-shine::after,
+  .me-pulse,
+  .heart-beat,
+  .live-dot,
+  .code-caret::after,
+  .screen-tab.is-running::after {
+    animation: none !important;
+  }
+  .hero-in,
+  .text-shimmer,
+  .reveal,
+  .reveal-stagger > *,
+  .app-screen * {
+    animation: none !important;
+  }
+  .app-screen { transform: none; filter: none; }
+  .tilt { transform: none; }
+  .marquee__track { flex-wrap: wrap; width: auto; }
+}
+
+/* Lišta o cookies sa vysunie zdola. */
+.cookie-in { animation: cookie-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes cookie-in { from { opacity: 0; transform: translateY(30px); } }
+@media (prefers-reduced-motion: reduce) { .cookie-in { animation: none; } }

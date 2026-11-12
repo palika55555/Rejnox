@@ -4,14 +4,40 @@
     {
       "name": "rejnox-web",
       "runtimeExecutable": "flutter",
-      "runtimeArgs": ["run", "--release", "-d", "web-server", "--web-port", "5173", "--web-hostname", "localhost"],
+      "runtimeArgs": [
+        "run",
+        "--release",
+        "-d",
+        "web-server",
+        "--web-port",
+        "5173",
+        "--web-hostname",
+        "localhost"
+      ],
       "port": 5173
     },
     {
       "name": "rejnox-server",
       "runtimeExecutable": "dart",
-      "runtimeArgs": ["run", "server/bin/server.dart"],
+      "runtimeArgs": [
+        "run",
+        "server/bin/server.dart"
+      ],
       "port": 8080
+    },
+    {
+      "name": "rejnox-webapp",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "webapp",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3100"
+      ],
+      "port": 3100
     }
   ]
 }
