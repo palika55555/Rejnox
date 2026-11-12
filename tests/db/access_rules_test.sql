@@ -140,6 +140,12 @@ BEGIN
     RAISE EXCEPTION 'FAIL: klient obnovil zrušený termín';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
+  -- Mazať termíny smie len tréner.
+  SELECT count(*) INTO n FROM bookings WHERE trainer_client_id = tc;
+  ASSERT n = 2, 'nečakaný počet termínov pred pokusom o zmazanie';
+  DELETE FROM bookings WHERE trainer_client_id = tc;
+  SELECT count(*) INTO n FROM bookings WHERE trainer_client_id = tc;
+  ASSERT n = 2, 'klient zmazal termíny';
 
   -- 5. Cudzí používateľ B nevidí nič z toho a nevie sa nikam dostať.
   PERFORM set_config('app.user_id', b::text, true);
@@ -206,6 +212,25 @@ BEGIN
     RAISE EXCEPTION 'FAIL: tréner obnovil ukončenú spoluprácu';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
+
+  -- 7b. Po ukončení klient nové termíny nežiada, ale svoje zrušiť môže.
+  PERFORM set_config('app.user_id', a::text, true);
+  BEGIN
+    INSERT INTO bookings (trainer_id, trainer_client_id, during)
+    VALUES (t, tc, tstzrange('2030-04-01 10:00+00', '2030-04-01 11:00+00'));
+    RAISE EXCEPTION 'FAIL: klient po ukončení blokuje trénerovi kalendár';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    UPDATE bookings
+    SET during = tstzrange('2030-04-02 10:00+00', '2030-04-02 11:00+00')
+    WHERE status = 'requested';
+    RAISE EXCEPTION 'FAIL: klient po ukončení presúva žiadosti';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  UPDATE bookings SET status = 'cancelled' WHERE status = 'requested';
+  SELECT count(*) INTO n FROM bookings WHERE status = 'requested';
+  ASSERT n = 0, 'klient po ukončení nevie zrušiť svoje žiadosti';
 
   -- 8. Klient má históriu stále a po zapnutí je v rebríčku.
   PERFORM set_config('app.user_id', a::text, true);
