@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Aplikácia číta srdcový tep z Apple Health na zobrazenie tvojej aktivity.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Poloha slúži na zobrazenie fitiek v tvojom okolí na mape.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Aplikácia môže po samostatnom povolení zapisovať tréningové údaje.</string>
 </dict>
 </plist>

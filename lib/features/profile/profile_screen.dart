@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/tm_card.dart';
 import '../auth/presentation/auth_controller.dart';
 import '../coaching/presentation/my_trainer_card.dart';
+import '../health/heart_rate_tile.dart';
 import '../reminders/reminder_card.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -92,6 +93,8 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             const MyTrainerCard(),
+            const SizedBox(height: 12),
+            const HeartRateTile(),
             const SizedBox(height: 12),
             const ReminderCard(),
             const SizedBox(height: 16),

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pozadie Rejnox (AppColors.bg): splash bez bieleho bliknutia. -->
+    <color name="rejnox_bg">#06061A</color>
+</resources>

@@ -135,6 +135,14 @@ Future<void> _pumpApp(
   await tester.pumpAndSettle();
 }
 
+/// Z úvodnej obrazovky otvorí prihlasovací formulár.
+Future<void> _openLogin(WidgetTester tester) async {
+  expect(find.text('VITAJ SPÄŤ'), findsNothing);
+  await tester.tap(find.text('Prihlásiť sa'));
+  await tester.pumpAndSettle();
+  expect(find.text('VITAJ SPÄŤ'), findsOneWidget);
+}
+
 Future<void> _pumpSignedIn(WidgetTester tester) =>
     _pumpApp(tester, tokens: _MemoryTokenStore('ok'));
 
@@ -160,15 +168,17 @@ void main() {
       expect(authRedirect(const AuthRestoring(), '/splash'), isNull);
     });
 
-    test('neprihlásený sa dostane len na prihlásenie a registráciu', () {
-      expect(authRedirect(const SignedOut(), '/home'), '/login');
-      expect(authRedirect(const SignedOut(), '/profile'), '/login');
+    test('neprihlásený sa dostane len na úvod, prihlásenie a registráciu', () {
+      expect(authRedirect(const SignedOut(), '/home'), '/welcome');
+      expect(authRedirect(const SignedOut(), '/profile'), '/welcome');
+      expect(authRedirect(const SignedOut(), '/welcome'), isNull);
       expect(authRedirect(const SignedOut(), '/login'), isNull);
       expect(authRedirect(const SignedOut(), '/register'), isNull);
     });
 
     test('prihlásený ide z prihlásenia rovno domov', () {
       expect(authRedirect(signedIn, '/login'), '/home');
+      expect(authRedirect(signedIn, '/welcome'), '/home');
       expect(authRedirect(signedIn, '/splash'), '/home');
       expect(authRedirect(signedIn, '/map'), isNull);
     });
@@ -213,10 +223,13 @@ void main() {
     expect(find.text('TRÉNING'), findsOneWidget);
   });
 
-  testWidgets('bez uloženého tokenu sa ukáže prihlásenie', (tester) async {
+  testWidgets('bez uloženého tokenu sa ukáže úvod s tlačidlami', (
+    tester,
+  ) async {
     await _pumpApp(tester, tokens: _MemoryTokenStore());
 
-    expect(find.text('VITAJ SPÄŤ'), findsOneWidget);
+    expect(find.text('Začať'), findsOneWidget);
+    expect(find.text('Prihlásiť sa'), findsOneWidget);
     expect(find.text('Pavol'), findsNothing);
   });
 
@@ -224,7 +237,7 @@ void main() {
     final tokens = _MemoryTokenStore('stary-token');
     await _pumpApp(tester, tokens: tokens);
 
-    expect(find.text('VITAJ SPÄŤ'), findsOneWidget);
+    expect(find.text('Začať'), findsOneWidget);
     expect(tokens.token, isNull);
   });
 
@@ -234,7 +247,7 @@ void main() {
       ..meError = const ApiError.network();
     await _pumpApp(tester, tokens: tokens, repository: repository);
 
-    expect(find.text('VITAJ SPÄŤ'), findsOneWidget);
+    expect(find.text('Začať'), findsOneWidget);
     expect(tokens.token, 'ok');
   });
 
@@ -254,7 +267,7 @@ void main() {
     final tokens = _MemoryTokenStore('stary-token')..user = _pavol;
     await _pumpApp(tester, tokens: tokens);
 
-    expect(find.text('VITAJ SPÄŤ'), findsOneWidget);
+    expect(find.text('Začať'), findsOneWidget);
     expect(tokens.token, isNull);
     expect(tokens.user, isNull);
   });
@@ -262,6 +275,7 @@ void main() {
   testWidgets('zlé heslo ukáže chybu, správne prihlási', (tester) async {
     final tokens = _MemoryTokenStore();
     await _pumpApp(tester, tokens: tokens);
+    await _openLogin(tester);
 
     final fields = find.byType(TextFormField);
     await tester.enterText(fields.at(0), 'pavol@test.sk');
@@ -280,6 +294,7 @@ void main() {
 
   testWidgets('formulár nepustí neplatný e-mail', (tester) async {
     await _pumpApp(tester, tokens: _MemoryTokenStore());
+    await _openLogin(tester);
 
     await tester.enterText(find.byType(TextFormField).at(0), 'bez-zavinaca');
     await tester.tap(find.text('Prihlásiť sa'));
@@ -292,7 +307,7 @@ void main() {
   testWidgets('registrácia trénera', (tester) async {
     await _pumpApp(tester, tokens: _MemoryTokenStore());
 
-    await tester.tap(find.text('Nemám účet. Zaregistrovať sa'));
+    await tester.tap(find.text('Začať'));
     await tester.pumpAndSettle();
     expect(find.text('VYTVOR SI ÚČET'), findsOneWidget);
 
@@ -324,10 +339,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Pavol Novák'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Odhlásiť sa'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Odhlásiť sa'));
     await tester.pumpAndSettle();
 
-    expect(find.text('VITAJ SPÄŤ'), findsOneWidget);
+    expect(find.text('Začať'), findsOneWidget);
     expect(tokens.token, isNull);
     expect(repository.loggedOut, ['ok']);
   });

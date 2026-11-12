@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/auth_screen.dart';
+import '../../features/auth/presentation/welcome_screen.dart';
 import '../../features/coaching/presentation/client_detail_screen.dart';
 import '../../features/coaching/presentation/clients_screen.dart';
+import '../../features/health/health_screen.dart';
+import '../../features/health/heart_rate_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/shell/app_shell.dart';
@@ -13,12 +16,12 @@ import '../../features/training/presentation/workout_log_screen.dart';
 import '../widgets/app_background.dart';
 import '../widgets/rejnox_mark.dart';
 
-const _authPaths = {'/login', '/register'};
+const _authPaths = {'/welcome', '/login', '/register'};
 
 /// Kam presmerovať podľa stavu prihlásenia (null = nikam).
 String? authRedirect(AuthState auth, String location) => switch (auth) {
   AuthRestoring() => location == '/splash' ? null : '/splash',
-  SignedOut() => _authPaths.contains(location) ? null : '/login',
+  SignedOut() => _authPaths.contains(location) ? null : '/welcome',
   SignedIn() =>
     location == '/splash' || _authPaths.contains(location) ? '/home' : null,
 };
@@ -39,10 +42,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         authRedirect(authState.value, state.matchedLocation),
     routes: [
       GoRoute(path: '/splash', builder: (context, state) => const _Splash()),
+      GoRoute(
+        path: '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const AuthScreen()),
       GoRoute(
         path: '/register',
         builder: (context, state) => const AuthScreen(register: true),
+      ),
+      GoRoute(
+        path: '/health',
+        builder: (context, state) => const HealthScreen(),
+      ),
+      GoRoute(
+        path: '/heart-rate',
+        builder: (context, state) => const HeartRateScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(shell: shell),

@@ -5,6 +5,7 @@ import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../../coaching/presentation/trainer_plans_section.dart';
+import '../../health/workout_heart_rate_card.dart';
 import '../application/workout_log_controller.dart';
 import '../data/exercise_catalog.dart';
 import '../domain/training_models.dart';
@@ -91,6 +92,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
               OfflineBanner(pending: log.pendingCount),
             ],
             const SizedBox(height: 16),
+            const WorkoutHeartRateCard(),
             const TrainerPlansSection(),
             TmCard(
               grid: true,

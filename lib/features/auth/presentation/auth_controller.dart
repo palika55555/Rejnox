@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_client.dart';
 import '../data/auth_repository.dart';
 import '../domain/auth_models.dart';
+import 'celebration_state.dart';
 
 sealed class AuthState {
   const AuthState();
@@ -72,7 +73,10 @@ class AuthController extends Notifier<AuthState> {
 
   /// Pri chybe vyhodí [ApiError] so správou pre používateľa.
   Future<void> login({required String email, required String password}) async {
-    await _signIn(await _repository.login(email: email, password: password));
+    await _signIn(
+      await _repository.login(email: email, password: password),
+      registered: false,
+    );
   }
 
   Future<void> register({
@@ -88,6 +92,7 @@ class AuthController extends Notifier<AuthState> {
         displayName: displayName,
         role: role,
       ),
+      registered: true,
     );
   }
 
@@ -104,10 +109,19 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<void> _signIn(AuthSession session) async {
+  Future<void> _signIn(AuthSession session, {required bool registered}) async {
     await _tokens.write(session.token);
     await _tokens.writeUser(session.user);
     state = SignedIn(user: session.user, token: session.token);
+    // Oslava len po ručnom prihlásení / registrácii, nie pri obnovení relácie.
+    ref
+        .read(celebrationProvider.notifier)
+        .show(
+          Celebration(
+            firstName: session.user.firstName,
+            registered: registered,
+          ),
+        );
   }
 }
 

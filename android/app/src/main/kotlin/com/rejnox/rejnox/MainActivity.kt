@@ -1,5 +1,6 @@
 package com.rejnox.rejnox
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// Health Connect (balík health) potrebuje FlutterFragmentActivity.
+class MainActivity : FlutterFragmentActivity()
