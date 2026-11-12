@@ -143,7 +143,7 @@ export function MapScreen() {
           </span>
         ))}
 
-        <div className="sheet-up absolute inset-x-2 bottom-2 rounded-2xl border border-line bg-surface/95 p-3 backdrop-blur">
+        <div className="sheet-up absolute inset-x-2 bottom-2 rounded-2xl border border-line bg-surface p-3">
           <div className="flex items-center justify-between">
             <p className="font-semibold">Fitko Aréna</p>
             <p className="text-xs text-plate-yellow">★ 4,7</p>

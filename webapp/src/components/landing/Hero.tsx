@@ -14,7 +14,7 @@ export function Hero() {
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 pt-14 pb-24 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:pt-20 lg:pb-28">
         <div>
-          <p className="hero-in inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs font-semibold text-muted backdrop-blur" style={{ ["--d" as string]: "0ms" }}>
+          <p className="hero-in inline-flex items-center gap-2 rounded-full border border-line bg-surface/90 px-3 py-1 text-xs font-semibold text-muted" style={{ ["--d" as string]: "0ms" }}>
             <span className="live-dot" aria-hidden />
             Funguje aj offline
           </p>

@@ -134,6 +134,15 @@
 
 .hero-phone {
   animation: phone-float 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.tilt { will-change: transform; }
+
+/* Keď hero nie je vidno (odscrollované, iná karta), nekonečné animácie stoja. */
+[data-paused] *,
+[data-paused] *::after {
+  animation-play-state: paused !important;
 }
 
 @keyframes phone-float {
@@ -148,17 +157,14 @@
   overflow: hidden;
   opacity: 0;
   transform: translateX(14%) scale(0.96);
-  filter: blur(6px);
   transition:
     opacity 0.5s ease,
-    transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
-    filter 0.5s ease;
+    transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .app-screen.is-active {
   opacity: 1;
   transform: none;
-  filter: none;
 }
 
 .app-screen.is-active .bar-grow { animation: bar-grow 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
@@ -174,8 +180,10 @@
 .ecg-draw { stroke-dasharray: 1; }
 .bar-grow { transform-origin: bottom; }
 
-.me-pulse { animation: me-pulse 1.8s ease-out infinite; }
-.heart-beat { display: inline-block; animation: heart-beat 0.85s ease-in-out infinite; }
+/* Nekonečné animácie len na viditeľnej obrazovke. */
+.heart-beat { display: inline-block; }
+.app-screen.is-active .me-pulse { animation: me-pulse 1.8s ease-out infinite; }
+.app-screen.is-active .heart-beat { animation: heart-beat 0.85s ease-in-out infinite; }
 .row-in { animation: pop-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
 
 @keyframes bar-grow { from { transform: scaleY(0); } }
@@ -219,8 +227,9 @@
   padding: 0.6rem 0.85rem;
   border: 1px solid var(--color-line);
   border-radius: 1rem;
-  background: rgb(18 17 45 / 0.82);
-  backdrop-filter: blur(12px);
+  /* Bez backdrop-filter: nad pohyblivým pozadím by sa rozmazanie počítalo stále. */
+  background: rgb(18 17 45 / 0.96);
+  will-change: transform;
   font-size: 0.72rem;
   line-height: 1.3;
   color: var(--color-muted);
@@ -242,7 +251,7 @@
 /* Kým beží úvod so znakom, hero počká. */
 :root:not([data-intro-seen]) .hero-in { animation-delay: calc(var(--d, 0ms) + 1.8s); }
 
-@keyframes hero-in { from { opacity: 0; transform: translateY(24px); filter: blur(6px); } }
+@keyframes hero-in { from { opacity: 0; transform: translateY(24px); } }
 @keyframes hero-line-in { from { transform: translateY(105%); } }
 @keyframes hero-phone-in { from { opacity: 0; transform: translateY(60px) rotate(4deg) scale(0.92); } }
 
@@ -254,10 +263,11 @@
   color: transparent;
   animation:
     hero-line-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 0ms) both,
-    shimmer 6s linear infinite;
+    shimmer 8s ease-in-out infinite;
 }
 :root:not([data-intro-seen]) .text-shimmer { animation-delay: calc(var(--d, 0ms) + 1.8s), 0s; }
-@keyframes shimmer { to { background-position: -300% 0; } }
+/* Prechod sa pohne len v prvej tretine, potom stojí – text sa neprekresľuje stále. */
+@keyframes shimmer { 0% { background-position: 0 0; } 35%, 100% { background-position: -150% 0; } }
 
 .live-dot {
   width: 8px;
@@ -270,11 +280,16 @@
 @keyframes live-dot { to { box-shadow: 0 0 0 10px rgb(43 217 139 / 0); } }
 
 /* Pomaly sa prelievajúce farebné škvrny za hero. */
-.aurora { overflow: hidden; filter: blur(60px); opacity: 0.55; }
-.aurora__blob { position: absolute; border-radius: 50%; }
-.aurora__blob--a { width: 40vw; height: 40vw; left: 50%; top: -10%; background: #5468ff; animation: blob-a 18s ease-in-out infinite; }
-.aurora__blob--b { width: 32vw; height: 32vw; left: 70%; top: 30%; background: #9b5cff; animation: blob-b 22s ease-in-out infinite; }
-.aurora__blob--c { width: 22vw; height: 22vw; left: 10%; top: 60%; background: #ff8a3d; opacity: 0.35; animation: blob-a 26s ease-in-out infinite reverse; }
+/*
+ * Škvrny sú mäkké už vďaka radiálnemu prechodu, bez filter: blur – ten by
+ * sa pri pohybe prepočítaval každý snímok a web by sekal. Hýbe sa len
+ * transform, ktorý ide cez GPU.
+ */
+.aurora { overflow: hidden; opacity: 0.55; }
+.aurora__blob { position: absolute; border-radius: 50%; will-change: transform; }
+.aurora__blob--a { width: 56vw; height: 56vw; left: 42%; top: -25%; background: radial-gradient(circle, #5468ff 0%, rgb(84 104 255 / 0) 65%); animation: blob-a 18s ease-in-out infinite; }
+.aurora__blob--b { width: 46vw; height: 46vw; left: 62%; top: 15%; background: radial-gradient(circle, #9b5cff 0%, rgb(155 92 255 / 0) 65%); animation: blob-b 22s ease-in-out infinite; }
+.aurora__blob--c { width: 34vw; height: 34vw; left: 2%; top: 50%; background: radial-gradient(circle, rgb(255 138 61 / 0.35) 0%, rgb(255 138 61 / 0) 65%); animation: blob-a 26s ease-in-out infinite reverse; }
 @keyframes blob-a { 50% { transform: translate(-18vw, 12vh) scale(1.2); } }
 @keyframes blob-b { 50% { transform: translate(-25vw, -10vh) scale(0.85); } }
 
@@ -293,7 +308,7 @@
 /* -------------------------------------------------------------- marquee */
 
 .marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent); }
-.marquee__track { display: flex; width: max-content; animation: marquee 32s linear infinite; }
+.marquee__track { display: flex; width: max-content; animation: marquee 32s linear infinite; will-change: transform; }
 .marquee:hover .marquee__track { animation-play-state: paused; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 

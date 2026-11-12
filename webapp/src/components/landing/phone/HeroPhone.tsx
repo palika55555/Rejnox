@@ -26,6 +26,7 @@ export function HeroPhone() {
   const [active, setActive] = useState(0);
   const [online, setOnline] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [island, setIsland] = useState<ReactNode>(null);
   const tiltRef = useRef<HTMLDivElement>(null);
   const islandTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -45,12 +46,35 @@ export function HeroPhone() {
     [flashIsland],
   );
 
-  // Automatické striedanie obrazoviek (nie pri zníženom pohybe).
+  // Automatické striedanie obrazoviek (nie pri zníženom pohybe ani mimo obrazovky).
   useEffect(() => {
-    if (paused || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (paused || !visible || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = setTimeout(() => show((active + 1) % screens.length), AUTO_MS);
     return () => clearTimeout(timer);
-  }, [active, paused, show]);
+  }, [active, paused, visible, show]);
+
+  // Keď hero nie je vidno alebo je karta na pozadí, animácie v ňom stoja (šetrí GPU).
+  useEffect(() => {
+    const section = tiltRef.current?.closest("section");
+    if (!section) return;
+    let inView = true;
+    const update = () => {
+      const on = inView && document.visibilityState === "visible";
+      setVisible(on);
+      if (on) section.removeAttribute("data-paused");
+      else section.setAttribute("data-paused", "");
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      update();
+    });
+    observer.observe(section);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, []);
 
   useEffect(() => () => clearTimeout(islandTimer.current), []);
 
