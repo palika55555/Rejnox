@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rejnox-web",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "--release", "-d", "web-server", "--web-port", "5173", "--web-hostname", "localhost"],
+      "port": 5173
+    },
+    {
+      "name": "rejnox-server",
+      "runtimeExecutable": "dart",
+      "runtimeArgs": ["run", "server/bin/server.dart"],
+      "port": 8080
+    }
+  ]
+}
