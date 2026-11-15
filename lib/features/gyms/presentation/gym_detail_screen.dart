@@ -11,6 +11,8 @@ import '../application/user_location.dart';
 import '../data/gym_repository.dart';
 import '../domain/gym.dart';
 import 'gym_detail_widgets.dart';
+import 'gym_photos.dart';
+import 'gym_prices.dart';
 
 /// Detail fitka: fotka, hodnotenie, akcie a informácie.
 class GymDetailScreen extends ConsumerWidget {
@@ -23,6 +25,7 @@ class GymDetailScreen extends ConsumerWidget {
     final gym = ref.watch(gymByIdProvider(gymId));
     return AppBackground(
       child: Scaffold(
+        backgroundColor: Colors.transparent,
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
@@ -72,6 +75,8 @@ class _Detail extends ConsumerWidget {
             onBack: () => context.canPop() ? context.pop() : context.go('/map'),
             onToggleSaved: () =>
                 ref.read(favoriteGymsProvider.notifier).toggle(gym.id),
+            onEdit: gym.mine ? () => context.push('/gym/${gym.id}/edit') : null,
+            onDelete: gym.mine ? () => _confirmDelete(context, ref) : null,
           ),
         ),
         SliverPadding(
@@ -88,7 +93,7 @@ class _Detail extends ConsumerWidget {
                   const Icon(
                     Icons.star_rounded,
                     size: 18,
-                    color: Color(0xFFFFC542),
+                    color: Color(0xFFF0BE2E),
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -162,9 +167,7 @@ class _Detail extends ConsumerWidget {
                       DetailInfoRow(
                         icon: Icons.schedule_rounded,
                         text: hours == 'Nonstop' ? 'Otvorené nonstop' : hours,
-                        color: hours == 'Nonstop'
-                            ? const Color(0xFF2BD98B)
-                            : null,
+                        color: hours == 'Nonstop' ? AppColors.good : null,
                       ),
                     if (gym.tags.isNotEmpty)
                       DetailInfoRow(
@@ -174,10 +177,8 @@ class _Detail extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (gym.photoUrls.length > 1) ...[
-                const SizedBox(height: 16),
-                GymGallery(urls: gym.photoUrls.skip(1).toList()),
-              ],
+              const SizedBox(height: 16),
+              GymPhotoStrip(gym: gym),
               const SizedBox(height: 16),
               GymRatingCard(
                 rating,
@@ -191,11 +192,52 @@ class _Detail extends ConsumerWidget {
                   }
                 },
               ),
+              const SizedBox(height: 16),
+              GymPricesCard(gym: gym),
             ],
           ),
         ),
       ],
     );
+  }
+}
+
+extension on _Detail {
+  /// Zmaže vlastné fitko po potvrdení a vráti sa na mapu.
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Zmazať fitko?'),
+        content: Text(
+          '${gym.name} zmizne z mapy aj s fotkami, cenníkom a hodnoteniami. '
+          'Nedá sa to vrátiť.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Nechať'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Zmazať'),
+          ),
+        ],
+      ),
+    );
+    if (sure != true) return;
+    try {
+      await ref.read(gymsProvider.notifier).delete(gym.id);
+      router.go('/map');
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Fitko je zmazané.')),
+      );
+    } on ApiError catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 }
 
@@ -206,6 +248,8 @@ class _Hero extends StatelessWidget {
     required this.saved,
     required this.onBack,
     required this.onToggleSaved,
+    this.onEdit,
+    this.onDelete,
   });
 
   final Gym gym;
@@ -213,20 +257,20 @@ class _Hero extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onToggleSaved;
 
+  /// Len pre autora fitka.
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
   @override
   Widget build(BuildContext context) {
-    final photo = gym.photoUrls.firstOrNull;
+    final photo = shownPhotos(gym).firstOrNull;
     return SizedBox(
       height: 280,
       child: Stack(
         fit: StackFit.expand,
         children: [
           if (photo != null)
-            Image.network(
-              photo,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const GymPhotoPlaceholder(),
-            )
+            GymPhotoImage(photo)
           else
             const GymPhotoPlaceholder(),
           // Prechod do pozadia, aby nadpis plynulo nadväzoval.
@@ -252,12 +296,28 @@ class _Hero extends StatelessWidget {
                     onPressed: onBack,
                   ),
                   const Spacer(),
+                  if (onEdit != null) ...[
+                    _CircleButton(
+                      icon: Icons.edit_outlined,
+                      tooltip: 'Upraviť fitko',
+                      onPressed: onEdit!,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  if (onDelete != null) ...[
+                    _CircleButton(
+                      icon: Icons.delete_outline_rounded,
+                      tooltip: 'Zmazať fitko',
+                      onPressed: onDelete!,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   _CircleButton(
                     icon: saved
                         ? Icons.favorite_rounded
                         : Icons.favorite_border_rounded,
                     tooltip: saved ? 'Odobrať z uložených' : 'Uložiť',
-                    color: saved ? const Color(0xFFFF4D6A) : null,
+                    color: saved ? AppColors.error : null,
                     onPressed: onToggleSaved,
                   ),
                 ],
@@ -285,7 +345,7 @@ class _CircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: AppColors.surface.withValues(alpha: 0.8),
+    color: AppColors.sheet.withValues(alpha: 0.8),
     shape: const CircleBorder(side: BorderSide(color: AppColors.border)),
     child: IconButton(
       tooltip: tooltip,

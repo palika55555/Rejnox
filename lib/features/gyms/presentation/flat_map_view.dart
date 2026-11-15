@@ -21,6 +21,7 @@ class FlatMapView extends StatelessWidget {
     required this.initialZoom,
     required this.showTiles,
     required this.onReady,
+    this.onLongPress,
   });
 
   final MapController controller;
@@ -32,6 +33,9 @@ class FlatMapView extends StatelessWidget {
   final double initialZoom;
   final bool showTiles;
   final VoidCallback onReady;
+
+  /// Dlhé podržanie na mape (pridanie fitka na tomto mieste).
+  final ValueChanged<GeoPoint>? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +50,10 @@ class FlatMapView extends StatelessWidget {
         backgroundColor: AppColors.bg,
         onMapReady: onReady,
         onTap: (_, _) => onSelect(null),
+        onLongPress: onLongPress == null
+            ? null
+            : (_, point) =>
+                  onLongPress!(GeoPoint(point.latitude, point.longitude)),
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
         ),
@@ -128,7 +136,7 @@ class GymPinPainter extends CustomPainter {
     canvas.drawPath(
       shape,
       Paint()
-        ..color = AppColors.violet.withValues(alpha: selected ? 0.8 : 0.5)
+        ..color = AppColors.accent.withValues(alpha: selected ? 0.8 : 0.5)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, selected ? 10 : 6),
     );
     canvas.drawPath(
@@ -138,7 +146,7 @@ class GymPinPainter extends CustomPainter {
             (selected
                     ? AppColors.actionGradient
                     : const LinearGradient(
-                        colors: [Color(0xFF2A2366), Color(0xFF16133F)],
+                        colors: [AppColors.buttonSurface, AppColors.surface],
                       ))
                 .createShader(Offset.zero & size),
     );
@@ -148,7 +156,7 @@ class GymPinPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.6
-        ..color = selected ? Colors.white : AppColors.accent,
+        ..color = selected ? AppColors.onAccent : AppColors.accent,
     );
     final icon = TextPainter(
       text: TextSpan(
@@ -157,7 +165,7 @@ class GymPinPainter extends CustomPainter {
           fontFamily: Icons.fitness_center_rounded.fontFamily,
           package: Icons.fitness_center_rounded.fontPackage,
           fontSize: r * 1.1,
-          color: Colors.white,
+          color: selected ? AppColors.onAccent : AppColors.text,
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -170,7 +178,7 @@ class GymPinPainter extends CustomPainter {
   bool shouldRepaint(GymPinPainter old) => old.selected != selected;
 }
 
-/// Poloha používateľa: modrý bod so žiarou a kruhmi.
+/// Poloha používateľa: koralový bod a kruhmi.
 class _UserDot extends StatelessWidget {
   const _UserDot();
 
@@ -186,9 +194,9 @@ class _UserDot extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.blue.withValues(alpha: alpha),
+              color: AppColors.accentDeep.withValues(alpha: alpha),
               border: Border.all(
-                color: AppColors.blue.withValues(alpha: alpha * 2.5),
+                color: AppColors.accentDeep.withValues(alpha: alpha * 2.5),
               ),
             ),
           ),
@@ -197,9 +205,11 @@ class _UserDot extends StatelessWidget {
           height: 16,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.blue,
+            color: AppColors.accentDeep,
             border: Border.all(color: Colors.white, width: 2.5),
-            boxShadow: const [BoxShadow(color: AppColors.blue, blurRadius: 14)],
+            boxShadow: const [
+              BoxShadow(color: AppColors.accentDeep, blurRadius: 14),
+            ],
           ),
         ),
       ],

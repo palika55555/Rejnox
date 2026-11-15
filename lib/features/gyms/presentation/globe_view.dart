@@ -208,17 +208,17 @@ class _GlobePainter extends CustomPainter {
       c,
       r,
       Paint()
-        ..color = AppColors.blue.withValues(alpha: 0.45)
+        ..color = AppColors.accentDeep.withValues(alpha: 0.45)
         ..maskFilter = MaskFilter.blur(BlurStyle.outer, r * 0.22),
     );
     canvas.drawCircle(
       c,
       r,
       Paint()
-        ..color = AppColors.violet.withValues(alpha: 0.8)
+        ..color = AppColors.accent.withValues(alpha: 0.8)
         ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 10),
     );
-    canvas.drawCircle(c, r, Paint()..color = const Color(0xFF060A1E));
+    canvas.drawCircle(c, r, Paint()..color = AppColors.bg);
 
     canvas.save();
     canvas.clipPath(Path()..addOval(sphere));
@@ -405,7 +405,7 @@ class _GlobePainter extends CustomPainter {
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(box, const Radius.circular(10)),
-      Paint()..color = AppColors.surface.withValues(alpha: 0.92),
+      Paint()..color = AppColors.sheet.withValues(alpha: 0.92),
     );
     painter.paint(canvas, box.topLeft + const Offset(8, 4));
     painter.dispose();
@@ -419,9 +419,9 @@ class _GlobePainter extends CustomPainter {
     canvas.drawCircle(
       at,
       16,
-      Paint()..color = AppColors.blue.withValues(alpha: 0.25),
+      Paint()..color = AppColors.accentDeep.withValues(alpha: 0.25),
     );
-    canvas.drawCircle(at, 6.5, Paint()..color = AppColors.blue);
+    canvas.drawCircle(at, 6.5, Paint()..color = AppColors.accentDeep);
     canvas.drawCircle(
       at,
       6.5,

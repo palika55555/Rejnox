@@ -17,6 +17,9 @@ const healthReadTypes = [
   HealthDataType.SLEEP_LIGHT,
   HealthDataType.SLEEP_DEEP,
   HealthDataType.SLEEP_REM,
+  // Z hodiniek, ktoré to merajú (Apple Watch, Garmin, Galaxy Watch…).
+  HealthDataType.BLOOD_OXYGEN,
+  HealthDataType.RESPIRATORY_RATE,
 ];
 
 const _sleepTypes = {
@@ -35,6 +38,8 @@ class HealthSummary {
     this.activeKcal,
     this.sleep,
     this.weightKg,
+    this.bloodOxygen,
+    this.respiratoryRate,
   });
 
   final HeartRateReading? heartRate;
@@ -44,18 +49,36 @@ class HealthSummary {
   final Duration? sleep;
   final double? weightKg;
 
+  /// Saturácia kyslíkom v percentách (0–100).
+  final double? bloodOxygen;
+
+  /// Dychy za minútu.
+  final double? respiratoryRate;
+
   bool get isEmpty =>
       heartRate == null &&
       restingBpm == null &&
       steps == null &&
       activeKcal == null &&
       sleep == null &&
-      weightKg == null;
+      weightKg == null &&
+      bloodOxygen == null &&
+      respiratoryRate == null;
 }
 
 double? _num(HealthDataPoint p) => p.value is NumericHealthValue
     ? (p.value as NumericHealthValue).numericValue.toDouble()
     : null;
+
+/// Najnovšia hodnota daného typu, alebo null.
+double? _latest(List<HealthDataPoint> points, HealthDataType type) {
+  final list = points.where((p) => p.type == type).toList()
+    ..sort((a, b) => b.dateTo.compareTo(a.dateTo));
+  return list.isEmpty ? null : _num(list.first);
+}
+
+/// Apple Health dáva saturáciu ako zlomok (0,97), Health Connect v % (97).
+double? _percent(double? v) => v == null || v > 1 ? v : v * 100;
 
 /// Okno poslednej noci: od 18:00 predchádzajúceho dňa do 12:00.
 ({DateTime from, DateTime to}) lastNight(DateTime now) {
@@ -75,10 +98,6 @@ HealthSummary summarize(
   final heartRate =
       pickLatestWatchReading(points) ?? _latestAutomaticHeartRate(points);
 
-  final resting =
-      points.where((p) => p.type == HealthDataType.RESTING_HEART_RATE).toList()
-        ..sort((a, b) => b.dateTo.compareTo(a.dateTo));
-
   final kcal = points
       .where(
         (p) =>
@@ -91,9 +110,6 @@ HealthSummary summarize(
   final hasKcal = points.any(
     (p) => p.type == HealthDataType.ACTIVE_ENERGY_BURNED,
   );
-
-  final weight = points.where((p) => p.type == HealthDataType.WEIGHT).toList()
-    ..sort((a, b) => b.dateTo.compareTo(a.dateTo));
 
   final night = lastNight(now);
   final sleepMinutes = points
@@ -109,11 +125,13 @@ HealthSummary summarize(
 
   return HealthSummary(
     heartRate: heartRate,
-    restingBpm: resting.isEmpty ? null : _num(resting.first),
+    restingBpm: _latest(points, HealthDataType.RESTING_HEART_RATE),
     steps: steps,
     activeKcal: hasKcal ? kcal : null,
     sleep: sleepMinutes > 0 ? Duration(minutes: sleepMinutes.round()) : null,
-    weightKg: weight.isEmpty ? null : _num(weight.first),
+    weightKg: _latest(points, HealthDataType.WEIGHT),
+    bloodOxygen: _percent(_latest(points, HealthDataType.BLOOD_OXYGEN)),
+    respiratoryRate: _latest(points, HealthDataType.RESPIRATORY_RATE),
   );
 }
 

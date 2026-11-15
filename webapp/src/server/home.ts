@@ -2,7 +2,7 @@ import type { Db, Tx } from "./db";
 import { planOn } from "./trainer";
 
 /** Rejnox je slovenská appka: „dnes“ a týždeň sa rátajú podľa slovenského času. */
-const ZONE = "Europe/Bratislava";
+export const ZONE = "Europe/Bratislava";
 
 /** Koľko tréningových dní za týždeň je cieľ (zatiaľ pevne, neskôr nastavenie v profile). */
 export const WEEKLY_GOAL_DAYS = 3;
@@ -13,7 +13,7 @@ const TREND_POINTS = 8;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Posun dátumu „YYYY-MM-DD“ o počet dní. */
-function shift(day: string, days: number): string {
+export function shift(day: string, days: number): string {
   return new Date(Date.parse(`${day}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
 }
 
@@ -56,8 +56,8 @@ export type HomeOverview = {
  * Série používateľa: jeho vlastné aj tie, čo mu zapísal tréner.
  * Tréner cez RLS vidí aj série klientov, preto výslovný filter na vlastníka.
  */
-const MY_SETS = `
-  SELECT s.exercise_id, s.weight_kg::float8 AS kg, (s.performed_at AT TIME ZONE $2)::date AS day
+export const MY_SETS = `
+  SELECT s.exercise_id, s.reps, s.weight_kg::float8 AS kg, (s.performed_at AT TIME ZONE $2)::date AS day
   FROM set_logs s
   LEFT JOIN trainer_clients tc ON tc.id = s.trainer_client_id
   WHERE coalesce(s.user_id, tc.client_user_id) = $1::uuid`;

@@ -13,7 +13,8 @@
 #
 # Workflow ios-sideload (bez platenej Apple Developer účtu a bez App Store
 # Connect kľúča): zostaví nepodpísanú .ipa, stiahneš ju z Artifacts a podpíšeš
-# v Sideloadly svojím Apple ID. Adresa API je v premennej API_URL nižšie,
+# v Sideloadly svojím Apple ID. IPA obsahuje aj appku pre Apple Watch
+# (Sideloadly ju podpíše s vlastným App ID). Adresa API je v premennej API_URL nižšie,
 # v Codemagicu sa nič nastavovať nemusí.
 workflows:
   ios-sideload:
@@ -30,6 +31,13 @@ workflows:
     scripts:
       - name: Balíčky
         script: flutter pub get
+
+      # Appka pre hodinky sa vloží do IPA (Rejnox.app/Watch), takže po
+      # inštalácii na iPhone ju ponúkne appka Watch na inštaláciu.
+      - name: Pridať aplikáciu pre Apple Watch do projektu
+        script: |
+          gem list xcodeproj -i >/dev/null || gem install xcodeproj
+          ruby scripts/ios/add_watch_target.rb
 
       - name: Zostavenie nepodpísanej IPA
         script: |

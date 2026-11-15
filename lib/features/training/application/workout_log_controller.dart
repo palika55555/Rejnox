@@ -120,6 +120,7 @@ class WorkoutLogController extends Notifier<WorkoutLogState> {
     required String exerciseId,
     required int reps,
     required double weightKg,
+    SetKind kind = SetKind.working,
   }) async {
     final userId = _userId;
     if (userId == null) return;
@@ -129,6 +130,7 @@ class WorkoutLogController extends Notifier<WorkoutLogState> {
       reps: reps,
       weightKg: weightKg,
       performedAt: DateTime.now(),
+      kind: kind,
     );
     state = state.copyWith(sets: [set, ...state.sets]);
     await _persist(userId);

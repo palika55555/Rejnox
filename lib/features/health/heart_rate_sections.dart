@@ -37,7 +37,7 @@ class Segments<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.7),
+        color: AppColors.sheet.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
@@ -63,7 +63,9 @@ class Segments<T> extends StatelessWidget {
                       label(v),
                       style: text.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: v == selected ? Colors.white : AppColors.muted,
+                        color: v == selected
+                            ? AppColors.onAccent
+                            : AppColors.muted,
                       ),
                     ),
                   ),
@@ -186,7 +188,7 @@ class OverviewChartCard extends StatelessWidget {
             Expanded(
               child: StatTile(
                 icon: Icons.arrow_downward_rounded,
-                color: AppColors.blue,
+                color: AppColors.accentDeep,
                 label: 'Minimum',
                 value: v(stats?.min),
               ),

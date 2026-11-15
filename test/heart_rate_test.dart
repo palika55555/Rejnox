@@ -10,6 +10,7 @@ import 'package:rejnox/features/health/heart_rate_screen.dart';
 import 'package:rejnox/features/health/heart_rate_service.dart';
 import 'package:rejnox/features/health/heart_rate_stats.dart';
 import 'package:rejnox/features/health/watch_link.dart';
+import 'package:rejnox/features/health/wearable_sources.dart';
 import 'package:rejnox/features/health/workout_heart_rate_card.dart';
 
 HealthDataPoint _point({
@@ -17,6 +18,7 @@ HealthDataPoint _point({
   required DateTime at,
   DateTime? to,
   String source = 'Pavlove Apple Watch',
+  String sourceId = 'com.apple.health',
   String device = '',
   RecordingMethod method = RecordingMethod.automatic,
   HealthDataType type = HealthDataType.HEART_RATE,
@@ -29,7 +31,7 @@ HealthDataPoint _point({
   dateTo: to ?? at,
   sourcePlatform: HealthPlatformType.appleHealth,
   sourceDeviceId: device,
-  sourceId: 'com.apple.health',
+  sourceId: sourceId,
   sourceName: source,
   recordingMethod: method,
 );
@@ -57,14 +59,18 @@ class _FakeSource implements HeartRateSource {
 }
 
 class _FakeWatch implements WatchLink {
+  _FakeWatch({this.installed = true});
+
+  final bool installed;
   final controller = StreamController<WatchHeartRate>.broadcast();
+  final commands = <String>[];
 
   @override
   bool get supported => true;
 
   @override
   Future<WatchStatus> status() async =>
-      const WatchStatus(paired: true, installed: true);
+      WatchStatus(paired: true, installed: installed);
 
   @override
   Stream<WatchHeartRate> get heartRate => controller.stream;
@@ -73,7 +79,21 @@ class _FakeWatch implements WatchLink {
   Future<void> startWorkout() async {}
 
   @override
-  Future<bool> stopWorkout() async => true;
+  Future<bool> stopWorkout() async => _log('stop');
+
+  @override
+  Future<bool> pauseWorkout() async => _log('pause');
+
+  @override
+  Future<bool> resumeWorkout() async => _log('resume');
+
+  @override
+  Future<bool> openWatchApp() async => _log('open');
+
+  bool _log(String command) {
+    commands.add(command);
+    return true;
+  }
 }
 
 Future<void> _pump(
@@ -140,6 +160,53 @@ void main() {
         66,
       );
       expect(pickLatestWatchReading([]), isNull);
+    });
+  });
+
+  group('iné hodinky', () {
+    final t = DateTime(2026, 11, 12, 18);
+
+    test('rozpozná Garmin, Fitbit, Galaxy Watch, Polar podľa appky', () {
+      final cases = {
+        'com.garmin.android.apps.connectmobile': 'Garmin',
+        'com.fitbit.FitbitMobile': 'Fitbit',
+        'com.sec.android.app.shealth': 'Samsung Galaxy Watch',
+        'fi.polar.polarflow': 'Polar',
+        'com.huami.watch.hmwatchmanager': 'Amazfit',
+      };
+      for (final MapEntry(key: id, value: name) in cases.entries) {
+        final p = _point(bpm: 90, at: t, source: 'Connect', sourceId: id);
+        expect(wearableName(p), name, reason: id);
+      }
+    });
+
+    test('telefón a ručný zápis nie sú hodinky', () {
+      expect(wearableName(_point(bpm: 70, at: t, source: 'iPhone')), isNull);
+      expect(
+        wearableName(
+          _point(
+            bpm: 70,
+            at: t,
+            source: 'Garmin',
+            method: RecordingMethod.manual,
+          ),
+        ),
+        isNull,
+      );
+    });
+
+    test('najnovšie meranie z Garminu nesie názov hodiniek', () {
+      final r = pickLatestWatchReading([
+        _point(bpm: 64, at: t),
+        _point(
+          bpm: 131,
+          at: t.add(const Duration(minutes: 1)),
+          source: 'Connect',
+          sourceId: 'com.garmin.connect.mobile',
+        ),
+      ]);
+      expect(r!.bpm, 131);
+      expect(r.source, 'Garmin');
     });
   });
 
@@ -302,6 +369,21 @@ void main() {
       expect(s.steps, 8421);
     });
 
+    test('saturácia v % z Apple Health aj Health Connect, dýchanie', () {
+      final ios = summarize([
+        _point(bpm: 0.97, at: now, type: HealthDataType.BLOOD_OXYGEN),
+        _point(bpm: 15, at: now, type: HealthDataType.RESPIRATORY_RATE),
+      ], now: now);
+      expect(ios.bloodOxygen, closeTo(97, 0.001));
+      expect(ios.respiratoryRate, 15);
+      expect(ios.isEmpty, isFalse);
+
+      final android = summarize([
+        _point(bpm: 96, at: now, type: HealthDataType.BLOOD_OXYGEN),
+      ], now: now);
+      expect(android.bloodOxygen, 96);
+    });
+
     test('bez údajov je prázdny', () {
       expect(summarize([], now: now).isEmpty, isTrue);
     });
@@ -353,6 +435,90 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('142'), findsNothing);
   });
+
+  _iosTest('nenainštalovaný Rejnox na hodinkách sa dá doinštalovať', (
+    tester,
+  ) async {
+    final watch = _FakeWatch(installed: false);
+    await _pump(tester, _FakeSource(), watch: watch);
+    expect(find.text('Nainštaluj Rejnox na hodinky'), findsOneWidget);
+
+    await tester.tap(find.text('Nainštaluj Rejnox na hodinky'));
+    await tester.pumpAndSettle();
+    expect(watch.commands, ['open']);
+  });
+
+  testWidgets(
+    'karta tréningu: pauza a kalórie z hodiniek',
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+    (tester) async {
+      final watch = _FakeWatch();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            heartRateSourceProvider.overrideWithValue(_FakeSource()),
+            watchLinkProvider.overrideWithValue(watch),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.dark(webFonts: false),
+            home: const Scaffold(
+              body: SingleChildScrollView(child: WorkoutHeartRateCard()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      watch.controller.add(
+        WatchHeartRate(
+          state: 'running',
+          bpm: 120,
+          kcal: 85,
+          at: DateTime.now(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('85 kcal'), findsOneWidget);
+      await tester.tap(find.text('Pozastaviť'));
+      await tester.pumpAndSettle();
+
+      watch.controller.add(
+        WatchHeartRate(state: 'paused', bpm: 118, at: DateTime.now()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('pozastavené'), findsOneWidget);
+      await tester.tap(find.text('Pokračovať'));
+      await tester.pumpAndSettle();
+      expect(watch.commands, ['pause', 'resume']);
+    },
+  );
+
+  testWidgets(
+    'karta tréningu ponúkne inštaláciu na spárované hodinky',
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+    (tester) async {
+      final watch = _FakeWatch(installed: false);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            heartRateSourceProvider.overrideWithValue(_FakeSource()),
+            watchLinkProvider.overrideWithValue(watch),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.dark(webFonts: false),
+            home: const Scaffold(
+              body: SingleChildScrollView(child: WorkoutHeartRateCard()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Nainštalovať Rejnox na hodinky'));
+      await tester.pumpAndSettle();
+      expect(watch.commands, ['open']);
+      expect(find.text('Spustiť tréning na hodinkách'), findsNothing);
+    },
+  );
 
   _iosTest('zamietnuté povolenie', (tester) async {
     await _pump(tester, _FakeSource(granted: false));

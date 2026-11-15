@@ -24,3 +24,5 @@ plugins {
 }
 
 include(":app")
+// Rejnox pre hodinky s Wear OS (zostavuje sa samostatne: :wear:assembleRelease).
+include(":wear")

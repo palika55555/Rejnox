@@ -1,7 +1,8 @@
 import Foundation
 import WatchConnectivity
 
-/// Spojenie hodiniek s iPhonom: posiela tep, prijíma príkaz na ukončenie.
+/// Spojenie hodiniek s iPhonom: posiela tep a kalórie, prijíma príkazy
+/// stop / pause / resume.
 final class PhoneLink: NSObject, WCSessionDelegate {
     static let shared = PhoneLink()
 
@@ -11,8 +12,8 @@ final class PhoneLink: NSObject, WCSessionDelegate {
         WCSession.default.activate()
     }
 
-    /// state: started / running / ended
-    func send(state: String, bpm: Double?) {
+    /// state: started / running / paused / ended
+    func send(state: String, bpm: Double?, kcal: Double?) {
         guard WCSession.isSupported() else { return }
         let session = WCSession.default
         guard session.activationState == .activated else { return }
@@ -23,6 +24,7 @@ final class PhoneLink: NSObject, WCSessionDelegate {
             "at": Date().timeIntervalSince1970,
         ]
         if let bpm { payload["bpm"] = bpm }
+        if let kcal { payload["kcal"] = kcal }
 
         if session.isReachable {
             session.sendMessage(payload, replyHandler: nil, errorHandler: nil)
@@ -39,8 +41,23 @@ final class PhoneLink: NSObject, WCSessionDelegate {
     ) {}
 
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-        if message["command"] as? String == "stop" {
-            Task { @MainActor in await WorkoutManager.shared.stop() }
+        handle(command: message["command"] as? String)
+    }
+
+    /// Príkaz z iPhonu, keď hodinky neboli v dosahu (doručí sa neskôr).
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        handle(command: userInfo["command"] as? String)
+    }
+
+    private func handle(command: String?) {
+        Task { @MainActor in
+            let workout = WorkoutManager.shared
+            switch command {
+            case "stop": await workout.stop()
+            case "pause": if !workout.paused { workout.togglePause() }
+            case "resume": if workout.paused { workout.togglePause() }
+            default: break
+            }
         }
     }
 }

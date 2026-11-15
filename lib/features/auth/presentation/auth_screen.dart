@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/rejnox_mark.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../domain/auth_models.dart';
 import 'auth_background.dart';
@@ -68,8 +69,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final text = Theme.of(context).textTheme;
     final register = widget.register;
     return AuthBackground(
-      // Fotka sa posunie nahor tak, aby logo z nej ostalo nad formulárom.
-      lift: register ? 0.3 : 0.14,
       child: Scaffold(
         body: SafeArea(
           child: LayoutBuilder(
@@ -107,6 +106,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
+                                    const Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: RejnoxMark(width: 42),
+                                    ),
+                                    const SizedBox(height: 14),
                                     Text(
                                       register
                                           ? 'VYTVOR SI ÚČET'

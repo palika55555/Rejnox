@@ -48,11 +48,29 @@ async function readCapped(request: Request, maxBytes: number): Promise<Uint8Arra
   return bytes;
 }
 
-/** Načíta telo požiadavky ako JSON objekt, s limitom veľkosti. */
-export async function readJsonBody(request: Request, maxBytes = DEFAULT_MAX_BODY): Promise<Body> {
+/** Načíta surové telo požiadavky (napr. fotku), s limitom veľkosti. */
+export async function readBytes(request: Request, maxBytes: number): Promise<Uint8Array> {
   const declared = Number(request.headers.get("content-length"));
   if (Number.isFinite(declared) && declared > maxBytes) throw tooLarge();
-  const bytes = await readCapped(request, maxBytes);
+  return readCapped(request, maxBytes);
+}
+
+/** Obrázok pre prihláseného používateľa. Obsah sa pod rovnakým ID nemení. */
+export function image(contentType: string, bytes: Uint8Array): Response {
+  return new Response(bytes as BodyInit, {
+    status: 200,
+    headers: {
+      "content-type": contentType,
+      "x-content-type-options": "nosniff",
+      "content-security-policy": "default-src 'none'",
+      "cache-control": "private, max-age=31536000, immutable",
+    },
+  });
+}
+
+/** Načíta telo požiadavky ako JSON objekt, s limitom veľkosti. */
+export async function readJsonBody(request: Request, maxBytes = DEFAULT_MAX_BODY): Promise<Body> {
+  const bytes = await readBytes(request, maxBytes);
   try {
     const decoded: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
     if (typeof decoded === "object" && decoded !== null && !Array.isArray(decoded)) return decoded as Body;

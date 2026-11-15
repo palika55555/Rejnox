@@ -27,6 +27,19 @@ class Exercise {
   final MuscleGroup group;
 }
 
+/// Druh série. Server ho zatiaľ nepozná, drží sa len v telefóne.
+enum SetKind {
+  working('P', 'Pracovná'),
+  warmup('R', 'Rozcvička'),
+  dropset('D', 'Drop set'),
+  failure('Z', 'Do zlyhania');
+
+  const SetKind(this.code, this.label);
+
+  final String code;
+  final String label;
+}
+
 enum SyncState {
   /// Uložené len v telefóne, čaká na odoslanie.
   pending,
@@ -48,6 +61,7 @@ class LoggedSet {
     required this.weightKg,
     required this.performedAt,
     this.state = SyncState.pending,
+    this.kind = SetKind.working,
   });
 
   factory LoggedSet.fromJson(Map<String, dynamic> json) => LoggedSet(
@@ -58,6 +72,7 @@ class LoggedSet {
     // Ukladá sa v UTC, zobrazuje sa v miestnom čase.
     performedAt: DateTime.parse(json['performedAt'] as String).toLocal(),
     state: SyncState.values.byName(json['state'] as String? ?? 'pending'),
+    kind: SetKind.values.asNameMap()[json['kind']] ?? SetKind.working,
   );
 
   final String id;
@@ -66,6 +81,10 @@ class LoggedSet {
   final double weightKg;
   final DateTime performedAt;
   final SyncState state;
+  final SetKind kind;
+
+  /// Objem série v kg (opakovania × váha).
+  double get volumeKg => reps * weightKg;
 
   LoggedSet withState(SyncState state) => LoggedSet(
     id: id,
@@ -74,6 +93,7 @@ class LoggedSet {
     weightKg: weightKg,
     performedAt: performedAt,
     state: state,
+    kind: kind,
   );
 
   /// Tvar pre server.
@@ -85,8 +105,12 @@ class LoggedSet {
     'performedAt': performedAt.toUtc().toIso8601String(),
   };
 
-  /// Tvar pre lokálne úložisko (aj so stavom).
-  Map<String, dynamic> toJson() => {...toApiJson(), 'state': state.name};
+  /// Tvar pre lokálne úložisko (aj so stavom a druhom série).
+  Map<String, dynamic> toJson() => {
+    ...toApiJson(),
+    'state': state.name,
+    'kind': kind.name,
+  };
 
   String get weightLabel => weightKg == weightKg.roundToDouble()
       ? '${weightKg.toInt()} kg'

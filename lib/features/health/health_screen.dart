@@ -9,8 +9,9 @@ import '../../core/widgets/tm_card.dart';
 import 'health_platform.dart';
 import 'health_summary.dart';
 
-/// Sekcia Zdravie: prehľad z Apple Health (len čítanie, údaje ostávajú
-/// v telefóne).
+/// Sekcia Zdravie: prehľad z Apple Health / Health Connect, kam zapisujú
+/// Apple Watch aj iné hodinky (Garmin, Fitbit, Galaxy Watch…). Len čítanie,
+/// údaje ostávajú v telefóne.
 class HealthScreen extends ConsumerStatefulWidget {
   const HealthScreen({super.key});
 
@@ -70,6 +71,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
 
     return AppBackground(
       child: Scaffold(
+        backgroundColor: Colors.transparent,
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: s == null ? () async {} : _load,
@@ -108,17 +110,17 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                     children: [
                       _Metric(
                         icon: Icons.favorite_rounded,
-                        color: AppColors.violet,
+                        color: AppColors.accent,
                         label: 'Tep',
                         value: hr == null ? '—' : '${hr.bpm.round()}',
                         unit: 'BPM',
                         note: hr == null
                             ? null
-                            : 'o ${hr.measuredAt.hour}:${hr.measuredAt.minute.toString().padLeft(2, '0')}',
+                            : 'o ${hr.measuredAt.hour}:${hr.measuredAt.minute.toString().padLeft(2, '0')} · ${hr.source}',
                       ),
                       _Metric(
                         icon: Icons.bedtime_outlined,
-                        color: AppColors.blue,
+                        color: AppColors.accentDeep,
                         label: 'Pokojový tep',
                         value: s?.restingBpm == null
                             ? '—'
@@ -158,6 +160,26 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                                   .replaceAll('.', ','),
                         unit: 'kg',
                         note: 'posledné meranie',
+                      ),
+                      _Metric(
+                        icon: Icons.water_drop_outlined,
+                        color: AppColors.accent,
+                        label: 'Saturácia O₂',
+                        value: s?.bloodOxygen == null
+                            ? '—'
+                            : '${s!.bloodOxygen!.round()}',
+                        unit: '%',
+                        note: 'z hodiniek',
+                      ),
+                      _Metric(
+                        icon: Icons.air_rounded,
+                        color: Plate.green.color,
+                        label: 'Dýchanie',
+                        value: s?.respiratoryRate == null
+                            ? '—'
+                            : '${s!.respiratoryRate!.round()}',
+                        unit: '/min',
+                        note: 'z hodiniek',
                       ),
                     ],
                   ),
@@ -250,7 +272,12 @@ class _Metric extends StatelessWidget {
               ),
             ),
           ),
-          Text(note ?? '', style: text.bodySmall),
+          Text(
+            note ?? '',
+            style: text.bodySmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );

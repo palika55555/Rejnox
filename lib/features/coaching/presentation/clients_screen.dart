@@ -17,7 +17,7 @@ class ClientsScreen extends ConsumerWidget {
     final created = await showModalBottomSheet<ClientLink>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.sheet,
       builder: (_) => const _AddClientSheet(),
     );
     if (created != null && context.mounted) {
@@ -40,6 +40,11 @@ class ClientsScreen extends ConsumerWidget {
             Row(
               children: [
                 Expanded(child: Text('KLIENTI', style: text.headlineMedium)),
+                IconButton(
+                  tooltip: 'Kalendár',
+                  onPressed: () => context.push('/calendar'),
+                  icon: const Icon(Icons.calendar_month_rounded),
+                ),
                 PrimaryButton(
                   label: 'Pridať',
                   icon: Icons.person_add_alt_1_rounded,
@@ -73,7 +78,6 @@ class ClientsScreen extends ConsumerWidget {
               data: (list) => list.isEmpty
                   ? [
                       TmCard(
-                        grid: true,
                         padding: const EdgeInsets.all(24),
                         child: Text(
                           'Zatiaľ nemáš klientov. Pridaj prvého – stačí meno, '

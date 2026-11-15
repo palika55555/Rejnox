@@ -4,65 +4,159 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_background.dart';
+import '../../core/widgets/glass.dart';
+import '../../core/widgets/screen_header.dart';
 import '../../core/widgets/tm_card.dart';
 import '../auth/domain/auth_models.dart';
 import '../auth/presentation/auth_controller.dart';
+import '../notifications/notifications_controller.dart';
+import '../training/application/workout_session.dart';
+import '../training/presentation/workout_session_widgets.dart';
+import 'more_sheet.dart';
 
-/// Rám appky: žiariace pozadie, obsah a plávajúca spodná navigácia.
+/// Rám appky: tmavé pozadie so žiarami, obsah a sklenená spodná lišta.
 /// Na webe drží šírku telefónu.
 class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
-  /// Poradie vetiev v routeri: 0 Domov, 1 Mapa, 2 Tréning, 3 Správy,
-  /// 4 Profil, 5 Klienti (len tréner).
+  /// Poradie vetiev v routeri: 0 Dnes, 1 Mapa, 2 Tréning, 3 Správy,
+  /// 4 Profil, 5 Klienti (len tréner), 6 Komunita. Čo sa do lišty nezmestí,
+  /// je v menu „Viac“ (posledná položka lišty).
+  static const _workoutBranch = 2;
+  static const _mapBranch = 1;
+  static const _chatBranch = 3;
+  static const _profileBranch = 4;
+
   static const _member = [
-    (branch: 0, icon: Icons.home_rounded, label: 'Domov'),
+    (branch: 0, icon: Icons.home_outlined, label: 'Dnes'),
     (branch: 1, icon: Icons.map_outlined, label: 'Mapa'),
-    (branch: 2, icon: Icons.fitness_center_rounded, label: 'Tréning'),
-    (branch: 3, icon: Icons.chat_bubble_outline_rounded, label: 'Správy'),
-    (branch: 4, icon: Icons.person_outline_rounded, label: 'Profil'),
+    (branch: 2, icon: Icons.fitness_center, label: 'Tréning'),
+    (branch: 6, icon: Icons.forum_outlined, label: 'Komunita'),
   ];
   static const _trainer = [
-    (branch: 0, icon: Icons.home_rounded, label: 'Domov'),
-    (branch: 5, icon: Icons.groups_rounded, label: 'Klienti'),
-    (branch: 2, icon: Icons.fitness_center_rounded, label: 'Tréning'),
-    (branch: 3, icon: Icons.chat_bubble_outline_rounded, label: 'Správy'),
-    (branch: 4, icon: Icons.person_outline_rounded, label: 'Profil'),
+    (branch: 0, icon: Icons.home_outlined, label: 'Dnes'),
+    (branch: 5, icon: Icons.groups_outlined, label: 'Klienti'),
+    (branch: 2, icon: Icons.fitness_center, label: 'Tréning'),
+    (branch: 6, icon: Icons.forum_outlined, label: 'Komunita'),
+  ];
+
+  void _goBranch(int branch) =>
+      shell.goBranch(branch, initialLocation: branch == shell.currentIndex);
+
+  List<MoreItem> _moreItems(
+    BuildContext context,
+    AuthUser? user, {
+    int unreadMessages = 0,
+  }) => [
+    (
+      icon: Icons.person_outline_rounded,
+      title: 'Profil',
+      subtitle: user?.displayName,
+      onTap: () => _goBranch(_profileBranch),
+    ),
+    if (user?.role == UserRole.trainer)
+      (
+        icon: Icons.calendar_month_rounded,
+        title: 'Kalendár',
+        subtitle: 'Termíny, tréningy klientov a žiadosti',
+        onTap: () => context.push('/calendar'),
+      ),
+    (
+      icon: Icons.trending_up_rounded,
+      title: 'Progres',
+      subtitle: 'Rekordy, objem a vývoj cvikov',
+      onTap: () => context.push('/progress'),
+    ),
+    (
+      icon: Icons.accessibility_new_rounded,
+      title: 'Telo a rozmery',
+      subtitle: 'Váha, pás, brucho, obvody',
+      onTap: () => context.push('/body'),
+    ),
+    if (user?.role == UserRole.trainer)
+      (
+        icon: Icons.map_outlined,
+        title: 'Mapa fitiek',
+        subtitle: null,
+        onTap: () => _goBranch(_mapBranch),
+      ),
+    (
+      icon: Icons.favorite_outline_rounded,
+      title: 'Tep srdca',
+      subtitle: 'Z hodiniek a Zdravia',
+      onTap: () => context.push('/heart-rate'),
+    ),
+    (
+      icon: Icons.chat_bubble_outline_rounded,
+      title: 'Správy',
+      subtitle: unreadMessages == 0
+          ? 'Chat s trénerom a klientmi'
+          : 'Neprečítané: $unreadMessages',
+      onTap: () => _goBranch(_chatBranch),
+    ),
+    (
+      icon: Icons.info_outline_rounded,
+      title: 'O aplikácii',
+      subtitle: null,
+      onTap: () => context.push('/about'),
+    ),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
-    final isTrainer = auth is SignedIn && auth.user.role == UserRole.trainer;
-    final items = isTrainer ? _trainer : _member;
-    final current = items.indexWhere((i) => i.branch == shell.currentIndex);
+    final user = auth is SignedIn ? auth.user : null;
+    final items = user?.role == UserRole.trainer ? _trainer : _member;
+    final inBar = items.indexWhere((i) => i.branch == shell.currentIndex);
+    // Časť otvorená z menu (Profil, Správy…) zvýrazní tlačidlo „Viac“.
+    final current = inBar == -1 ? items.length : inBar;
+    final activeWorkout = ref.watch(workoutSessionProvider).active;
+    // Sledovaním sa po prihlásení spustí priebežné načítavanie upozornení.
+    final unreadMessages =
+        ref.watch(notificationsProvider).value?.unreadMessages ?? 0;
 
     return AppBackground(
       child: Scaffold(
+        backgroundColor: Colors.transparent,
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
             child: Column(
               children: [
                 Expanded(child: shell),
-                SafeArea(
-                  top: false,
-                  minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                  child: _NavBar(
-                    items: [
-                      for (final i in items) (icon: i.icon, label: i.label),
-                    ],
-                    current: current,
-                    onTap: (index) {
-                      final branch = items[index].branch;
-                      shell.goBranch(
-                        branch,
-                        initialLocation: branch == shell.currentIndex,
-                      );
-                    },
+                // Bežiaci tréning je vidieť aj z ostatných záložiek.
+                if (activeWorkout != null &&
+                    shell.currentIndex != _workoutBranch)
+                  ResumeWorkoutBar(
+                    workout: activeWorkout,
+                    onTap: () => shell.goBranch(_workoutBranch),
                   ),
+                _NavBar(
+                  items: [
+                    for (final i in items)
+                      (icon: i.icon, label: i.label, badge: 0),
+                    (
+                      icon: Icons.menu_rounded,
+                      label: 'Viac',
+                      // Správy sú v menu „Viac“.
+                      badge: shell.currentIndex == _chatBranch
+                          ? 0
+                          : unreadMessages,
+                    ),
+                  ],
+                  current: current,
+                  onTap: (index) => index < items.length
+                      ? _goBranch(items[index].branch)
+                      : showMoreSheet(
+                          context,
+                          _moreItems(
+                            context,
+                            user,
+                            unreadMessages: unreadMessages,
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -73,6 +167,8 @@ class AppShell extends ConsumerWidget {
   }
 }
 
+/// Spodná lišta: antracitová plocha s vlasovou linkou, aktívna záložka má
+/// koralovú farbu a krátku čiarku nad ikonou.
 class _NavBar extends StatelessWidget {
   const _NavBar({
     required this.items,
@@ -80,89 +176,119 @@ class _NavBar extends StatelessWidget {
     required this.onTap,
   });
 
-  final List<({IconData icon, String label})> items;
+  final List<({IconData icon, String label, int badge})> items;
   final int current;
   final ValueChanged<int> onTap;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: AppColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x66000000),
-            blurRadius: 24,
-            offset: Offset(0, 8),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      child: Glass(
+        borderRadius: BorderRadius.circular(24),
+        border: false,
+        color: const Color(0xF01A1E23),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(24)),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < items.length; i++)
-            Expanded(
-              child: Semantics(
-                selected: i == current,
-                button: true,
-                child: InkResponse(
-                  onTap: () => onTap(i),
-                  radius: 32,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 44,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            gradient: i == current
-                                ? AppColors.actionGradient
-                                : null,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: i == current
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.violet.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                      blurRadius: 14,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: Icon(
-                            items[i].icon,
-                            size: 20,
-                            color: i == current
-                                ? Colors.white
-                                : AppColors.muted,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+              child: Row(
+                children: [
+                  for (var i = 0; i < items.length; i++)
+                    Expanded(
+                      child: Semantics(
+                        selected: i == current,
+                        button: true,
+                        child: InkResponse(
+                          onTap: () => onTap(i),
+                          radius: 32,
+                          child: _NavItem(
+                            icon: items[i].icon,
+                            label: items[i].label,
+                            badge: items[i].badge,
+                            active: i == current,
+                            style: text.bodySmall!,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          items[i].label,
-                          style: text.bodySmall!.copyWith(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                            color: i == current
-                                ? AppColors.text
-                                : AppColors.muted,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
+                ],
               ),
             ),
-        ],
+          ),
+        ),
       ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.style,
+    this.badge = 0,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool active;
+
+  /// Počet neprečítaných (0 = bez odznaku).
+  final int badge;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? AppColors.accent : AppColors.muted;
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 26,
+          height: 3,
+          decoration: BoxDecoration(
+            color: active ? AppColors.accent : Colors.transparent,
+
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(3),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Badge(
+                isLabelVisible: badge > 0,
+                backgroundColor: AppColors.accent,
+                textColor: AppColors.bg,
+                label: Text(badge > 99 ? '99+' : '$badge'),
+                child: Icon(icon, size: 23, color: color),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: style.copyWith(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -185,49 +311,67 @@ class PlaceholderScreen extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return SafeArea(
       bottom: false,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(title.toUpperCase(), style: text.headlineMedium),
-            const SizedBox(height: 16),
-            TmCard(
-              grid: true,
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        children: [
+          ScreenHeader(title),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+              child: SectionStack(
                 children: [
-                  Icon(icon, size: 32, color: AppColors.accent),
-                  const SizedBox(height: 12),
-                  const SectionLabel('Čoskoro tu nájdeš'),
-                  const SizedBox(height: 10),
-                  for (final feature in features)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(top: 6),
-                            child: Icon(
-                              Icons.circle,
-                              size: 6,
-                              color: AppColors.violet,
-                            ),
+                  // Prázdny stav ako v návrhu: ikona v jamke a krátky text.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.well,
+                            border: Border.all(color: AppColors.border),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(feature, style: text.bodyMedium),
+                          child: Icon(icon, color: AppColors.ink2, size: 28),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Zatiaľ tu nič nie je',
+                          style: text.titleMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Na tejto časti práve pracujeme.',
+                          style: text.bodyMedium!.copyWith(
+                            color: AppColors.ink2,
                           ),
-                        ],
-                      ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
+                  ),
+                  AppSection(
+                    title: 'Čoskoro tu nájdeš',
+                    child: AppList(
+                      children: [
+                        for (final feature in features)
+                          AppRow(
+                            leading: const Icon(
+                              Icons.radio_button_unchecked_rounded,
+                              size: 20,
+                              color: AppColors.accent,
+                            ),
+                            title: feature,
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import 'heart_rate_stats.dart';
 
-/// Veľký kruh s tepom (modro-fialový prechod ako v logu).
+/// Veľký kruh s tepom (koralový akcent značky).
 class HeartRing extends StatelessWidget {
   const HeartRing({super.key, required this.bpm, required this.caption});
 
@@ -77,7 +77,7 @@ class _RingPainter extends CustomPainter {
       ..shader = const SweepGradient(
         startAngle: 0,
         endAngle: 2 * pi,
-        colors: [AppColors.blue, AppColors.violet, AppColors.accent],
+        colors: [AppColors.accentDeep, AppColors.accent, AppColors.accent],
         transform: GradientRotation(-pi / 2),
       ).createShader(rect)
       ..style = PaintingStyle.stroke
@@ -92,7 +92,7 @@ class _RingPainter extends CustomPainter {
       false,
       arc
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
-        ..color = AppColors.violet.withValues(alpha: 0.4),
+        ..color = AppColors.accent.withValues(alpha: 0.4),
     );
     final end = Offset(
       center.dx + radius * cos(-pi / 2 + sweep),
@@ -201,8 +201,8 @@ class _LinePainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.violet.withValues(alpha: 0.35),
-            AppColors.violet.withValues(alpha: 0),
+            AppColors.accent.withValues(alpha: 0.35),
+            AppColors.accent.withValues(alpha: 0),
           ],
         ).createShader(Rect.fromLTWH(0, 0, size.width, h)),
     );
@@ -210,7 +210,7 @@ class _LinePainter extends CustomPainter {
       line,
       Paint()
         ..shader = const LinearGradient(
-          colors: [AppColors.blue, AppColors.violet],
+          colors: [AppColors.accentDeep, AppColors.accent],
         ).createShader(Rect.fromLTWH(_left, 0, w, h))
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
@@ -224,7 +224,7 @@ class _LinePainter extends CustomPainter {
       p,
       9,
       Paint()
-        ..color = AppColors.violet.withValues(alpha: 0.35)
+        ..color = AppColors.accent.withValues(alpha: 0.35)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
     );
   }

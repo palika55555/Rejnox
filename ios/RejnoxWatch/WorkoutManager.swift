@@ -1,13 +1,16 @@
 import Foundation
 import HealthKit
 
-/// Beží tréning na hodinkách (HKWorkoutSession) a číta tep naživo.
+/// Beží tréning na hodinkách (HKWorkoutSession), číta tep a kalórie naživo,
+/// dá sa pozastaviť a po páde appky sa obnoví.
 @MainActor
 final class WorkoutManager: NSObject, ObservableObject {
     static let shared = WorkoutManager()
 
     @Published private(set) var heartRate: Double = 0
+    @Published private(set) var activeKcal: Double = 0
     @Published private(set) var running = false
+    @Published private(set) var paused = false
     @Published private(set) var startDate: Date?
     @Published var errorMessage: String?
 
@@ -16,6 +19,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     private var builder: HKLiveWorkoutBuilder?
 
     private let heartRateType = HKQuantityType(.heartRate)
+    private let energyType = HKQuantityType(.activeEnergyBurned)
 
     func requestAuthorization() async -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else {
@@ -25,7 +29,7 @@ final class WorkoutManager: NSObject, ObservableObject {
         do {
             try await healthStore.requestAuthorization(
                 toShare: [HKObjectType.workoutType()],
-                read: [heartRateType, HKObjectType.workoutType()]
+                read: [heartRateType, energyType, HKObjectType.workoutType()]
             )
             return true
         } catch {
@@ -50,29 +54,44 @@ final class WorkoutManager: NSObject, ObservableObject {
                 healthStore: healthStore,
                 configuration: config
             )
-            let builder = session.associatedWorkoutBuilder()
-            builder.dataSource = HKLiveWorkoutDataSource(
-                healthStore: healthStore,
-                workoutConfiguration: config
-            )
-            session.delegate = self
-            builder.delegate = self
-            self.session = session
-            self.builder = builder
+            attach(session)
 
             let start = Date()
             session.startActivity(with: start)
-            try await builder.beginCollection(at: start)
+            try await builder?.beginCollection(at: start)
 
             startDate = start
             running = true
+            paused = false
+            activeKcal = 0
             errorMessage = nil
-            PhoneLink.shared.send(state: "started", bpm: nil)
+            PhoneLink.shared.send(state: "started", bpm: nil, kcal: 0)
         } catch {
             errorMessage = error.localizedDescription
             self.session = nil
             self.builder = nil
         }
+    }
+
+    /// Po páde alebo reštarte appky počas tréningu ho watchOS vráti.
+    func recover() async {
+        guard session == nil else { return }
+        do {
+            guard let recovered = try await healthStore.recoverActiveWorkoutSession()
+            else { return }
+            attach(recovered)
+            startDate = recovered.startDate
+            running = true
+            paused = recovered.state == .paused
+            PhoneLink.shared.send(state: phoneState, bpm: nil, kcal: nil)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func togglePause() {
+        guard let session else { return }
+        if paused { session.resume() } else { session.pause() }
     }
 
     func stop() async {
@@ -87,14 +106,40 @@ final class WorkoutManager: NSObject, ObservableObject {
         self.session = nil
         self.builder = nil
         running = false
+        paused = false
         startDate = nil
         heartRate = 0
-        PhoneLink.shared.send(state: "ended", bpm: nil)
+        PhoneLink.shared.send(state: "ended", bpm: nil, kcal: activeKcal)
     }
 
-    fileprivate func publish(bpm: Double) {
-        heartRate = bpm
-        PhoneLink.shared.send(state: "running", bpm: bpm)
+    private func attach(_ session: HKWorkoutSession) {
+        let builder = session.associatedWorkoutBuilder()
+        builder.dataSource = HKLiveWorkoutDataSource(
+            healthStore: healthStore,
+            workoutConfiguration: session.workoutConfiguration
+        )
+        session.delegate = self
+        builder.delegate = self
+        self.session = session
+        self.builder = builder
+    }
+
+    private var phoneState: String { paused ? "paused" : "running" }
+
+    fileprivate func publish(bpm: Double?, kcal: Double?) {
+        if let bpm { heartRate = bpm }
+        if let kcal { activeKcal = kcal }
+        PhoneLink.shared.send(
+            state: phoneState,
+            bpm: heartRate > 0 ? heartRate : nil,
+            kcal: activeKcal
+        )
+    }
+
+    fileprivate func setPaused(_ value: Bool) {
+        guard running, paused != value else { return }
+        paused = value
+        PhoneLink.shared.send(state: phoneState, bpm: nil, kcal: activeKcal)
     }
 }
 
@@ -104,7 +149,10 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
         didChangeTo toState: HKWorkoutSessionState,
         from fromState: HKWorkoutSessionState,
         date: Date
-    ) {}
+    ) {
+        let paused = toState == .paused
+        Task { @MainActor in self.setPaused(paused) }
+    }
 
     nonisolated func workoutSession(
         _ workoutSession: HKWorkoutSession,
@@ -122,11 +170,20 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
         _ workoutBuilder: HKLiveWorkoutBuilder,
         didCollectDataOf collectedTypes: Set<HKSampleType>
     ) {
-        let type = HKQuantityType(.heartRate)
-        guard collectedTypes.contains(type),
-              let quantity = workoutBuilder.statistics(for: type)?.mostRecentQuantity()
-        else { return }
-        let bpm = quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-        Task { @MainActor in self.publish(bpm: bpm) }
+        let hrType = HKQuantityType(.heartRate)
+        let energyType = HKQuantityType(.activeEnergyBurned)
+        var bpm: Double?
+        var kcal: Double?
+        if collectedTypes.contains(hrType),
+           let q = workoutBuilder.statistics(for: hrType)?.mostRecentQuantity() {
+            bpm = q.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+        }
+        if collectedTypes.contains(energyType),
+           let q = workoutBuilder.statistics(for: energyType)?.sumQuantity() {
+            kcal = q.doubleValue(for: .kilocalorie())
+        }
+        guard bpm != nil || kcal != nil else { return }
+        let (b, k) = (bpm, kcal)
+        Task { @MainActor in self.publish(bpm: b, kcal: k) }
     }
 }

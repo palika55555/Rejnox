@@ -5,11 +5,14 @@ import 'package:rejnox/features/coaching/data/coaching_api.dart';
 import 'package:rejnox/features/coaching/domain/coaching_models.dart';
 import 'package:rejnox/features/gyms/application/gym_actions.dart';
 import 'package:rejnox/features/gyms/application/user_location.dart';
+import 'package:rejnox/features/gyms/application/gym_photo_picker.dart';
 import 'package:rejnox/features/gyms/data/gym_repository.dart';
 import 'package:rejnox/core/theme/app_colors.dart';
 import 'package:rejnox/features/gyms/domain/gym.dart';
 import 'package:rejnox/features/home/data/home_repository.dart';
 import 'package:rejnox/features/home/domain/home_overview.dart' as home;
+import 'package:rejnox/features/progress/data/progress_repository.dart';
+import 'package:rejnox/features/progress/domain/progress_models.dart';
 import 'package:rejnox/features/reminders/reminder_service.dart';
 import 'package:rejnox/features/training/data/set_storage.dart';
 import 'package:rejnox/features/training/domain/training_models.dart';
@@ -274,6 +277,65 @@ class FakeHomeRepository implements HomeRepository {
   }
 }
 
+/// Progres bez servera: odpoveď v tvare, aký posiela GET /progress.
+class FakeProgressRepository implements ProgressRepository {
+  FakeProgressRepository([Map<String, dynamic>? json])
+    : json = json ?? sampleJson;
+
+  final Map<String, dynamic> json;
+
+  static Map<String, dynamic> get sampleJson => {
+    'totals': {'trainingDays': 24, 'sets': 310, 'volumeKg': 48250},
+    'month': {'days': 9, 'sets': 112, 'volumeKg': 16400, 'prevVolumeKg': 14000},
+    'weeks': [
+      for (var i = 0; i < 12; i++)
+        {
+          'start': DateTime(
+            2026,
+            8,
+            24,
+          ).add(Duration(days: 7 * i)).toIso8601String().substring(0, 10),
+          'days': i % 4 == 0 ? 0 : 2,
+          'sets': i % 4 == 0 ? 0 : 20,
+          'volumeKg': i % 4 == 0 ? 0 : 3000 + 200 * i,
+        },
+    ],
+    'exercises': [
+      {
+        'exerciseId': '00000000-0000-4000-8000-000000000001',
+        'name': 'Drep s činkou',
+        'muscleGroup': 'nohy',
+        'bestKg': 120,
+        'bestE1rmKg': 138.5,
+        'firstKg': 100,
+        'lastDay': '2026-11-14',
+        'days': 8,
+        'trend': [
+          {'day': '2026-10-01', 'kg': 100},
+          {'day': '2026-10-15', 'kg': 110},
+          {'day': '2026-11-14', 'kg': 120},
+        ],
+      },
+    ],
+    'muscles': [
+      {'muscleGroup': 'nohy', 'sets': 40},
+      {'muscleGroup': 'hrudnik', 'sets': 22},
+    ],
+  };
+
+  static Map<String, dynamic> get emptyJson => {
+    'totals': {'trainingDays': 0, 'sets': 0, 'volumeKg': 0},
+    'month': {'days': 0, 'sets': 0, 'volumeKg': 0, 'prevVolumeKg': 0},
+    'weeks': <Object>[],
+    'exercises': <Object>[],
+    'muscles': <Object>[],
+  };
+
+  @override
+  Future<ProgressOverview> fetch(String token) async =>
+      ProgressOverview.fromJson(json);
+}
+
 class FakeLocationSource implements LocationSource {
   FakeLocationSource([
     this.result = const LocationFound(GeoPoint(48.3, 18.08)),
@@ -315,6 +377,8 @@ class FakeGymRepository implements GymRepository {
   List<Gym> gyms;
   bool fail = false;
   final ratings = <String, int?>{};
+  final uploads = <List<int>>[];
+  var _nextId = 0;
 
   @override
   Future<List<Gym>> fetchGyms(String token) async {
@@ -322,8 +386,37 @@ class FakeGymRepository implements GymRepository {
     return gyms;
   }
 
-  Gym _withMine(String gymId, int? stars) {
+  /// Kópia fitka so zmenenými poľami (ako by ho vrátil server).
+  Gym _replace(
+    String gymId, {
+    GymRating? rating,
+    int? Function()? myStars,
+    List<GymPhoto>? photos,
+    List<GymPrice>? prices,
+  }) {
     if (fail) throw const ApiError.network();
+    final gym = gyms.firstWhere((g) => g.id == gymId);
+    final updated = Gym(
+      id: gym.id,
+      name: gym.name,
+      city: gym.city,
+      address: gym.address,
+      location: gym.location,
+      openingHours: gym.openingHours,
+      tags: gym.tags,
+      website: gym.website,
+      photoUrls: gym.photoUrls,
+      photos: photos ?? gym.photos,
+      prices: prices ?? gym.prices,
+      mine: gym.mine,
+      rating: rating ?? gym.rating,
+      myStars: myStars == null ? gym.myStars : myStars(),
+    );
+    gyms = [for (final g in gyms) g.id == gymId ? updated : g];
+    return updated;
+  }
+
+  Gym _withMine(String gymId, int? stars) {
     ratings[gymId] = stars;
     final gym = gyms.firstWhere((g) => g.id == gymId);
     final counts = [
@@ -331,18 +424,11 @@ class FakeGymRepository implements GymRepository {
     ];
     if (gym.myStars != null) counts[gym.myStars! - 1]--;
     if (stars != null) counts[stars - 1]++;
-    final updated = Gym(
-      id: gym.id,
-      name: gym.name,
-      city: gym.city,
-      location: gym.location,
-      openingHours: gym.openingHours,
-      tags: gym.tags,
+    return _replace(
+      gymId,
       rating: GymRating(stars: counts),
-      myStars: stars,
+      myStars: () => stars,
     );
-    gyms = [for (final g in gyms) g.id == gymId ? updated : g];
-    return updated;
   }
 
   @override
@@ -352,4 +438,116 @@ class FakeGymRepository implements GymRepository {
   @override
   Future<Gym> unrate(String token, String gymId) async =>
       _withMine(gymId, null);
+
+  Gym _fromDraft(String id, GymDraft draft) => Gym(
+    id: id,
+    name: draft.name,
+    city: draft.city,
+    address: draft.address,
+    location: draft.location,
+    openingHours: draft.openingHours,
+    tags: draft.tags,
+    website: draft.website == null ? null : Uri.parse(draft.website!),
+    mine: true,
+  );
+
+  @override
+  Future<Gym> create(String token, GymDraft draft) async {
+    if (fail) throw const ApiError.network();
+    final gym = _fromDraft('new-${_nextId++}', draft);
+    gyms = [...gyms, gym];
+    return gym;
+  }
+
+  @override
+  Future<Gym> update(String token, String gymId, GymDraft draft) async {
+    if (fail) throw const ApiError.network();
+    final gym = _fromDraft(gymId, draft);
+    gyms = [for (final g in gyms) g.id == gymId ? gym : g];
+    return gym;
+  }
+
+  @override
+  Future<void> delete(String token, String gymId) async {
+    if (fail) throw const ApiError.network();
+    gyms = [
+      for (final g in gyms)
+        if (g.id != gymId) g,
+    ];
+  }
+
+  @override
+  Future<Gym> addPhoto(String token, String gymId, List<int> bytes) async {
+    uploads.add(bytes);
+    final gym = gyms.firstWhere((g) => g.id == gymId);
+    return _replace(
+      gymId,
+      photos: [
+        ...gym.photos,
+        GymPhoto(id: 'p${_nextId++}', mine: true),
+      ],
+    );
+  }
+
+  @override
+  Future<Gym> deletePhoto(String token, String photoId) async {
+    final gym = gyms.firstWhere((g) => g.photos.any((p) => p.id == photoId));
+    return _replace(
+      gym.id,
+      photos: [
+        for (final p in gym.photos)
+          if (p.id != photoId) p,
+      ],
+    );
+  }
+
+  @override
+  Future<Gym> addPrice(
+    String token,
+    String gymId, {
+    required GymPriceKind kind,
+    required String title,
+    required int priceCents,
+    String? period,
+  }) async {
+    final gym = gyms.firstWhere((g) => g.id == gymId);
+    return _replace(
+      gymId,
+      prices: [
+        ...gym.prices,
+        GymPrice(
+          id: 'c${_nextId++}',
+          kind: kind,
+          title: title,
+          priceCents: priceCents,
+          period: period,
+          mine: true,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Future<Gym> deletePrice(String token, String priceId) async {
+    final gym = gyms.firstWhere((g) => g.prices.any((p) => p.id == priceId));
+    return _replace(
+      gym.id,
+      prices: [
+        for (final p in gym.prices)
+          if (p.id != priceId) p,
+      ],
+    );
+  }
+}
+
+/// Výber fotky bez galérie: vráti pripravené bajty.
+class FakeGymPhotoPicker implements GymPhotoPicker {
+  List<int>? next = const [0xff, 0xd8, 0xff, 0xe0];
+  bool fail = false;
+
+  @override
+  Future<List<int>?> pick(PhotoSource source) async {
+    if (fail) throw const PhotoPickFailed();
+    return next;
+  }
 }

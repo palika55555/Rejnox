@@ -19,6 +19,15 @@ export const limits = {
   // Fitká: zoznam vracia až 5000 riadkov a hodnotenia by sa dali "klikať" v slučke.
   gymRead: { name: "gym-read", max: 60, windowSeconds: 60 },
   gymWrite: { name: "gym-write", max: 30, windowSeconds: 60 },
+  // Nové fitká a fotky od používateľov: rozumné množstvo, nie spam.
+  gymCreate: { name: "gym-create", max: 10, windowSeconds: 60 * 60 },
+  gymPhotoUpload: { name: "gym-photo-upload", max: 30, windowSeconds: 60 * 60 },
+  // Detail fitka načíta naraz aj 20 fotiek.
+  gymPhotoRead: { name: "gym-photo-read", max: 300, windowSeconds: 60 },
+  // Rezervácie a termíny: nech sa kalendár trénera nedá zahltiť žiadosťami.
+  calendarWrite: { name: "calendar-write", max: 30, windowSeconds: 60 },
+  // Chat: bežné písanie áno, zaplavenie druhej strany nie.
+  chatSend: { name: "chat-send", max: 30, windowSeconds: 60 },
 } satisfies Record<string, Limit>;
 
 /** Počítadlo pokusov v databáze (spoločné pre všetky inštancie Workera). */

@@ -16,48 +16,27 @@ class SyncStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pending = state.pendingCount;
-    final (icon, color, label) = switch (state) {
+    final (icon, tone, label) = switch (state) {
       _ when state.syncing && pending > 0 => (
         Icons.cloud_upload_outlined,
-        AppColors.accent,
+        PillTone.info,
         'Odosielam…',
       ),
       _ when pending > 0 && state.offline => (
         Icons.cloud_off_rounded,
-        AppColors.flame,
+        PillTone.warn,
         'Offline · čaká $pending',
       ),
       _ when pending > 0 => (
         Icons.cloud_upload_outlined,
-        AppColors.flame,
+        PillTone.warn,
         'Čaká $pending',
       ),
-      _ => (Icons.cloud_done_rounded, AppColors.accent, 'Všetko uložené'),
+      _ => (Icons.cloud_done_outlined, PillTone.good, 'Všetko uložené'),
     };
     return Semantics(
       liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-        decoration: BoxDecoration(
-          color: AppColors.surface.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.5)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: color),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                color: AppColors.text,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: AppPill(label, tone: tone, icon: icon),
     );
   }
 }
@@ -70,17 +49,23 @@ class OfflineBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TmCard(
+    return Container(
       padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.warnSoft,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Row(
         children: [
-          const Icon(Icons.wifi_off_rounded, color: AppColors.flame, size: 20),
+          const Icon(Icons.wifi_off_rounded, color: AppColors.warn, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Si offline. Série ($pending) sú bezpečne uložené v telefóne '
               'a odošlú sa samy, keď sa pripojíš.',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium!.copyWith(color: AppColors.warn),
             ),
           ),
         ],
@@ -89,7 +74,7 @@ class OfflineBanner extends StatelessWidget {
   }
 }
 
-/// Jeden riadok zapísanej série.
+/// Jeden riadok zapísanej série (v zozname s vlasovými linkami).
 class LoggedSetRow extends StatelessWidget {
   const LoggedSetRow(this.set, {super.key, this.onDelete});
 
@@ -106,44 +91,63 @@ class LoggedSetRow extends StatelessWidget {
     final time = '${at.hour}:${at.minute.toString().padLeft(2, '0')}';
     final (icon, color, tooltip) = switch (set.state) {
       SyncState.synced => (
-        Icons.cloud_done_rounded,
-        AppColors.accent,
+        Icons.cloud_done_outlined,
+        AppColors.good,
         'Uložené na serveri',
       ),
       SyncState.pending => (
         Icons.cloud_upload_outlined,
-        AppColors.flame,
+        AppColors.warn,
         'Čaká na odoslanie',
       ),
       SyncState.rejected => (
         Icons.error_outline_rounded,
-        Plate.red.color,
+        AppColors.error,
         'Server sériu odmietol',
       ),
     };
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.fromLTRB(16, 10, onDelete == null ? 16 : 4, 10),
       child: Row(
         children: [
-          PlateDot(exercise?.group.plate ?? Plate.blue, size: 9),
+          PlateDot(exercise?.group.plate ?? Plate.blue, size: 10),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  exercise?.name ?? 'Neznámy cvik',
-                  style: text.bodyLarge,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        exercise?.name ?? 'Neznámy cvik',
+                        style: text.bodyLarge,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (set.kind != SetKind.working) ...[
+                      const SizedBox(width: 6),
+                      AppPill(set.kind.label, tone: PillTone.accent),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
-                Text(time, style: text.bodySmall),
+                Text(
+                  [time, ?exercise?.group.label].join(' · '),
+                  style: text.bodySmall,
+                ),
               ],
             ),
           ),
-          Text(
-            '${set.reps} × ${set.weightLabel}',
-            style: text.bodyLarge!.copyWith(fontWeight: FontWeight.w800),
+          // Úzky displej alebo veľké písmo: číslo sa radšej zmenší.
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '${set.reps} × ${set.weightLabel}',
+                style: text.headlineLarge!.copyWith(fontSize: 22),
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Tooltip(
@@ -167,7 +171,7 @@ class LoggedSetRow extends StatelessWidget {
   }
 }
 
-/// Tlačidlá − / + okolo čísla (opakovania, váha).
+/// Krokovač: okrúhle − / + a veľké číslo v strede (plány, záznam klienta).
 class NumberStepper extends StatelessWidget {
   const NumberStepper({
     super.key,
@@ -197,28 +201,46 @@ class NumberStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final text = Theme.of(context).textTheme;
+    return Column(
       children: [
-        _RoundButton(
-          icon: Icons.remove_rounded,
-          label: '$label menej',
-          onTap: () => _change(-step),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: TextFormField(
-            controller: controller,
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-            decoration: InputDecoration(labelText: label),
-            validator: validator,
-          ),
-        ),
-        const SizedBox(width: 8),
-        _RoundButton(
-          icon: Icons.add_rounded,
-          label: '$label viac',
-          onTap: () => _change(step),
+        SectionLabel(label),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _RoundButton(
+              icon: Icons.remove_rounded,
+              label: '$label menej',
+              onTap: () => _change(-step),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextFormField(
+                controller: controller,
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.numberWithOptions(decimal: decimal),
+                style: text.headlineLarge!.copyWith(fontSize: 44),
+                decoration: const InputDecoration(
+                  filled: false,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 6),
+                  isDense: true,
+                ),
+                validator: validator,
+              ),
+            ),
+            const SizedBox(width: 8),
+            _RoundButton(
+              icon: Icons.add_rounded,
+              label: '$label viac',
+              onTap: () => _change(step),
+            ),
+          ],
         ),
       ],
     );
@@ -241,18 +263,18 @@ class _RoundButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          width: 44,
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: AppColors.surfaceHi,
-            border: Border.all(color: AppColors.border),
+      child: Material(
+        color: AppColors.surface,
+        shape: const CircleBorder(
+          side: BorderSide(color: AppColors.border, width: 1.5),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: SizedBox.square(
+            dimension: 56,
+            child: Icon(icon, color: AppColors.text),
           ),
-          child: Icon(icon, color: AppColors.text),
         ),
       ),
     );

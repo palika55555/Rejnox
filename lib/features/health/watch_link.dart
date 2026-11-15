@@ -16,27 +16,41 @@ class WatchStatus {
   final bool reachable;
 
   bool get ready => paired && installed;
+
+  /// Hodinky sú spárované, ale Rejnox na nich ešte nie je.
+  bool get canInstall => paired && !installed;
 }
 
-/// Správa z hodiniek: stav tréningu a tep.
+/// Správa z hodiniek: stav tréningu, tep a aktívne kalórie.
 class WatchHeartRate {
-  const WatchHeartRate({required this.state, required this.at, this.bpm});
+  const WatchHeartRate({
+    required this.state,
+    required this.at,
+    this.bpm,
+    this.kcal,
+  });
 
   factory WatchHeartRate.fromMap(Map<Object?, Object?> map) => WatchHeartRate(
     state: map['state'] as String? ?? 'running',
     bpm: (map['bpm'] as num?)?.toDouble(),
+    kcal: (map['kcal'] as num?)?.toDouble(),
     at: DateTime.fromMillisecondsSinceEpoch(
       (((map['at'] as num?) ?? 0) * 1000).round(),
     ),
   );
 
-  /// started / running / ended
+  /// started / running / paused / ended
   final String state;
   final double? bpm;
+  final double? kcal;
   final DateTime at;
+
+  bool get paused => state == 'paused';
 }
 
-/// Spojenie s Rejnoxom na Apple Watch (cez appku pre iPhone).
+/// Spojenie s Rejnoxom na Apple Watch (cez appku pre iPhone). Iné hodinky
+/// (Garmin, Fitbit, Galaxy Watch…) zapisujú do Apple Health / Health Connect,
+/// pozri `wearable_sources.dart`.
 abstract interface class WatchLink {
   bool get supported;
   Future<WatchStatus> status();
@@ -45,8 +59,14 @@ abstract interface class WatchLink {
   /// Spustí tréning na hodinkách (otvorí Rejnox na hodinkách).
   Future<void> startWorkout();
 
-  /// Vráti false, ak hodinky práve nie sú v dosahu.
+  /// Vráti false, ak hodinky práve nie sú v dosahu (príkaz sa doručí,
+  /// keď budú).
   Future<bool> stopWorkout();
+  Future<bool> pauseWorkout();
+  Future<bool> resumeWorkout();
+
+  /// Otvorí appku Watch na iPhone, kde sa Rejnox nainštaluje na hodinky.
+  Future<bool> openWatchApp();
 }
 
 class NativeWatchLink implements WatchLink {
@@ -86,8 +106,27 @@ class NativeWatchLink implements WatchLink {
   Future<void> startWorkout() => _methods.invokeMethod<void>('startWorkout');
 
   @override
-  Future<bool> stopWorkout() async =>
-      await _methods.invokeMethod<bool>('stopWorkout') ?? false;
+  Future<bool> stopWorkout() => _command('stopWorkout');
+
+  @override
+  Future<bool> pauseWorkout() => _command('pauseWorkout');
+
+  @override
+  Future<bool> resumeWorkout() => _command('resumeWorkout');
+
+  @override
+  Future<bool> openWatchApp() => _command('openWatchApp');
+
+  Future<bool> _command(String method) async {
+    if (!supported) return false;
+    try {
+      return await _methods.invokeMethod<bool>(method) ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
 }
 
 final watchLinkProvider = Provider<WatchLink>((ref) => NativeWatchLink());

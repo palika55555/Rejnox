@@ -154,8 +154,8 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                                 decoration: BoxDecoration(
                                   gradient: RadialGradient(
                                     colors: [
-                                      AppColors.violet.withValues(alpha: 0.7),
-                                      AppColors.violet.withValues(alpha: 0),
+                                      AppColors.accent.withValues(alpha: 0.18),
+                                      AppColors.accent.withValues(alpha: 0),
                                     ],
                                   ),
                                 ),

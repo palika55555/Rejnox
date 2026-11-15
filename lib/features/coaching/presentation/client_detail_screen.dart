@@ -78,7 +78,7 @@ class _Body extends ConsumerWidget {
     builder: (context) {
       final text = Theme.of(context).textTheme;
       return AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.sheet,
         title: const Text('Pozývací kód'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -206,6 +206,13 @@ class _Body extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (client.hasAccount)
+                IconButton(
+                  tooltip: 'Napísať klientovi',
+                  onPressed: () =>
+                      context.push('/chat/${client.id}', extra: client.name),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded),
+                ),
               LinkStatusChip(client.status),
             ],
           ),
@@ -232,7 +239,7 @@ class _Body extends ConsumerWidget {
                   onPressed: () => showModalBottomSheet<bool>(
                     context: context,
                     isScrollControlled: true,
-                    backgroundColor: AppColors.surface,
+                    backgroundColor: AppColors.sheet,
                     builder: (_) => AddPlanSheet(clientId: client.id),
                   ),
                   icon: const Icon(Icons.add_rounded),

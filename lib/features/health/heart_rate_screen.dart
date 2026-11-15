@@ -141,6 +141,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
 
     return AppBackground(
       child: Scaffold(
+        backgroundColor: Colors.transparent,
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: _refresh,
@@ -248,7 +249,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                         Expanded(
                           child: StatTile(
                             icon: Icons.nightlight_round,
-                            color: AppColors.blue,
+                            color: AppColors.accentDeep,
                             label: 'Pokojový tep',
                             hint: 'v pokoji',
                             value: history?.restingBpm == null
@@ -318,10 +319,11 @@ class _WatchChip extends ConsumerWidget {
         ? (false, 'Nainštaluj Rejnox na hodinky')
         : (true, 'Pripojené Apple Watch');
     final color = ok ? Plate.green.color : AppColors.muted;
-    return Container(
+    final canInstall = !demo && status != null && status.canInstall;
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.8),
+        color: AppColors.sheet.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
@@ -330,8 +332,28 @@ class _WatchChip extends ConsumerWidget {
         children: [
           Icon(Icons.watch_outlined, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(label, style: text.bodySmall!.copyWith(color: AppColors.text)),
+          Flexible(
+            child: Text(
+              label,
+              style: text.bodySmall!.copyWith(color: AppColors.text),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (canInstall) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.download_rounded, size: 16, color: AppColors.accent),
+          ],
         ],
+      ),
+    );
+    if (!canInstall) return chip;
+    return Semantics(
+      button: true,
+      label: 'Nainštalovať Rejnox na hodinky',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => ref.read(watchLinkProvider).openWatchApp(),
+        child: chip,
       ),
     );
   }

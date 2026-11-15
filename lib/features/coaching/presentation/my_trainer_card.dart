@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -82,11 +83,25 @@ class MyTrainerCard extends ConsumerWidget {
                     t.trainerName.isEmpty
                         ? '?'
                         : t.trainerName[0].toUpperCase(),
-                    style: text.titleMedium,
+                    style: text.titleMedium!.copyWith(
+                      color: AppColors.onAccent,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(child: Text(t.trainerName, style: text.titleMedium)),
+                IconButton(
+                  tooltip: 'Napísať trénerovi',
+                  onPressed: () =>
+                      context.push('/chat/${t.linkId}', extra: t.trainerName),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded),
+                ),
+                IconButton(
+                  tooltip: 'Kalendár a rezervácie',
+                  onPressed: () =>
+                      context.push('/trainer/${t.linkId}/calendar'),
+                  icon: const Icon(Icons.calendar_month_rounded),
+                ),
                 TextButton(
                   onPressed: () => _end(context, ref, t),
                   child: const Text('Ukončiť'),
@@ -148,7 +163,7 @@ class _CodeDialogState extends ConsumerState<_CodeDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.sheet,
       title: const Text('Kód od trénera'),
       content: TextField(
         controller: _code,

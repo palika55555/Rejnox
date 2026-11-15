@@ -17,7 +17,7 @@ class HeartRateTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          const Icon(Icons.health_and_safety_outlined, color: AppColors.violet),
+          const Icon(Icons.health_and_safety_outlined, color: AppColors.accent),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

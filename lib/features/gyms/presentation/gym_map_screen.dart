@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../application/user_location.dart';
 import '../data/gym_repository.dart';
@@ -93,6 +94,12 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
     context.push('/gym/${gym.id}');
   }
 
+  /// Formulár nového fitka; [at] je miesto z dlhého podržania na mape.
+  void _addGym([GeoPoint? at]) {
+    final query = at == null ? '' : '?lat=${at.lat}&lng=${at.lng}';
+    context.push('/gym/new$query');
+  }
+
   void _onLocationAction(LocationIssue issue) {
     final source = ref.read(locationSourceProvider);
     switch (issue) {
@@ -175,7 +182,6 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
                   cities: gymCities(gyms).length,
                 ),
               ),
-              if (showTiles) const _Attribution(),
               if (selected != null)
                 Positioned(
                   left: 0,
@@ -190,11 +196,11 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        const SectionLabel('Mestá s fitkami', icon: Icons.location_city),
-        const SizedBox(height: 8),
+        const SizedBox(height: 14),
+        const SectionLabel('Mestá s fitkami'),
+        const SizedBox(height: 10),
         SizedBox(
-          height: 96,
+          height: 72,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: gymCities(gyms).length,
@@ -228,6 +234,7 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
             initialZoom: user == null ? 5 : 13,
             showTiles: showTiles,
             onReady: _onMapReady,
+            onLongPress: _addGym,
           ),
           Positioned(
             right: 10,
@@ -250,12 +257,11 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
               ],
             ),
           ),
-          if (showTiles) const _Attribution(),
           if (cardGym != null)
             Positioned(
               left: 10,
               right: 10,
-              bottom: 22,
+              bottom: 10,
               child: GymCard(
                 gym: cardGym,
                 distance: distanceTo(cardGym),
@@ -271,57 +277,113 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
 
     final list = ranked.isEmpty
         ? Center(child: Text('Nič sme nenašli.', style: text.bodyMedium))
-        : ListView.separated(
-            padding: const EdgeInsets.only(bottom: 8),
-            itemCount: ranked.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final item = ranked[index];
-              return GymListTile(
-                gym: item.gym,
-                distance: item.distance,
-                onTap: () => _openDetail(item.gym),
-              );
-            },
+        : _ListFrame(
+            child: ListView.separated(
+              itemCount: ranked.length,
+              separatorBuilder: (_, _) => const Divider(),
+              itemBuilder: (context, index) {
+                final item = ranked[index];
+                return GymListTile(
+                  gym: item.gym,
+                  distance: item.distance,
+                  onTap: () => _openDetail(item.gym),
+                );
+              },
+            ),
           );
 
     return SafeArea(
       bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('MAPA FITIEK', style: text.headlineMedium),
-            Text(
-              'Objavuj fitká po celom svete',
-              style: text.bodyMedium!.copyWith(color: AppColors.muted),
-            ),
-            const SizedBox(height: 12),
-            MapModeSwitch(selected: _mode, onChanged: _setMode),
-            const SizedBox(height: 10),
-            GymSearchField(controller: _search),
-            const SizedBox(height: 10),
-            if (loadFailed) ...[
-              GymsErrorBanner(onRetry: () => ref.invalidate(gymsProvider)),
-              const SizedBox(height: 10),
-            ],
-            if (issue != null) ...[
-              LocationBanner(
-                issue: issue,
-                onAction: () => _onLocationAction(issue),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const ScreenHeader(
+            'Mapa fitiek',
+            subtitle: 'Objavuj fitká po celom svete',
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  MapModeSwitch(selected: _mode, onChanged: _setMode),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(child: GymSearchField(controller: _search)),
+                      const SizedBox(width: 8),
+                      MapRoundButton(
+                        icon: Icons.add_location_alt_outlined,
+                        tooltip: 'Pridať fitko',
+                        onPressed: _addGym,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (loadFailed) ...[
+                    GymsErrorBanner(
+                      onRetry: () => ref.invalidate(gymsProvider),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  if (issue != null) ...[
+                    LocationBanner(
+                      issue: issue,
+                      onAction: () => _onLocationAction(issue),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  Expanded(
+                    child: IndexedStack(
+                      index: _mode.index,
+                      sizing: StackFit.expand,
+                      children: [globe, map, list],
+                    ),
+                  ),
+                  if (showTiles && _mode != MapMode.list)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.ink2,
+                          textStyle: text.bodySmall,
+                          minimumSize: const Size(0, 36),
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () => context.push('/about'),
+                        child: const Text(MapStyle.attribution),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(height: 10),
-            ],
-            Expanded(
-              child: IndexedStack(
-                index: _mode.index,
-                sizing: StackFit.expand,
-                children: [globe, map, list],
-              ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Zoznam fitiek v jednej karte s vlasovými linkami.
+class _ListFrame extends StatelessWidget {
+  const _ListFrame({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(18);
+    return DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Material(color: AppColors.surface, child: child),
       ),
     );
   }
@@ -335,7 +397,7 @@ class _MapFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(22);
+    final radius = BorderRadius.circular(18);
     return DecoratedBox(
       position: DecorationPosition.foreground,
       decoration: BoxDecoration(
@@ -348,26 +410,6 @@ class _MapFrame extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Zdroj dlaždíc mapy v rohu (podmienka OpenStreetMap).
-class _Attribution extends StatelessWidget {
-  const _Attribution();
-
-  @override
-  Widget build(BuildContext context) => Positioned(
-    left: 10,
-    bottom: 4,
-    child: IgnorePointer(
-      child: Text(
-        MapStyle.attribution,
-        style: Theme.of(context).textTheme.bodySmall!.copyWith(
-          fontSize: 9.5,
-          color: AppColors.muted.withValues(alpha: 0.8),
-        ),
-      ),
-    ),
-  );
 }
 
 /// Odznak „20 fitiek v 18 mestách“ pri zemeguli.
@@ -383,7 +425,7 @@ class _CountBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 14, 8),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.85),
+        color: AppColors.sheet.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),

@@ -3,6 +3,7 @@ import 'package:health/health.dart';
 
 import 'health_platform.dart';
 import 'heart_rate_stats.dart';
+import 'wearable_sources.dart';
 
 class HeartRateReading {
   const HeartRateReading({
@@ -18,13 +19,13 @@ class HeartRateReading {
 
 /// Zdroj srdcového tepu. Dá sa nahradiť v testoch.
 abstract interface class HeartRateSource {
-  /// Apple Health je len na iPhone.
+  /// Apple Health (iPhone) alebo Health Connect (Android).
   bool get supported;
 
   /// Vypýta povolenie len na čítanie tepu.
   Future<bool> requestPermission();
 
-  /// Najnovšie meranie z Apple Watch za posledných 24 hodín.
+  /// Najnovšie meranie z hodiniek za posledných 24 hodín.
   Future<HeartRateReading?> latest();
 
   /// Merania tepu za posledné [window] + HRV a pokojový tep.
@@ -74,20 +75,22 @@ HeartRateHistory buildHistory(List<HealthDataPoint> points, DateTime from) {
   );
 }
 
-/// Vyberie najnovšie automatické meranie tepu z Apple Watch.
+/// Vyberie najnovšie automatické meranie tepu z hodiniek (Apple Watch,
+/// Garmin, Fitbit, Galaxy Watch, Polar…, pozri [wearableName]).
 ///
 /// Pozor: `sourceName` a `sourceDeviceId` nie sú spoľahlivá identifikácia
-/// zariadenia, filter môže niektoré platné merania vynechať. Spoľahlivé
-/// rozlíšenie Apple Watch by vyžadovalo natívny HealthKit dotaz (HKDevice).
+/// zariadenia, filter môže niektoré platné merania vynechať (napr. hodinky
+/// premenované bez slova „watch“). Spoľahlivé rozlíšenie by vyžadovalo
+/// natívny dotaz (HKDevice / Health Connect Device).
 HeartRateReading? pickLatestWatchReading(List<HealthDataPoint> points) {
-  final watch = points.where((p) {
-    final source = p.sourceName.toLowerCase();
-    final device = p.sourceDeviceId.toLowerCase();
-    return p.type == HealthDataType.HEART_RATE &&
-        p.recordingMethod != RecordingMethod.manual &&
-        p.value is NumericHealthValue &&
-        (source.contains('watch') || device.contains('watch'));
-  }).toList();
+  final watch = points
+      .where(
+        (p) =>
+            p.type == HealthDataType.HEART_RATE &&
+            p.value is NumericHealthValue &&
+            isWearable(p),
+      )
+      .toList();
   if (watch.isEmpty) return null;
 
   watch.sort((a, b) => b.dateTo.compareTo(a.dateTo));
@@ -95,7 +98,7 @@ HeartRateReading? pickLatestWatchReading(List<HealthDataPoint> points) {
   return HeartRateReading(
     bpm: (latest.value as NumericHealthValue).numericValue.toDouble(),
     measuredAt: latest.dateTo,
-    source: latest.sourceName,
+    source: wearableName(latest) ?? latest.sourceName,
   );
 }
 

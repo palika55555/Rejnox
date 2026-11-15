@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rejnox/core/theme/app_theme.dart';
+import 'package:rejnox/core/widgets/rejnox_mark.dart';
 import 'package:rejnox/features/auth/data/auth_repository.dart';
 import 'package:rejnox/features/auth/domain/auth_models.dart';
 import 'package:rejnox/features/auth/presentation/auth_controller.dart';
@@ -65,6 +66,32 @@ Widget _app(Widget child, {bool reduced = false}) => MaterialApp(
 );
 
 void main() {
+  testWidgets('loader rešpektuje vypnuté animácie a čítačku obrazovky', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(_app(const RejnoxLoader(), reduced: true));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Načítavam Rejnox'), findsOneWidget);
+      expect(tester.binding.transientCallbackCount, 0);
+      expect(tester.takeException(), isNull);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('loader zastaví pulz pri zmene systémového nastavenia', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(const RejnoxLoader()));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+    await tester.pumpWidget(_app(const RejnoxLoader(), reduced: true));
+    await tester.pumpAndSettle();
+    expect(tester.binding.transientCallbackCount, 0);
+  });
+
   group('úvodná animácia', () {
     testWidgets('prebehne a sama skončí', (tester) async {
       var done = false;

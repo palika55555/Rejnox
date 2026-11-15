@@ -27,9 +27,35 @@ struct ContentView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
 
+                if workout.running {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(.orange)
+                            .accessibilityHidden(true)
+                        Text("\(Int(workout.activeKcal.rounded())) kcal")
+                            .monospacedDigit()
+                    }
+                    .font(.caption)
+                    .accessibilityElement(children: .combine)
+                }
+
                 if let start = workout.startDate {
-                    Text(start, style: .timer)
-                        .font(.caption.monospacedDigit())
+                    if workout.paused {
+                        Text("Pozastavené")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                    } else {
+                        Text(start, style: .timer)
+                            .font(.caption.monospacedDigit())
+                    }
+                }
+
+                if workout.running {
+                    Button(workout.paused ? "Pokračovať" : "Pauza") {
+                        workout.togglePause()
+                    }
+                    .tint(workout.paused ? .green : .yellow)
+                    .padding(.top, 4)
                 }
 
                 Button(workout.running ? "Ukončiť" : "Začať tréning") {

@@ -44,7 +44,7 @@ class ReminderCard extends ConsumerWidget {
             children: [
               const Icon(
                 Icons.notifications_active_outlined,
-                color: AppColors.accent,
+                color: AppColors.ink2,
                 size: 20,
               ),
               const SizedBox(width: 10),
@@ -54,7 +54,7 @@ class ReminderCard extends ConsumerWidget {
               Switch(
                 value: settings.enabled,
                 activeThumbColor: Colors.white,
-                activeTrackColor: AppColors.violet,
+                activeTrackColor: AppColors.primary,
                 onChanged: supported
                     ? (value) => _update(context, ref, enabled: value)
                     : null,

@@ -58,7 +58,6 @@ class _LogClientSetCardState extends ConsumerState<LogClientSetCard> {
   @override
   Widget build(BuildContext context) {
     return TmCard(
-      grid: true,
       child: Form(
         key: _form,
         child: Column(

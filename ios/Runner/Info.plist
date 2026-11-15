@@ -46,9 +46,13 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Aplikácia číta srdcový tep z Apple Health na zobrazenie tvojej aktivity.</string>
+	<string>Aplikácia číta tep, kroky, kalórie, spánok, saturáciu a dýchanie z Apple Health (Apple Watch aj iné hodinky) na zobrazenie tvojej aktivity.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Poloha slúži na zobrazenie fitiek v tvojom okolí na mape.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fotky z galérie môžeš pridať k fitku na mape.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Fotoaparát slúži na odfotenie fitka, ktoré pridávaš na mapu.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Aplikácia môže po samostatnom povolení zapisovať tréningové údaje.</string>
 </dict>

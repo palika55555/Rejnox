@@ -20,6 +20,11 @@ final class WatchAppDelegate: NSObject, WKApplicationDelegate {
         PhoneLink.shared.activate()
     }
 
+    /// Tréning bežal, keď appka spadla alebo sa reštartovala.
+    func handleActiveWorkoutRecovery() {
+        Task { @MainActor in await WorkoutManager.shared.recover() }
+    }
+
     /// iPhone spustil tréning cez HKHealthStore.startWatchApp(with:).
     func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
         Task { @MainActor in

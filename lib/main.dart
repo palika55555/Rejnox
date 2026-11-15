@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/presentation/auth_controller.dart';
 import 'features/intro/celebration_overlay.dart';
 import 'features/intro/intro_animation.dart';
 
@@ -18,14 +19,17 @@ class RejnoxApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final signedOut = ref.watch(authControllerProvider) is SignedOut;
     return MaterialApp.router(
       title: 'Rejnox',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark(webFonts: webFonts),
       routerConfig: ref.watch(routerProvider),
       // Úvod pri spustení a oslava po prihlásení ležia nad celou appkou.
-      builder: (context, child) =>
-          IntroGate(child: CelebrationGate(child: child ?? const SizedBox())),
+      builder: (context, child) => IntroGate(
+        skip: signedOut,
+        child: CelebrationGate(child: child ?? const SizedBox()),
+      ),
     );
   }
 }

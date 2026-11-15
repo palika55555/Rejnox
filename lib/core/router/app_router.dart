@@ -5,14 +5,25 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/auth/presentation/welcome_screen.dart';
+import '../../features/body/presentation/body_screen.dart';
+import '../../features/booking/presentation/client_calendar_screen.dart';
+import '../../features/booking/presentation/trainer_calendar_screen.dart';
+import '../../features/chat/presentation/chat_screen.dart';
+import '../../features/chat/presentation/chats_screen.dart';
 import '../../features/coaching/presentation/client_detail_screen.dart';
 import '../../features/coaching/presentation/clients_screen.dart';
+import '../../features/community/presentation/community_screen.dart';
+import '../../features/gyms/domain/gym.dart';
 import '../../features/gyms/presentation/gym_detail_screen.dart';
+import '../../features/gyms/presentation/gym_form_screen.dart';
 import '../../features/gyms/presentation/gym_map_screen.dart';
 import '../../features/health/health_screen.dart';
 import '../../features/health/heart_rate_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/notifications/notifications_screen.dart';
+import '../../features/profile/about_screen.dart';
 import '../../features/profile/profile_screen.dart';
+import '../../features/progress/presentation/progress_screen.dart';
 import '../../features/shell/app_shell.dart';
 import '../../features/training/presentation/workout_log_screen.dart';
 import '../widgets/app_background.dart';
@@ -53,13 +64,51 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/register',
         builder: (context, state) => const AuthScreen(register: true),
       ),
+      GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
       GoRoute(
         path: '/health',
         builder: (context, state) => const HealthScreen(),
       ),
+      GoRoute(path: '/body', builder: (context, state) => const BodyScreen()),
+      GoRoute(
+        path: '/calendar',
+        builder: (context, state) => const TrainerCalendarScreen(),
+      ),
+      GoRoute(
+        path: '/trainer/:id/calendar',
+        builder: (context, state) =>
+            ClientCalendarScreen(linkId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/chat/:id',
+        builder: (context, state) => ChatScreen(
+          linkId: state.pathParameters['id']!,
+          name: state.extra is String ? state.extra! as String : null,
+        ),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/progress',
+        builder: (context, state) => const ProgressScreen(),
+      ),
       GoRoute(
         path: '/heart-rate',
         builder: (context, state) => const HeartRateScreen(),
+      ),
+      // Pred /gym/:id, aby sa „new“ nebralo ako ID fitka.
+      GoRoute(
+        path: '/gym/new',
+        builder: (context, state) => GymFormScreen(
+          initialLocation: geoPointFromQuery(state.uri.queryParameters),
+        ),
+      ),
+      GoRoute(
+        path: '/gym/:id/edit',
+        builder: (context, state) =>
+            GymFormScreen(gymId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/gym/:id',
@@ -72,18 +121,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           branch('/home', const HomeScreen()),
           branch('/map', const GymMapScreen()),
           branch('/workout', const WorkoutLogScreen()),
-          branch(
-            '/chat',
-            const PlaceholderScreen(
-              title: 'Správy',
-              icon: Icons.chat_bubble_outline_rounded,
-              features: [
-                'Chat s trénerom',
-                'Chat s ostatnými cvičiacimi',
-                'Rezervácia termínov u trénera',
-              ],
-            ),
-          ),
+          branch('/chat', const ChatsScreen()),
           branch('/profile', const ProfileScreen()),
           StatefulShellBranch(
             routes: [
@@ -101,6 +139,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          branch('/community', const CommunityScreen()),
         ],
       ),
     ],
@@ -118,6 +157,9 @@ class _Splash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const AppBackground(
-    child: Scaffold(body: Center(child: RejnoxMark(width: 80))),
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Center(child: RejnoxLoader()),
+    ),
   );
 }

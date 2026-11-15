@@ -1,6 +1,3 @@
-import 'dart:math';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -9,9 +6,13 @@ import '../../core/widgets/rejnox_mark.dart';
 /// Pri spustení appky ukáže úvodnú animáciu nad obsahom.
 /// Pri vypnutých animáciách v systéme sa úvod vynechá.
 class IntroGate extends StatefulWidget {
-  const IntroGate({super.key, required this.child});
+  const IntroGate({super.key, required this.child, this.skip = false});
 
   final Widget child;
+
+  /// Úvodná obrazovka pre odhlásených má vlastné odhalenie znaku,
+  /// preto sa úvod vtedy zruší.
+  final bool skip;
 
   @override
   State<IntroGate> createState() => _IntroGateState();
@@ -23,7 +24,13 @@ class _IntroGateState extends State<IntroGate> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _show ??= !MediaQuery.of(context).disableAnimations;
+    _show ??= !widget.skip && !MediaQuery.of(context).disableAnimations;
+  }
+
+  @override
+  void didUpdateWidget(IntroGate old) {
+    super.didUpdateWidget(old);
+    if (widget.skip) _show = false;
   }
 
   @override
@@ -94,7 +101,6 @@ class _IntroAnimationState extends State<IntroAnimation>
             final exit = _seg(1.9, 2.3, Curves.easeInCubic);
             final word = _seg(1.0, 1.5, Curves.easeOutCubic);
             final tagline = _seg(1.3, 1.6, Curves.easeOut);
-            final glow = sin(pi * _seg(0.85, 1.4));
             return Opacity(
               opacity: 1 - exit,
               child: ColoredBox(
@@ -105,35 +111,15 @@ class _IntroAnimationState extends State<IntroAnimation>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(
-                          width: 220,
-                          height: 170,
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Fialová žiara za znakom.
-                              Opacity(
-                                opacity: glow,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    gradient: RadialGradient(
-                                      colors: [
-                                        AppColors.violet.withValues(alpha: 0.6),
-                                        AppColors.violet.withValues(alpha: 0),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              CustomPaint(
-                                size: const Size(150, 93),
-                                painter: _IntroMarkPainter(
-                                  draw: _seg(0, 0.8, Curves.easeInOut),
-                                  fill: _seg(0.7, 1.0),
-                                  stripe: _seg(0.75, 1.05, Curves.easeOutBack),
-                                ),
-                              ),
-                            ],
+                        Transform.scale(
+                          scale:
+                              0.94 + 0.06 * _seg(0, 1.0, Curves.easeOutCubic),
+                          child: CustomPaint(
+                            size: const Size(136, 136),
+                            painter: RejnoxMarkPainter(
+                              outlineProgress: _seg(0, 0.75, Curves.easeInOut),
+                              fillProgress: _seg(0.65, 1.05, Curves.easeOut),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -143,7 +129,8 @@ class _IntroAnimationState extends State<IntroAnimation>
                             'REJNOX',
                             style: text.headlineMedium!.copyWith(
                               fontWeight: FontWeight.w800,
-                              letterSpacing: lerpDouble(28, 10, word),
+                              letterSpacing: 7,
+                              fontSize: 34,
                             ),
                           ),
                         ),
@@ -172,76 +159,6 @@ class _IntroAnimationState extends State<IntroAnimation>
       ),
     );
   }
-}
-
-class _IntroMarkPainter extends CustomPainter {
-  _IntroMarkPainter({
-    required this.draw,
-    required this.fill,
-    required this.stripe,
-  });
-
-  /// 0..1 nakreslenie obrysu "R".
-  final double draw;
-
-  /// 0..1 vyplnenie "R".
-  final double fill;
-
-  /// 0..~1.1 príchod pruhu (s prekmitom).
-  final double stripe;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.scale(
-      size.width / rejnoxMarkSize.width,
-      size.height / rejnoxMarkSize.height,
-    );
-    final letter = rejnoxLetterPath();
-
-    // Obrys sa kreslí ťahom.
-    if (draw > 0) {
-      final outline = Path();
-      for (final metric in letter.computeMetrics()) {
-        outline.addPath(
-          metric.extractPath(0, metric.length * draw),
-          Offset.zero,
-        );
-      }
-      canvas.drawPath(
-        outline,
-        Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 7
-          ..strokeJoin = StrokeJoin.round
-          ..strokeCap = StrokeCap.round,
-      );
-    }
-    if (fill > 0) {
-      canvas.drawPath(
-        letter,
-        Paint()..color = Colors.white.withValues(alpha: fill),
-      );
-    }
-
-    // Pruh prešvihne zľava zdola na svoje miesto.
-    if (stripe > 0) {
-      canvas.save();
-      canvas.translate(-160 * (1 - stripe), 120 * (1 - stripe));
-      canvas.saveLayer(
-        null,
-        Paint()
-          ..color = Colors.white.withValues(alpha: (stripe * 2).clamp(0, 1)),
-      );
-      canvas.drawPath(rejnoxStripePath(), rejnoxStripePaint());
-      canvas.restore();
-      canvas.restore();
-    }
-  }
-
-  @override
-  bool shouldRepaint(_IntroMarkPainter old) =>
-      old.draw != draw || old.fill != fill || old.stripe != stripe;
 }
 
 /// Vycentruje obsah a na veľmi malom okne ho zmenší, aby nič nepretieklo.

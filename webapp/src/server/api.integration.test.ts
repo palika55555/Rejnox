@@ -29,7 +29,8 @@ async function call(
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const response = await handleApi(request, path, {
+  // Ako route.ts: router dostane cestu bez ?query.
+  const response = await handleApi(request, new URL(request.url).pathname.replace(/^\/api/, ""), {
     connect: (fn) => withDb(fn, url),
     onError: (e) => console.error(e),
   });
@@ -330,6 +331,215 @@ describe.skipIf(!url)("API proti databáze", () => {
     });
   });
 
+  describe("progres", () => {
+    const squat = "00000000-0000-4000-8000-000000000001";
+
+    it("nový účet má prázdny prehľad s 12 týždňami", async () => {
+      const fresh = await register("progresnovy");
+      const res = await call("GET", "/progress", { token: fresh.token });
+      expect(res.status).toBe(200);
+      expect(res.body.totals).toEqual({ trainingDays: 0, sets: 0, volumeKg: 0 });
+      expect(res.body.weeks).toHaveLength(12);
+      expect(res.body.exercises).toEqual([]);
+    });
+
+    it("zo série spočíta objem, rekord a odhad maxima", async () => {
+      const me = await register("progresclen");
+      const now = new Date().toISOString();
+      await call("POST", "/sets/sync", {
+        token: me.token,
+        body: {
+          sets: [
+            { id: crypto.randomUUID(), exerciseId: squat, reps: 5, weightKg: 90, performedAt: now },
+            { id: crypto.randomUUID(), exerciseId: squat, reps: 3, weightKg: 100, performedAt: now },
+          ],
+        },
+      });
+      const res = await call("GET", "/progress", { token: me.token });
+      expect(res.status).toBe(200);
+      expect(res.body.totals).toEqual({ trainingDays: 1, sets: 2, volumeKg: 750 });
+      expect(res.body.month).toMatchObject({ days: 1, sets: 2, volumeKg: 750 });
+      expect(res.body.exercises[0]).toMatchObject({ exerciseId: squat, bestKg: 100, bestE1rmKg: 110, days: 1 });
+      expect(res.body.muscles).toEqual([{ muscleGroup: "nohy", sets: 2 }]);
+    });
+
+    it("bez prihlásenia nič", async () => {
+      expect((await call("GET", "/progress")).status).toBe(401);
+    });
+  });
+
+  describe("kalendár trénera", () => {
+    let coach: Account;
+    let anna: Account;
+    let boris: Account;
+    let outsider: Account;
+    let annaLink: string;
+    let borisLink: string;
+
+    const HOUR = 60 * 60 * 1000;
+    // Zajtra o 10:00 UTC, aby testy nezáviseli od aktuálnej hodiny.
+    const base = new Date(Math.ceil(Date.now() / (24 * HOUR)) * 24 * HOUR + 10 * HOUR);
+    const at = (hours: number) => new Date(base.getTime() + hours * HOUR).toISOString();
+    const range = `from=${encodeURIComponent(at(-48))}&to=${encodeURIComponent(at(7 * 24))}`;
+
+    async function link(member: Account, name: string): Promise<string> {
+      let res = await call("POST", "/clients", { token: coach.token, body: { name } });
+      const linkId = res.body.id as string;
+      res = await call("POST", `/clients/${linkId}/invite`, { token: coach.token });
+      res = await call("POST", "/invites/accept", { token: member.token, body: { code: res.body.code } });
+      expect(res.status).toBe(200);
+      return linkId;
+    }
+
+    beforeAll(async () => {
+      coach = await register("kalendar", "trainer");
+      anna = await register("annak");
+      boris = await register("borisk");
+      outsider = await register("cudzik");
+      annaLink = await link(anna, "Anna");
+      borisLink = await link(boris, "Boris");
+    });
+
+    it("vypísaný termín: miesta, plná kapacita, jedno miesto na klienta", async () => {
+      let res = await call("POST", "/calendar/slots", {
+        token: coach.token,
+        body: { startsAt: at(0), endsAt: at(1), capacity: 1, title: "Kruhový tréning" },
+      });
+      expect(res.status).toBe(201);
+      const slotId = res.body.id as string;
+
+      res = await call("POST", `/me/trainers/${annaLink}/bookings`, { token: anna.token, body: { slotId } });
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ status: "confirmed", slotId, requestedByClient: true });
+      expect(res.body.startsAt).toBe(at(0));
+
+      res = await call("POST", `/me/trainers/${annaLink}/bookings`, { token: anna.token, body: { slotId } });
+      expect(res.status).toBe(409);
+
+      res = await call("POST", `/me/trainers/${borisLink}/bookings`, { token: boris.token, body: { slotId } });
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("slot_full");
+
+      // Boris vidí obsadenosť, ale nie Annine meno.
+      res = await call("GET", `/me/trainers/${borisLink}/calendar?${range}`, { token: boris.token });
+      expect(res.status).toBe(200);
+      expect(res.body.slots).toEqual([expect.objectContaining({ id: slotId, capacity: 1, taken: 1 })]);
+      expect(JSON.stringify(res.body)).not.toContain("Anna");
+
+      // Tréner vidí v termíne Annu.
+      res = await call("GET", `/calendar?${range}`, { token: coach.token });
+      expect(res.body.slots[0].bookings).toEqual([expect.objectContaining({ clientId: annaLink, clientName: "Anna" })]);
+
+      // Zrušenie termínu zruší aj rezerváciu.
+      expect((await call("DELETE", `/calendar/slots/${slotId}`, { token: coach.token })).status).toBe(204);
+      res = await call("GET", `/me/trainers/${annaLink}/calendar?${range}`, { token: anna.token });
+      expect(res.body).toMatchObject({ slots: [], bookings: [] });
+    });
+
+    it("žiadosť o tréning: tréner potvrdí, ďalšia žiadosť na ten čas neprejde", async () => {
+      let res = await call("POST", `/me/trainers/${annaLink}/bookings`, {
+        token: anna.token,
+        body: { startsAt: at(24), endsAt: at(25), note: "Nohy" },
+      });
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ status: "requested", note: "Nohy" });
+      const bookingId = res.body.id as string;
+
+      // Klient si žiadosť sám potvrdiť nevie.
+      expect((await call("POST", `/bookings/${bookingId}/confirm`, { token: anna.token })).status).toBe(403);
+
+      res = await call("POST", `/bookings/${bookingId}/confirm`, { token: coach.token });
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe("confirmed");
+
+      res = await call("POST", `/me/trainers/${borisLink}/bookings`, {
+        token: boris.token,
+        body: { startsAt: at(24.5), endsAt: at(25.5) },
+      });
+      expect(res.status).toBe(409);
+      expect(res.body.error.code).toBe("time_taken");
+
+      res = await call("GET", `/me/trainers/${borisLink}/calendar?${range}`, { token: boris.token });
+      expect(res.body.busy).toEqual([{ startsAt: at(24), endsAt: at(25) }]);
+      res = await call("GET", `/me/trainers/${annaLink}/calendar?${range}`, { token: anna.token });
+      expect(res.body.busy).toEqual([]);
+      expect(res.body.bookings).toEqual([expect.objectContaining({ id: bookingId, status: "confirmed" })]);
+
+      // Klient zruší, čas sa uvoľní.
+      expect((await call("POST", `/bookings/${bookingId}/cancel`, { token: anna.token })).status).toBe(204);
+      res = await call("GET", `/me/trainers/${borisLink}/calendar?${range}`, { token: boris.token });
+      expect(res.body.busy).toEqual([]);
+    });
+
+    it("tréner zapíše klientovi tréning s plánom, aj odcvičený dozadu", async () => {
+      const exercises = (await call("GET", "/exercises", { token: coach.token })).body.exercises;
+      let res = await call("POST", `/clients/${borisLink}/workouts`, {
+        token: coach.token,
+        body: { title: "Hrudník", exercises: [{ exerciseId: exercises[0].id, sets: 3, reps: 10 }] },
+      });
+      const planId = res.body.id as string;
+
+      res = await call("POST", "/calendar/bookings", {
+        token: coach.token,
+        body: { clientId: borisLink, startsAt: at(48), endsAt: at(49), title: "Osobný tréning", workoutId: planId },
+      });
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({
+        status: "confirmed",
+        requestedByClient: false,
+        clientName: "Boris",
+        workout: { id: planId, title: "Hrudník" },
+      });
+
+      res = await call("POST", "/calendar/bookings", {
+        token: coach.token,
+        body: { clientId: annaLink, startsAt: at(-30), endsAt: at(-29) },
+      });
+      expect(res.status).toBe(201);
+
+      // Cudzí plán k tréningu nepripojí.
+      res = await call("POST", "/calendar/bookings", {
+        token: coach.token,
+        body: { clientId: annaLink, startsAt: at(72), endsAt: at(73), workoutId: planId },
+      });
+      expect(res.status).toBe(404);
+
+      // Kolízia s iným potvrdeným tréningom.
+      res = await call("POST", "/calendar/bookings", {
+        token: coach.token,
+        body: { clientId: annaLink, startsAt: at(48.5), endsAt: at(49.5) },
+      });
+      expect(res.body.error.code).toBe("time_taken");
+    });
+
+    it("cudzí človek kalendár nevidí a nerezervuje", async () => {
+      expect((await call("GET", `/me/trainers/${annaLink}/calendar?${range}`, { token: outsider.token })).status).toBe(404);
+      const res = await call("POST", `/me/trainers/${annaLink}/bookings`, {
+        token: outsider.token,
+        body: { startsAt: at(80), endsAt: at(81) },
+      });
+      expect(res.status).toBe(404);
+      expect((await call("GET", `/calendar?${range}`, { token: anna.token })).status).toBe(403);
+    });
+
+    it("neplatné časy a obdobie", async () => {
+      let res = await call("POST", `/me/trainers/${annaLink}/bookings`, {
+        token: anna.token,
+        body: { startsAt: at(-48), endsAt: at(-47) },
+      });
+      expect(res.body.error.code).toBe("in_past");
+      res = await call("POST", "/calendar/slots", {
+        token: coach.token,
+        body: { startsAt: at(100), endsAt: at(100.1), title: "Krátke" },
+      });
+      expect(res.body.error.code).toBe("invalid_length");
+      res = await call("GET", `/calendar?from=${encodeURIComponent(at(0))}&to=${encodeURIComponent(at(24 * 90))}`, {
+        token: coach.token,
+      });
+      expect(res.body.error.code).toBe("invalid_range");
+    });
+  });
+
   describe("fitká", () => {
     let anna: Account;
     let boris: Account;
@@ -402,6 +612,83 @@ describe.skipIf(!url)("API proti databáze", () => {
         last = (await call("PUT", `/gyms/${gymId}/review`, { token: boris.token, body: { stars: 1 + (i % 5) } })).status;
       }
       expect(last).toBe(429);
+    });
+
+    it("používateľ pridá fitko, upraví ho len autor", async () => {
+      const boris = await register("emil");
+      let res = await call("POST", "/gyms", {
+        token: anna.token,
+        body: { name: `Nové ${run}`, city: "Žilina", lat: 49.22, lng: 18.74, tags: ["Kardio"], website: "fit.sk" },
+      });
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({ city: "Žilina", mine: true, website: "https://fit.sk/", photos: [], prices: [] });
+      const newId = res.body.id as string;
+
+      res = await call("GET", `/gyms/${newId}`, { token: boris.token });
+      expect(res.body.mine).toBe(false);
+      const edit = { name: "Prepísané", city: "Žilina", lat: 49.2, lng: 18.7 };
+      res = await call("PUT", `/gyms/${newId}`, { token: boris.token, body: edit });
+      expect(res.status).toBe(403);
+      expect((await call("DELETE", `/gyms/${newId}`, { token: boris.token })).status).toBe(403);
+
+      res = await call("PUT", `/gyms/${newId}`, { token: anna.token, body: edit });
+      expect(res.body).toMatchObject({ name: "Prepísané", lat: 49.2, tags: [] });
+      expect((await call("DELETE", `/gyms/${newId}`, { token: anna.token })).status).toBe(204);
+      expect((await call("GET", `/gyms/${newId}`, { token: anna.token })).status).toBe(404);
+      expect((await call("POST", "/gyms", { token: anna.token, body: { name: "X", city: "Y" } })).status).toBe(400);
+    });
+
+    it("fotky: nahrá ktokoľvek, zmaže len autor fotky", async () => {
+      // Boris už vyčerpal limit zápisov v teste hodnotení.
+      const boris = await register("cyril");
+      const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]);
+      const upload = (token: string, body: Uint8Array) =>
+        handleApi(
+          new Request(`http://localhost/api/gyms/${gymId}/photos`, {
+            method: "POST",
+            headers: { authorization: `Bearer ${token}`, "content-type": "image/jpeg", "cf-connecting-ip": freshIp() },
+            body: body as BodyInit,
+          }),
+          `/gyms/${gymId}/photos`,
+          { connect: (fn) => withDb(fn, url) },
+        );
+      let response = await upload(boris.token, jpeg);
+      expect(response.status).toBe(201);
+      const photo = (await response.json()).photos[0];
+      expect(photo.mine).toBe(true);
+
+      response = await upload(boris.token, new TextEncoder().encode("<svg/>"));
+      expect(response.status).toBe(415);
+
+      const raw = await handleApi(
+        new Request(`http://localhost/api/gym-photos/${photo.id}`, {
+          headers: { authorization: `Bearer ${anna.token}`, "cf-connecting-ip": freshIp() },
+        }),
+        `/gym-photos/${photo.id}`,
+        { connect: (fn) => withDb(fn, url) },
+      );
+      expect(raw.headers.get("content-type")).toBe("image/jpeg");
+      expect(new Uint8Array(await raw.arrayBuffer())).toEqual(jpeg);
+
+      expect((await call("DELETE", `/gym-photos/${photo.id}`, { token: anna.token })).status).toBe(403);
+      const res = await call("DELETE", `/gym-photos/${photo.id}`, { token: boris.token });
+      expect(res.body.photos).toEqual([]);
+    });
+
+    it("cenník: pridá ktokoľvek, zmaže len autor položky", async () => {
+      const boris = await register("dana");
+      let res = await call("POST", `/gyms/${gymId}/prices`, {
+        token: boris.token,
+        body: { kind: "membership", title: "Mesačná", priceCents: 3900, period: "mesiac" },
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.prices).toEqual([
+        expect.objectContaining({ kind: "membership", title: "Mesačná", priceCents: 3900, currency: "EUR", mine: true }),
+      ]);
+      const priceId = res.body.prices[0].id as string;
+      expect((await call("DELETE", `/gym-prices/${priceId}`, { token: anna.token })).status).toBe(403);
+      res = await call("DELETE", `/gym-prices/${priceId}`, { token: boris.token });
+      expect(res.body.prices).toEqual([]);
     });
   });
 });

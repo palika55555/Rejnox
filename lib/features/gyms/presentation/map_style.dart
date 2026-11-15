@@ -8,14 +8,18 @@ abstract final class MapStyle {
   static const tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   static const packageName = 'com.rejnox.rejnox';
   static const attribution = '© OpenStreetMap contributors';
+  static final attributionUrl = Uri.https(
+    'www.openstreetmap.org',
+    '/copyright',
+  );
 
-  /// Svetlú mapu prefarbí na nočnú modrú: pevnina tmavomodrá, voda
+  /// Svetlú mapu prefarbí na antracit: pevnina tmavosivá, voda
   /// takmer čierna. Vodu spozná podľa toho, že je modrejšia než červená
   /// (s = jas + 1,5 × (R − B)), a s namapuje na odtiene appky.
   static const darkFilter = ColorFilter.matrix(<double>[
-    0.2149, 0.0898, -0.1792, 0, -9.7, //
-    0.2821, 0.1178, -0.2352, 0, -11.6, //
-    0.6179, 0.2580, -0.5151, 0, -19, //
+    0.2149, 0.0898, -0.1792, 0, -4, //
+    0.2450, 0.1024, -0.2043, 0, -3, //
+    0.2778, 0.1160, -0.2317, 0, -2, //
     0, 0, 0, 1, 0, //
   ]);
 }

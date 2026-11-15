@@ -2,55 +2,54 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 
-const _image = 'assets/images/auth_background.webp';
+/// Koralová fotka športovkyne bez loga; znak kreslíme vektorovo nad ňou.
+const authHeroAsset = 'assets/images/auth_hero.webp';
 
-/// Pozadie úvodu, prihlásenia a registrácie: fotka s logom Rejnox.
-///
-/// [lift] posunie fotku nahor (časť výšky obrazovky), aby logo z fotky
-/// ostalo viditeľné nad formulárom. Spodok prechádza do tmavej farby,
-/// na ktorej je formulár dobre čitateľný.
-class AuthBackground extends StatelessWidget {
-  const AuthBackground({super.key, required this.child, this.lift = 0});
-
-  final Widget child;
-  final double lift;
+/// Fotka na celú plochu; bez súboru ostane antracitové pozadie.
+class AuthHeroPhoto extends StatelessWidget {
+  const AuthHeroPhoto({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.bg,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          ExcludeSemantics(
-            child: FractionalTranslation(
-              translation: Offset(0, -lift),
-              child: Image.asset(
-                _image,
-                fit: BoxFit.cover,
-                alignment: Alignment.topCenter,
-                // Pri chybe načítania ostane len tmavé pozadie.
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: Image.asset(
+      authHeroAsset,
+      fit: BoxFit.cover,
+      alignment: const Alignment(0, -0.3),
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => const ColoredBox(color: AppColors.bg),
+    ),
+  );
+}
+
+/// Prihlásenie a registrácia: rovnaká fotka ako úvod, výrazne stlmená,
+/// aby formulár ostal čitateľný.
+class AuthBackground extends StatelessWidget {
+  const AuthBackground({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: AppColors.bg,
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        const AuthHeroPhoto(),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppColors.bg.withValues(alpha: 0.55),
+                AppColors.bg.withValues(alpha: 0.78),
+                AppColors.bg.withValues(alpha: 0.94),
+              ],
+              stops: const [0, 0.45, 1],
             ),
           ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: [0.5 - lift, 0.78 - lift / 2, 1],
-                colors: [
-                  AppColors.bg.withValues(alpha: 0),
-                  AppColors.bg.withValues(alpha: 0.8),
-                  AppColors.bg,
-                ],
-              ),
-            ),
-          ),
-          child,
-        ],
-      ),
-    );
-  }
+        ),
+        child,
+      ],
+    ),
+  );
 }

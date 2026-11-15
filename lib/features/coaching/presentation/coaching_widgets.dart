@@ -26,27 +26,13 @@ class LinkStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
-      LinkStatus.linked => AppColors.accent,
-      LinkStatus.invited => AppColors.flame,
-      LinkStatus.recordOnly => AppColors.muted,
-      LinkStatus.ended => Plate.red.color,
+    final tone = switch (status) {
+      LinkStatus.linked => PillTone.good,
+      LinkStatus.invited => PillTone.warn,
+      LinkStatus.recordOnly => PillTone.neutral,
+      LinkStatus.ended => PillTone.neutral,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        status.label,
-        style: Theme.of(context).textTheme.bodySmall!.copyWith(
-          color: AppColors.text,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
+    return AppPill(status.label, tone: tone);
   }
 }
 
@@ -57,11 +43,13 @@ class PlanCard extends StatelessWidget {
     super.key,
     this.showTrainer = false,
     this.onDelete,
+    this.onStart,
   });
 
   final Plan plan;
   final bool showTrainer;
   final VoidCallback? onDelete;
+  final VoidCallback? onStart;
 
   @override
   Widget build(BuildContext context) {
@@ -71,40 +59,51 @@ class PlanCard extends StatelessWidget {
       if (showTrainer && plan.trainerName.isNotEmpty) 'od ${plan.trainerName}',
     ].join(' · ');
     return TmCard(
-      grid: true,
+      padding: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  plan.title.toUpperCase(),
-                  style: text.titleLarge,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (onDelete != null)
-                IconButton(
-                  tooltip: 'Zmazať plán',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onDelete,
-                  icon: const Icon(
-                    Icons.delete_outline_rounded,
-                    color: AppColors.muted,
-                    size: 20,
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, 14, onDelete == null ? 16 : 6, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (subtitle.isNotEmpty) ...[
+                        SectionLabel(subtitle),
+                        const SizedBox(height: 6),
+                      ],
+                      Text(
+                        plan.title.toUpperCase(),
+                        style: text.headlineMedium,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-            ],
+                if (onDelete != null)
+                  IconButton(
+                    tooltip: 'Zmazať plán',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: onDelete,
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppColors.muted,
+                      size: 20,
+                    ),
+                  ),
+              ],
+            ),
           ),
-          if (subtitle.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(subtitle, style: text.bodySmall),
-          ],
-          const SizedBox(height: 8),
           for (final item in plan.items)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.border)),
+              ),
               child: Row(
                 children: [
                   PlateDot(item.group.plate, size: 9),
@@ -119,11 +118,18 @@ class PlanCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     item.scheme,
-                    style: text.bodyLarge!.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: text.headlineLarge!.copyWith(fontSize: 22),
                   ),
                 ],
+              ),
+            ),
+          if (onStart != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+              child: OutlinedButton.icon(
+                onPressed: onStart,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('Cvičiť podľa plánu'),
               ),
             ),
         ],
@@ -142,7 +148,7 @@ Future<bool> confirmAction(
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.sheet,
       title: Text(title),
       content: Text(message),
       actions: [
@@ -151,7 +157,7 @@ Future<bool> confirmAction(
           child: const Text('Zrušiť'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: Plate.red.color),
+          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
           onPressed: () => Navigator.pop(context, true),
           child: Text(confirmLabel),
         ),

@@ -31,6 +31,16 @@ class GeoPoint {
   int get hashCode => Object.hash(lat, lng);
 }
 
+/// Bod z parametrov odkazu `?lat=..&lng=..` (null, ak chýba alebo je mimo).
+GeoPoint? geoPointFromQuery(Map<String, String> query) {
+  final lat = double.tryParse(query['lat'] ?? '');
+  final lng = double.tryParse(query['lng'] ?? '');
+  if (lat == null || lng == null) return null;
+  if (!lat.isFinite || !lng.isFinite) return null;
+  if (lat.abs() > 90 || lng.abs() > 180) return null;
+  return GeoPoint(lat, lng);
+}
+
 /// Fitko na mape.
 class Gym {
   const Gym({
@@ -43,6 +53,9 @@ class Gym {
     this.tags = const [],
     this.website,
     this.photoUrls = const [],
+    this.photos = const [],
+    this.prices = const [],
+    this.mine = false,
     this.rating,
     this.myStars,
   });
@@ -66,6 +79,15 @@ class Gym {
       tags: strings(json['tags']),
       website: website != null && website.isScheme('https') ? website : null,
       photoUrls: strings(json['photoUrls']),
+      photos: [
+        for (final p in json['photos'] as List? ?? const [])
+          GymPhoto.fromJson(p as Map<String, dynamic>),
+      ],
+      prices: [
+        for (final p in json['prices'] as List? ?? const [])
+          GymPrice.fromJson(p as Map<String, dynamic>),
+      ],
+      mine: json['mine'] == true,
       rating: stars is List && stars.length == 5
           ? GymRating(stars: [for (final n in stars) (n as num).toInt()])
           : null,
@@ -86,6 +108,15 @@ class Gym {
   final List<String> tags;
   final Uri? website;
   final List<String> photoUrls;
+
+  /// Fotky, ktoré nahrali používatelia appky (sú na našom serveri).
+  final List<GymPhoto> photos;
+
+  /// Cenník, ktorý zadali používatelia.
+  final List<GymPrice> prices;
+
+  /// Fitko pridal prihlásený používateľ (môže ho upraviť a zmazať).
+  final bool mine;
   final GymRating? rating;
 
   /// Koľko hviezdičiek dal fitku prihlásený používateľ (null = nehodnotil).
@@ -93,6 +124,109 @@ class Gym {
 
   /// „Bajkalská 7, Bratislava“ alebo len mesto.
   String get fullAddress => address == null ? city : '$address, $city';
+}
+
+/// Fotka fitka nahratá cez appku. Obsah je na `GET /gym-photos/<id>`.
+class GymPhoto {
+  const GymPhoto({required this.id, this.mine = false});
+
+  factory GymPhoto.fromJson(Map<String, dynamic> json) =>
+      GymPhoto(id: json['id'] as String, mine: json['mine'] == true);
+
+  final String id;
+
+  /// Nahral ju prihlásený používateľ (môže ju zmazať).
+  final bool mine;
+}
+
+/// Permanentka (aj jednorazový vstup) alebo produkt (proteín, nápoj…).
+enum GymPriceKind {
+  membership('Vstupy a permanentky'),
+  product('Produkty');
+
+  const GymPriceKind(this.label);
+
+  final String label;
+}
+
+/// Položka cenníka fitka.
+class GymPrice {
+  const GymPrice({
+    required this.id,
+    required this.kind,
+    required this.title,
+    required this.priceCents,
+    this.currency = 'EUR',
+    this.period,
+    this.mine = false,
+  });
+
+  factory GymPrice.fromJson(Map<String, dynamic> json) => GymPrice(
+    id: json['id'] as String,
+    kind: json['kind'] == 'product'
+        ? GymPriceKind.product
+        : GymPriceKind.membership,
+    title: json['title'] as String,
+    priceCents: (json['priceCents'] as num).toInt(),
+    currency: json['currency'] as String? ?? 'EUR',
+    period: json['period'] as String?,
+    mine: json['mine'] == true,
+  );
+
+  final String id;
+  final GymPriceKind kind;
+  final String title;
+  final int priceCents;
+  final String currency;
+
+  /// „mesiac“, „10 vstupov“… (null = jednorazovo).
+  final String? period;
+  final bool mine;
+
+  /// „39,00 €“ alebo „39,00 CZK“.
+  String get priceLabel {
+    final amount = (priceCents / 100).toStringAsFixed(2).replaceAll('.', ',');
+    return currency == 'EUR' ? '$amount €' : '$amount $currency';
+  }
+}
+
+/// Cena zadaná ako text („39“, „39,90“, „39.9 €“) v centoch, inak null.
+int? parsePriceCents(String text) {
+  final cleaned = text.replaceAll(RegExp(r'[\s€]'), '').replaceAll(',', '.');
+  if (!RegExp(r'^\d{1,6}(\.\d{1,2})?$').hasMatch(cleaned)) return null;
+  return (double.parse(cleaned) * 100).round();
+}
+
+/// Fitko tak, ako ho používateľ vyplní vo formulári (nové alebo úprava).
+class GymDraft {
+  const GymDraft({
+    required this.name,
+    required this.city,
+    required this.location,
+    this.address,
+    this.openingHours,
+    this.tags = const [],
+    this.website,
+  });
+
+  final String name;
+  final String city;
+  final GeoPoint location;
+  final String? address;
+  final String? openingHours;
+  final List<String> tags;
+  final String? website;
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'city': city,
+    'lat': location.lat,
+    'lng': location.lng,
+    'address': address,
+    'openingHours': openingHours,
+    'tags': tags,
+    'website': website,
+  };
 }
 
 /// Súhrn hodnotení fitka.

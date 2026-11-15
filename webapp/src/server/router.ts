@@ -1,10 +1,14 @@
 import * as auth from "./auth";
+import * as calendar from "./calendar";
+import * as chat from "./chat";
+import * as notifications from "./notifications";
 import type { AuthUser } from "./auth";
 import type { Db } from "./db";
 import { HttpError, unauthorized, tooManyAttempts } from "./errors";
 import * as gyms from "./gyms";
 import * as home from "./home";
-import { bearerToken, clientIp, errorResponse, json, noContent, readJsonBody } from "./http";
+import * as progress from "./progress";
+import { bearerToken, clientIp, errorResponse, image, json, noContent, readBytes, readJsonBody } from "./http";
 import { dbRateLimiter, limits, type Limit, type RateLimiter } from "./rateLimit";
 import * as trainer from "./trainer";
 import * as training from "./training";
@@ -49,6 +53,14 @@ async function trainerUser(ctx: Ctx): Promise<AuthUser> {
 const id = (ctx: Ctx, name = "id") => requireUuid(ctx.params[name]);
 
 const slowDown = () => new HttpError(429, "too_many_requests", "Priveľa požiadaviek. Skús to o chvíľu.");
+
+/** Zápis do kalendára: prihlásený používateľ s nevyčerpaným limitom. */
+async function calendarWriter(ctx: Ctx, me: AuthUser): Promise<AuthUser> {
+  if (!(await ctx.limiter.tryAcquire(limits.calendarWrite, me.id))) throw slowDown();
+  return me;
+}
+
+const range = (ctx: Ctx) => calendar.parseRange(new URL(ctx.request.url));
 
 /** Prihlásený používateľ, ktorý ešte nevyčerpal limit pre fitká. */
 async function gymUser(ctx: Ctx, limit: Limit): Promise<string> {
@@ -106,6 +118,7 @@ const routes: Route[] = [
 
   // ------------------------------------------------------------ tréningy
   { method: "GET", pattern: "/home", handler: async (ctx) => json(200, await home.overview(ctx.db, (await ctx.user()).id)) },
+  { method: "GET", pattern: "/progress", handler: async (ctx) => json(200, await progress.progress(ctx.db, (await ctx.user()).id)) },
   {
     method: "GET",
     pattern: "/exercises",
@@ -252,11 +265,195 @@ const routes: Route[] = [
     handler: async (ctx) => json(200, { plans: await trainer.myPlans(ctx.db, (await ctx.user()).id) }),
   },
 
+  // ------------------------------------------------------------ kalendár
+  {
+    method: "GET",
+    pattern: "/calendar",
+    handler: async (ctx) => json(200, await calendar.trainerCalendar(ctx.db, (await trainerUser(ctx)).id, range(ctx))),
+  },
+  {
+    method: "POST",
+    pattern: "/calendar/slots",
+    async handler(ctx) {
+      const me = await calendarWriter(ctx, await trainerUser(ctx));
+      const body = await readJsonBody(ctx.request);
+      return json(201, await calendar.addSlot(ctx.db, me.id, calendar.parseSlot(body)));
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: "/calendar/slots/:id",
+    async handler(ctx) {
+      const me = await calendarWriter(ctx, await trainerUser(ctx));
+      await calendar.deleteSlot(ctx.db, me.id, id(ctx));
+      return noContent();
+    },
+  },
+  {
+    method: "POST",
+    pattern: "/calendar/bookings",
+    async handler(ctx) {
+      const me = await calendarWriter(ctx, await trainerUser(ctx));
+      const body = await readJsonBody(ctx.request);
+      return json(201, await calendar.addTrainerBooking(ctx.db, me.id, calendar.parseTrainerBooking(body)));
+    },
+  },
+  {
+    method: "POST",
+    pattern: "/bookings/:id/confirm",
+    async handler(ctx) {
+      const me = await calendarWriter(ctx, await trainerUser(ctx));
+      return json(200, await calendar.confirmBooking(ctx.db, me.id, id(ctx)));
+    },
+  },
+  {
+    method: "POST",
+    pattern: "/bookings/:id/cancel",
+    async handler(ctx) {
+      const me = await calendarWriter(ctx, await ctx.user());
+      await calendar.cancelBooking(ctx.db, me.id, id(ctx));
+      return noContent();
+    },
+  },
+  {
+    method: "GET",
+    pattern: "/me/trainers/:id/calendar",
+    handler: async (ctx) => json(200, await calendar.clientCalendar(ctx.db, (await ctx.user()).id, id(ctx), range(ctx))),
+  },
+  {
+    method: "POST",
+    pattern: "/me/trainers/:id/bookings",
+    async handler(ctx) {
+      const me = await calendarWriter(ctx, await ctx.user());
+      const body = await readJsonBody(ctx.request);
+      return json(201, await calendar.addClientBooking(ctx.db, me.id, id(ctx), calendar.parseClientBooking(body)));
+    },
+  },
+
+  // ------------------------------------------------------------ chat
+  { method: "GET", pattern: "/chats", handler: async (ctx) => json(200, { chats: await chat.threads(ctx.db, (await ctx.user()).id) }) },
+  {
+    method: "GET",
+    pattern: "/chats/:id/messages",
+    async handler(ctx) {
+      const me = await ctx.user();
+      const query = new URL(ctx.request.url).searchParams;
+      const cursor = { after: chat.parseCursor(query.get("after")), before: chat.parseCursor(query.get("before")) };
+      return json(200, { messages: await chat.messages(ctx.db, me.id, id(ctx), cursor) });
+    },
+  },
+  {
+    method: "POST",
+    pattern: "/chats/:id/messages",
+    async handler(ctx) {
+      const me = await ctx.user();
+      if (!(await ctx.limiter.tryAcquire(limits.chatSend, me.id))) throw slowDown();
+      const linkId = id(ctx);
+      const body = chat.parseMessage(await readJsonBody(ctx.request, 32 * 1024));
+      return json(201, await chat.send(ctx.db, me.id, linkId, body));
+    },
+  },
+  {
+    method: "POST",
+    pattern: "/chats/:id/read",
+    async handler(ctx) {
+      await chat.markRead(ctx.db, (await ctx.user()).id, id(ctx));
+      return noContent();
+    },
+  },
+
+  // ----------------------------------------------------------- upozornenia
+  { method: "GET", pattern: "/notifications", handler: async (ctx) => json(200, await notifications.feed(ctx.db, (await ctx.user()).id)) },
+  {
+    method: "POST",
+    pattern: "/notifications/read",
+    async handler(ctx) {
+      const me = await ctx.user();
+      const body = await readJsonBody(ctx.request, 1024);
+      const one = body.id === undefined || body.id === null ? null : requireUuid(body.id);
+      await notifications.markRead(ctx.db, me.id, one);
+      return noContent();
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: "/notifications/:id",
+    async handler(ctx) {
+      await notifications.remove(ctx.db, (await ctx.user()).id, id(ctx));
+      return noContent();
+    },
+  },
+
   // ------------------------------------------------------------ fitká
   {
     method: "GET",
     pattern: "/gyms",
     handler: async (ctx) => json(200, { gyms: await gyms.listGyms(ctx.db, await gymUser(ctx, limits.gymRead)) }),
+  },
+  {
+    method: "POST",
+    pattern: "/gyms",
+    async handler(ctx) {
+      const userId = await gymUser(ctx, limits.gymCreate);
+      const input = gyms.parseGymInput(await readJsonBody(ctx.request, 4096));
+      return json(201, await gyms.createGym(ctx.db, userId, input));
+    },
+  },
+  {
+    method: "PUT",
+    pattern: "/gyms/:id",
+    async handler(ctx) {
+      const userId = await gymUser(ctx, limits.gymWrite);
+      const gymId = id(ctx);
+      const input = gyms.parseGymInput(await readJsonBody(ctx.request, 4096));
+      return json(200, await gyms.updateGym(ctx.db, userId, gymId, input));
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: "/gyms/:id",
+    async handler(ctx) {
+      await gyms.deleteGym(ctx.db, await gymUser(ctx, limits.gymWrite), id(ctx));
+      return noContent();
+    },
+  },
+  {
+    method: "POST",
+    pattern: "/gyms/:id/photos",
+    async handler(ctx) {
+      const userId = await gymUser(ctx, limits.gymPhotoUpload);
+      const gymId = id(ctx);
+      const bytes = await readBytes(ctx.request, gyms.MAX_PHOTO_BYTES);
+      return json(201, await gyms.addPhoto(ctx.db, userId, gymId, bytes));
+    },
+  },
+  {
+    method: "GET",
+    pattern: "/gym-photos/:id",
+    async handler(ctx) {
+      const photo = await gyms.photo(ctx.db, await gymUser(ctx, limits.gymPhotoRead), id(ctx));
+      return image(photo.contentType, photo.bytes);
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: "/gym-photos/:id",
+    handler: async (ctx) => json(200, await gyms.deletePhoto(ctx.db, await gymUser(ctx, limits.gymWrite), id(ctx))),
+  },
+  {
+    method: "POST",
+    pattern: "/gyms/:id/prices",
+    async handler(ctx) {
+      const userId = await gymUser(ctx, limits.gymWrite);
+      const gymId = id(ctx);
+      const input = gyms.parsePriceInput(await readJsonBody(ctx.request, 2048));
+      return json(201, await gyms.addPrice(ctx.db, userId, gymId, input));
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: "/gym-prices/:id",
+    handler: async (ctx) => json(200, await gyms.deletePrice(ctx.db, await gymUser(ctx, limits.gymWrite), id(ctx))),
   },
   {
     method: "GET",

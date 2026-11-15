@@ -1,4 +1,5 @@
 import '../../../core/theme/app_colors.dart';
+import '../../training/domain/training_models.dart' show MuscleGroup;
 
 /// Všetko, čo potrebuje domovská obrazovka klienta (GET /home).
 /// Čo ešte nemá dáta na serveri (rebríček, fitko v okolí, parťák), je null
@@ -94,6 +95,8 @@ class Exercise {
     required this.note,
     required this.plate,
     this.isPr = false,
+    this.exerciseId,
+    this.group,
   });
 
   factory Exercise.fromJson(Map<String, dynamic> json, {required Plate plate}) {
@@ -103,6 +106,10 @@ class Exercise {
     return Exercise(
       name: name,
       shortName: name,
+      exerciseId: json['exerciseId'] as String?,
+      group: json['muscleGroup'] == null
+          ? null
+          : MuscleGroup.fromApi(json['muscleGroup']),
       sets: sets,
       reps: json['reps'] as int,
       weightKg: (json['weightKg'] as num?)?.toDouble(),
@@ -113,6 +120,8 @@ class Exercise {
 
   final String name;
   final String shortName;
+  final String? exerciseId;
+  final MuscleGroup? group;
   final int sets;
   final int reps;
 

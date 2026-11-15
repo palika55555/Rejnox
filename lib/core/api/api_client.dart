@@ -41,24 +41,36 @@ class ApiClient {
 
   static const _timeout = Duration(seconds: 10);
 
+  /// Nahrávanie fotky na pomalom mobilnom pripojení trvá dlhšie.
+  static const _uploadTimeout = Duration(seconds: 60);
+
   /// Pošle požiadavku a vráti JSON objekt (prázdny pri odpovedi bez tela).
+  /// [bytes] je surové telo (napr. fotka) s typom [contentType].
   Future<Map<String, dynamic>> send(
     String method,
     String path, {
     Map<String, dynamic>? body,
     String? token,
+    List<int>? bytes,
+    String? contentType,
   }) async {
     final request = http.Request(method, Uri.parse('$baseUrl$path'));
     if (token != null) request.headers['authorization'] = 'Bearer $token';
     if (body != null) {
       request.headers['content-type'] = 'application/json';
       request.body = jsonEncode(body);
+    } else if (bytes != null) {
+      request.headers['content-type'] =
+          contentType ?? 'application/octet-stream';
+      request.bodyBytes = bytes;
     }
 
     final http.Response response;
     try {
       response = await http.Response.fromStream(
-        await _client.send(request).timeout(_timeout),
+        await _client
+            .send(request)
+            .timeout(bytes == null ? _timeout : _uploadTimeout),
       );
     } on Exception {
       throw const ApiError.network();

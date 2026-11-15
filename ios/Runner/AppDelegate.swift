@@ -23,7 +23,8 @@ import WatchConnectivity
 }
 
 /// Most medzi Apple Watch a Flutterom:
-/// - kanál "rejnox/watch": status, startWorkout, stopWorkout
+/// - kanál "rejnox/watch": status, startWorkout, stop/pause/resumeWorkout,
+///   openWatchApp (inštalácia Rejnoxu na hodinky)
 /// - stream "rejnox/watch_heart_rate": tep z hodiniek naživo
 final class WatchBridge: NSObject, FlutterStreamHandler, WCSessionDelegate {
   private let healthStore = HKHealthStore()
@@ -73,18 +74,45 @@ final class WatchBridge: NSObject, FlutterStreamHandler, WCSessionDelegate {
         }
       }
 
-    case "stopWorkout":
-      let session = WCSession.default
-      if WCSession.isSupported() && session.isReachable {
-        session.sendMessage(["command": "stop"], replyHandler: nil, errorHandler: nil)
-        result(true)
-      } else {
-        result(false)
-      }
+    case "openWatchApp":
+      // Appka Watch na iPhone: Dostupné appky → Rejnox → Inštalovať.
+      let urls = ["itms-watchs://", "itms-watch://"].compactMap(URL.init(string:))
+      openFirst(urls, result: result)
+
+    case "stopWorkout", "pauseWorkout", "resumeWorkout":
+      let command = ["stopWorkout": "stop", "pauseWorkout": "pause", "resumeWorkout": "resume"][
+        call.method]!
+      result(send(command: command))
 
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  private func openFirst(_ urls: [URL], result: @escaping FlutterResult) {
+    guard let url = urls.first else {
+      result(false)
+      return
+    }
+    UIApplication.shared.open(url) { [weak self] ok in
+      if ok { result(true) } else { self?.openFirst(Array(urls.dropFirst()), result: result) }
+    }
+  }
+
+  /// Vráti true, ak hodinky príkaz dostali hneď. Inak sa doručí, keď
+  /// budú v dosahu, a vráti false.
+  private func send(command: String) -> Bool {
+    guard WCSession.isSupported() else { return false }
+    let session = WCSession.default
+    guard session.activationState == .activated, session.isPaired else { return false }
+    if session.isReachable {
+      session.sendMessage(["command": command], replyHandler: nil) { _ in
+        session.transferUserInfo(["command": command])
+      }
+      return true
+    }
+    session.transferUserInfo(["command": command])
+    return false
   }
 
   // MARK: FlutterStreamHandler

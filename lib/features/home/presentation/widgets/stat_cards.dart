@@ -5,109 +5,108 @@ import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/tm_card.dart';
 import '../../domain/home_overview.dart';
 
-/// Osobný rekord s malým grafom vývoja.
-class PersonalRecordTile extends StatelessWidget {
-  const PersonalRecordTile(this.record, {super.key});
+/// Osobný rekord: veľké číslo, krivka vývoja a zmena za mesiac.
+class PersonalRecordRow extends StatelessWidget {
+  const PersonalRecordRow(this.record, {super.key});
 
   final PersonalRecord record;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return TmCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact =
+              constraints.maxWidth / MediaQuery.textScalerOf(context).scale(1) <
+              320;
+          return Flex(
+            direction: compact ? Axis.vertical : Axis.horizontal,
+            crossAxisAlignment: compact
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
             children: [
-              Expanded(child: SectionLabel('${record.exercise} PR')),
-              const Icon(
-                Icons.military_tech_rounded,
-                size: 16,
-                color: AppColors.accent,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text.rich(
-            TextSpan(
-              text: record.weightLabel,
-              style: text.headlineLarge,
-              children: [TextSpan(text: ' kg', style: text.bodyMedium)],
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(
-                Icons.trending_up_rounded,
-                size: 14,
-                color: AppColors.accent,
-              ),
-              const SizedBox(width: 4),
               Flexible(
-                child: Text(
-                  record.deltaLabel,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.bodySmall!.copyWith(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w700,
-                  ),
+                flex: compact ? 0 : 1,
+                fit: FlexFit.tight,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${record.exercise} · osobný rekord',
+                      style: text.bodyMedium!.copyWith(
+                        color: AppColors.ink2,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text.rich(
+                      TextSpan(
+                        text: record.weightLabel,
+                        children: [
+                          TextSpan(
+                            text: ' kg',
+                            style: text.bodySmall!.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      style: text.headlineLarge!.copyWith(fontSize: 36),
+                    ),
+                  ],
                 ),
               ),
+              if (compact) const SizedBox(height: 12),
+              Column(
+                crossAxisAlignment: compact
+                    ? CrossAxisAlignment.start
+                    : CrossAxisAlignment.end,
+                children: [
+                  SizedBox(
+                    width: 84,
+                    height: 30,
+                    child: CustomPaint(painter: SparklinePainter(record.trend)),
+                  ),
+                  const SizedBox(height: 4),
+                  if (compact)
+                    Text(record.deltaLabel, style: text.bodySmall)
+                  else
+                    AppPill(
+                      record.deltaLabel,
+                      tone: record.monthDeltaKg >= 0
+                          ? PillTone.good
+                          : PillTone.warn,
+                    ),
+                ],
+              ),
             ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 22,
-            width: double.infinity,
-            child: CustomPaint(painter: _SparklinePainter(record.trend)),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
 /// Ešte žiadna odcvičená séria, teda ani rekord.
-class EmptyRecordTile extends StatelessWidget {
-  const EmptyRecordTile({super.key});
+class EmptyRecordRow extends StatelessWidget {
+  const EmptyRecordRow({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return TmCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.military_tech_rounded,
-            size: 28,
-            color: AppColors.muted,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Zatiaľ bez rekordu', style: text.titleMedium),
-                const SizedBox(height: 2),
-                Text(
-                  'Odcvič prvú sériu a uvidíš tu svoj osobný rekord.',
-                  style: text.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return const AppRow(
+      leading: Icon(Icons.emoji_events_outlined, color: AppColors.muted),
+      title: 'Zatiaľ bez rekordu',
+      subtitle: 'Odcvič prvú sériu a uvidíš tu svoj osobný rekord.',
     );
   }
 }
 
-class _SparklinePainter extends CustomPainter {
-  _SparklinePainter(this.values);
+/// Krivka: neutrálna čiara, koralový koncový bod.
+class SparklinePainter extends CustomPainter {
+  SparklinePainter(this.values);
 
   final List<double> values;
 
@@ -117,187 +116,100 @@ class _SparklinePainter extends CustomPainter {
     final min = values.reduce((a, b) => a < b ? a : b);
     final max = values.reduce((a, b) => a > b ? a : b);
     final range = max - min == 0 ? 1 : max - min;
+    Offset at(int i) => Offset(
+      3 + (size.width - 8) * i / (values.length - 1),
+      4 + (1 - (values[i] - min) / range) * (size.height - 8),
+    );
     final path = Path();
     for (var i = 0; i < values.length; i++) {
-      final x = size.width * i / (values.length - 1);
-      final y = size.height - (values[i] - min) / range * (size.height - 4) - 2;
-      i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+      final p = at(i);
+      i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
     }
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppColors.accent
+        ..color = AppColors.muted
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
+        ..strokeWidth = 1.8
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round,
+    );
+    canvas.drawCircle(
+      at(values.length - 1),
+      3.2,
+      Paint()..color = AppColors.accent,
     );
   }
 
   @override
-  bool shouldRepaint(_SparklinePainter old) => old.values != values;
+  bool shouldRepaint(SparklinePainter old) => old.values != values;
 }
 
 /// Pozícia v rebríčku.
-class RankingTile extends StatelessWidget {
-  const RankingTile(this.ranking, {super.key});
+class RankingRow extends StatelessWidget {
+  const RankingRow(this.ranking, {super.key});
 
   final Ranking ranking;
-
-  static const _segments = 4;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    // Čím lepšie umiestnenie, tým viac vyplnených dielikov.
-    final filled = switch (ranking.topPercent) {
-      <= 5 => 4,
-      <= 20 => 3,
-      <= 50 => 2,
-      _ => 1,
-    };
-    return TmCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Expanded(child: SectionLabel('Rebríček')),
-              Icon(
-                Icons.emoji_events_rounded,
-                size: 16,
-                color: AppColors.accent,
-              ),
-            ],
+    return AppRow(
+      leading: SizedBox(
+        width: 40,
+        child: Text(
+          '${ranking.position}',
+          textAlign: TextAlign.center,
+          style: text.headlineLarge!.copyWith(
+            fontSize: 26,
+            color: AppColors.accent,
           ),
-          const SizedBox(height: 8),
-          Text.rich(
-            TextSpan(
-              text: '#${ranking.position}',
-              style: text.headlineLarge,
-              children: [
-                TextSpan(
-                  text: ' ${ranking.region}',
-                  style: text.bodyMedium!.copyWith(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Top ${ranking.topPercent} % v ${ranking.gymName}',
-            style: text.bodySmall,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              for (var i = 0; i < _segments; i++) ...[
-                if (i > 0) const SizedBox(width: 4),
-                Expanded(
-                  child: Container(
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: i < filled
-                          ? AppColors.accent
-                          : AppColors.surfaceHi,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
+        ),
       ),
+      title: 'Rebríček · ${ranking.region}',
+      subtitle: ranking.gymName,
+      trailing: AppPill('Top ${ranking.topPercent} %', tone: PillTone.accent),
     );
   }
 }
 
 /// Najbližšie fitko s vyťaženosťou.
-class NearbyGymCard extends StatelessWidget {
-  const NearbyGymCard(this.gym, {super.key, required this.onTap});
+class NearbyGymRow extends StatelessWidget {
+  const NearbyGymRow(this.gym, {super.key, required this.onTap});
 
   final NearbyGym gym;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return TmCard(
+    return AppRow(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          const _RoundIcon(Icons.place_outlined),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text.rich(
-                  TextSpan(
-                    text: gym.name,
-                    style: text.titleMedium,
-                    children: [
-                      TextSpan(
-                        text: '  •  ${gym.distanceLabel}',
-                        style: text.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Vyťaženosť ${gym.occupancyPercent} %',
-                  style: text.bodySmall!.copyWith(color: Plate.green.color),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-        ],
-      ),
+      leading: const _RoundIcon(Icons.place_outlined),
+      title: gym.name,
+      subtitle: '${gym.distanceLabel} · vyťaženosť ${gym.occupancyPercent} %',
+      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
     );
   }
 }
 
 /// Niekto hľadá parťáka na tréning.
-class PartnerRequestCard extends StatelessWidget {
-  const PartnerRequestCard(this.request, {super.key, required this.onJoin});
+class PartnerRequestRow extends StatelessWidget {
+  const PartnerRequestRow(this.request, {super.key, required this.onJoin});
 
   final PartnerRequest request;
   final VoidCallback onJoin;
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return TmCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          const _RoundIcon(Icons.handshake_outlined),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${request.name} hľadá parťáka', style: text.titleMedium),
-                const SizedBox(height: 2),
-                Text(
-                  '${request.when} • ${request.focus}',
-                  style: text.bodySmall,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          PrimaryButton(label: 'Pridať sa', compact: true, onPressed: onJoin),
-        ],
+    return AppRow(
+      leading: const _RoundIcon(Icons.handshake_outlined),
+      title: '${request.name} hľadá parťáka',
+      subtitle: '${request.when} · ${request.focus}',
+      trailing: PrimaryButton(
+        label: 'Pridať sa',
+        compact: true,
+        tone: ButtonTone.ghost,
+        onPressed: onJoin,
       ),
     );
   }
@@ -311,14 +223,14 @@ class _RoundIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: AppColors.bg,
+        color: AppColors.well,
         border: Border.all(color: AppColors.border),
       ),
-      child: Icon(icon, size: 20, color: AppColors.accent),
+      child: Icon(icon, size: 20, color: AppColors.ink2),
     );
   }
 }

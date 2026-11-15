@@ -21,9 +21,11 @@ String agoLabel(DateTime at, DateTime now) {
 }
 
 /// Karta Tréning: tep počas tréningu.
-/// - s Apple Watch: spustí tréning na hodinkách, tep naživo každú sekundu,
-/// - bez hodiniek: posledné meranie z Apple Health / Health Connect
-///   (oneskorené o sekundy až minúty, preto ukazuje čas merania).
+/// - s Apple Watch: spustí tréning na hodinkách, tep a kalórie naživo,
+///   pauza / pokračovanie / ukončenie z telefónu,
+/// - iné hodinky (Garmin, Fitbit, Galaxy Watch…) alebo bez hodiniek:
+///   posledné meranie z Apple Health / Health Connect (oneskorené o sekundy
+///   až minúty, preto ukazuje čas merania).
 class WorkoutHeartRateCard extends ConsumerStatefulWidget {
   const WorkoutHeartRateCard({super.key});
 
@@ -71,6 +73,8 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Po návrate z appky Watch môže byť Rejnox na hodinkách už nainštalovaný.
+    if (state == AppLifecycleState.resumed) ref.invalidate(watchStatusProvider);
     if (!_healthOn) return;
     if (state == AppLifecycleState.resumed) {
       _readHealth();
@@ -149,21 +153,36 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
     }
   }
 
-  Future<void> _stop() async {
-    final sent = await _watch.stopWorkout();
+  Future<void> _command(Future<bool> Function() send) async {
+    final sent = await send();
     if (!sent && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Hodinky nie sú v dosahu, ukonči tréning na nich.'),
+          content: Text(
+            'Hodinky nie sú v dosahu. Príkaz sa doručí, keď budú, '
+            'alebo to urob priamo na nich.',
+          ),
         ),
       );
     }
   }
 
+  Future<void> _install() async {
+    if (await _watch.openWatchApp() || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Otvor appku Watch na iPhone → Dostupné appky → Rejnox → '
+          'Inštalovať.',
+        ),
+      ),
+    );
+  }
+
   Widget _bigBpm(TextTheme text, int? bpm, String note) => Row(
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
-      const Icon(Icons.favorite_rounded, color: AppColors.violet, size: 30),
+      const Icon(Icons.favorite_rounded, color: AppColors.accent, size: 30),
       const SizedBox(width: 10),
       Semantics(
         liveRegion: true,
@@ -193,11 +212,39 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
 
     final List<Widget> body;
     if (_running) {
+      final last = _last!;
+      final kcal = last.kcal?.round();
       body = [
-        _bigBpm(text, _last?.bpm?.round(), 'naživo z Apple Watch'),
+        _bigBpm(
+          text,
+          last.bpm?.round(),
+          [
+            last.paused ? 'pozastavené' : 'naživo z Apple Watch',
+            if (kcal != null) '$kcal kcal',
+          ].join('\n'),
+        ),
         const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: () => _command(
+            last.paused ? _watch.resumeWorkout : _watch.pauseWorkout,
+          ),
+          icon: Icon(
+            last.paused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+            size: 18,
+          ),
+          label: Text(last.paused ? 'Pokračovať' : 'Pozastaviť'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.text,
+            side: const BorderSide(color: AppColors.border),
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         OutlinedButton(
-          onPressed: _stop,
+          onPressed: () => _command(_watch.stopWorkout),
           style: OutlinedButton.styleFrom(
             foregroundColor: Plate.red.color,
             side: BorderSide(color: Plate.red.color.withValues(alpha: 0.6)),
@@ -236,11 +283,22 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
             watchReady
                 ? 'Spusti tréning na hodinkách pre tep naživo, alebo zobraz '
                       'posledné meranie z $healthStoreName.'
-                : 'Zobraz posledné meranie tepu z $healthStoreName. '
-                      'Môže byť oneskorené o sekundy až minúty.',
+                : 'Zobraz posledné meranie tepu z $healthStoreName '
+                      '(Apple Watch, Garmin, Fitbit, Galaxy Watch a iné '
+                      'hodinky sem zapisujú cez svoju appku). Môže byť '
+                      'oneskorené o sekundy až minúty.',
             style: text.bodySmall,
           ),
           const SizedBox(height: 10),
+        ],
+        if (status != null && status.canInstall) ...[
+          const SizedBox(height: 6),
+          PrimaryButton(
+            label: 'Nainštalovať Rejnox na hodinky',
+            icon: Icons.install_mobile_rounded,
+            onPressed: _install,
+          ),
+          const SizedBox(height: 8),
         ],
         if (watchReady) ...[
           const SizedBox(height: 6),
@@ -268,29 +326,21 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
       ];
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+    return AppSection(
+      title: 'Tep počas tréningu',
+      trailing: TextButton(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        onPressed: () => context.push('/heart-rate'),
+        child: const Text('Detail'),
+      ),
       child: TmCard(
-        grid: true,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: SectionLabel(
-                    'Tep počas tréningu',
-                    icon: Icons.monitor_heart_outlined,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.push('/heart-rate'),
-                  child: const Text('Detail'),
-                ),
-              ],
-            ),
-            ...body,
-          ],
+          children: [...body],
         ),
       ),
     );

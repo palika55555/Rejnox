@@ -14,7 +14,7 @@ class GymPhotoPlaceholder extends StatelessWidget {
       gradient: RadialGradient(
         center: Alignment(0.3, -0.2),
         radius: 1.1,
-        colors: [Color(0xFF3A2A8F), Color(0xFF14103A), AppColors.bg],
+        colors: [AppColors.buttonSurface, AppColors.surface, AppColors.bg],
         stops: [0, 0.55, 1],
       ),
     ),
@@ -22,7 +22,7 @@ class GymPhotoPlaceholder extends StatelessWidget {
       child: Icon(
         Icons.fitness_center_rounded,
         size: 96,
-        color: AppColors.accent.withValues(alpha: 0.35),
+        color: AppColors.accent.withValues(alpha: 0.3),
       ),
     ),
   );
@@ -54,7 +54,7 @@ class DetailActionTile extends StatelessWidget {
       excludeSemantics: true,
       child: Material(
         borderRadius: radius,
-        color: primary ? null : AppColors.surface.withValues(alpha: 0.8),
+        color: primary ? null : AppColors.sheet.withValues(alpha: 0.8),
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: radius,
@@ -63,7 +63,7 @@ class DetailActionTile extends StatelessWidget {
             boxShadow: primary
                 ? [
                     BoxShadow(
-                      color: AppColors.blue.withValues(alpha: 0.45),
+                      color: AppColors.accentDeep.withValues(alpha: 0.12),
                       blurRadius: 16,
                     ),
                   ]
@@ -81,12 +81,15 @@ class DetailActionTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 14),
               child: Column(
                 children: [
-                  Icon(icon, color: primary ? Colors.white : AppColors.text),
+                  Icon(
+                    icon,
+                    color: primary ? AppColors.onAccent : AppColors.text,
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     label,
                     style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                      color: primary ? Colors.white : AppColors.text,
+                      color: primary ? AppColors.onAccent : AppColors.text,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -135,32 +138,6 @@ class DetailInfoRow extends StatelessWidget {
       ),
     );
   }
-}
-
-class GymGallery extends StatelessWidget {
-  const GymGallery({super.key, required this.urls});
-
-  final List<String> urls;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 92,
-    child: ListView.separated(
-      scrollDirection: Axis.horizontal,
-      itemCount: urls.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 8),
-      itemBuilder: (context, index) => ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Image.network(
-          urls[index],
-          width: 120,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) =>
-              const SizedBox(width: 120, child: GymPhotoPlaceholder()),
-        ),
-      ),
-    ),
-  );
 }
 
 /// Priemer a rozloženie hodnotení po hviezdičkách.
@@ -240,7 +217,7 @@ class GymRatingCard extends StatelessWidget {
                     star <= (myStars ?? 0)
                         ? Icons.star_rounded
                         : Icons.star_outline_rounded,
-                    color: const Color(0xFFFFC542),
+                    color: Plate.yellow.color,
                   ),
                 ),
             ],
@@ -274,7 +251,7 @@ class _StarBar extends StatelessWidget {
               value: share,
               minHeight: 7,
               backgroundColor: AppColors.surfaceHi,
-              valueColor: const AlwaysStoppedAnimation(AppColors.blue),
+              valueColor: const AlwaysStoppedAnimation(AppColors.accentDeep),
             ),
           ),
         ),

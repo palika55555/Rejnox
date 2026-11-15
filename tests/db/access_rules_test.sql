@@ -107,7 +107,7 @@ BEGIN
   DELETE FROM workouts WHERE user_id = a;
 
   INSERT INTO member_passes (user_id, label, code) VALUES (a, 'Gym Fit', '123456');
-  conv := start_conversation(t);
+  conv := link_conversation(tc);
   INSERT INTO messages (conversation_id, sender_id, body) VALUES (conv, a, 'Ahoj');
 
   -- 4b. Klient si žiada termín: len u svojho trénera a potvrdiť si ho nevie sám.
