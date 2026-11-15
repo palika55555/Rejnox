@@ -33,24 +33,24 @@ workflows:
       - name: Balíčky
         script: flutter pub get
 
-      # Appka pre hodinky sa vloží do IPA (Rejnox.app/Watch), takže po
-      # inštalácii na iPhone ju ponúkne appka Watch na inštaláciu.
-      - name: Pridať aplikáciu pre Apple Watch do projektu
+      # Najprv len iPhone: táto IPA vznikne vždy, aj keby appka pre
+      # hodinky neprešla.
+      - name: IPA bez hodiniek (len iPhone)
         script: |
+          set -euo pipefail
+          flutter build ios --release --no-codesign --dart-define=API_URL="$API_URL"
+          bash scripts/ios/package_unsigned_ipa.sh Rejnox-unsigned-bez-hodiniek.ipa
+
+      # Potom aj s Apple Watch (Rejnox.app/Watch): po inštalácii na iPhone
+      # ju ponúkne appka Watch. Ak zlyhá, IPA bez hodiniek ostane.
+      - name: IPA s Apple Watch
+        ignore_failure: true
+        script: |
+          set -euo pipefail
           gem list xcodeproj -i >/dev/null || gem install xcodeproj
           ruby scripts/ios/add_watch_target.rb
-
-      - name: Zostavenie nepodpísanej IPA
-        script: |
-          flutter build ios --release --no-codesign \
-            --dart-define=API_URL="$API_URL"
-          mkdir -p build/ios/ipa Payload
-          cp -R build/ios/iphoneos/Runner.app Payload/
-          zip -qry build/ios/ipa/Rejnox-unsigned.ipa Payload
-          # Záloha bez appky pre hodinky: ak Sideloadly s bezplatným Apple ID
-          # nepodpíše appku pre Apple Watch, nainštaluj túto.
-          rm -rf Payload/Runner.app/Watch
-          zip -qry build/ios/ipa/Rejnox-unsigned-bez-hodiniek.ipa Payload
+          flutter build ios --release --no-codesign --dart-define=API_URL="$API_URL"
+          bash scripts/ios/package_unsigned_ipa.sh Rejnox-unsigned.ipa
     artifacts:
       - build/ios/ipa/*.ipa
 
