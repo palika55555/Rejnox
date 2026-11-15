@@ -57,8 +57,8 @@ export function WelcomeBurst({ title, subtitle }: Props) {
             </linearGradient>
           </defs>
           <rect x="10" y="93" width="580" height="14" rx="7" fill="url(#welcome-steel)" />
-          <rect x={LEFT_START + PLATE_W + 4} y="80" width="12" height="40" rx="3" fill="#8B88B5" />
-          <rect x={RIGHT_START - 16} y="80" width="12" height="40" rx="3" fill="#8B88B5" />
+          <rect x={LEFT_START + PLATE_W + 4} y="80" width="12" height="40" rx="3" fill="#939ead" />
+          <rect x={RIGHT_START - 16} y="80" width="12" height="40" rx="3" fill="#939ead" />
           {plates.map((plate, i) => {
             const style = { "--delay": `${0.2 + i * 0.18}s` } as CSSProperties;
             const y = 100 - plate.height / 2;

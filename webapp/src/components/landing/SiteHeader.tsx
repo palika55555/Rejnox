@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RejnoxMark } from "./RejnoxMark";
 
 const nav = [
+  { href: "#appka", label: "Appka" },
   { href: "#na-pocitaci", label: "Mobil a počítač" },
   { href: "#pre-trenerov", label: "Pre trénerov" },
   { href: "#otazky", label: "Otázky" },

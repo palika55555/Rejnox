@@ -20,7 +20,7 @@ export function Field({ name, label, hint, error, ...input }: FieldProps) {
         name={name}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={`mt-2 w-full rounded-xl border bg-night/60 px-4 py-3 text-base outline-none transition-colors placeholder:text-muted/60 focus:border-brand-violet ${
+        className={`mt-2 w-full rounded-xl border bg-night/60 px-4 py-3 text-base outline-none transition-colors placeholder:text-muted/60 focus:border-accent focus:ring-2 focus:ring-accent/25 ${
           error ? "border-plate-red" : "border-line"
         }`}
         {...input}

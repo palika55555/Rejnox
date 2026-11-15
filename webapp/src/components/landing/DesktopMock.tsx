@@ -73,7 +73,7 @@ export function DesktopMock() {
                     y={chartH + 16}
                     textAnchor="middle"
                     fontSize="10"
-                    fill="#8B88B5"
+                    fill="#939ead"
                   >
                     {i + 1}.
                   </text>

@@ -2,16 +2,19 @@
 
 /* Farby Rejnox – rovnaké ako v mobilnej appke (lib/core/theme/app_colors.dart). */
 @theme {
-  --color-night: #06061a;
-  --color-surface: #12112d;
-  --color-surface-hi: #1e1b45;
-  --color-line: rgb(169 155 255 / 0.14);
-  --color-ink: #f4f3ff;
-  --color-muted: #8b88b5;
-  --color-accent: #a48bff;
-  --color-brand-blue: #5468ff;
-  --color-brand-violet: #9b5cff;
-  --color-flame: #ff8a3d;
+  /* Grafit a koralovo-oranžová ako na tréningových kotúčoch a v appke. */
+  --color-night: #14171b;
+  --color-surface: #1a1e23;
+  --color-surface-hi: #2a3038;
+  --color-line: #343b44;
+  --color-ink: #f4f5f7;
+  --color-muted: #939ead;
+  --color-accent: #ff6247;
+  /* Prechod hlavnej akcie: koralová → jantárová (pôvodné názvy tokenov ostali). */
+  --color-brand-blue: #ff5436;
+  --color-brand-violet: #ff9a3d;
+  --color-flame: #ffb547;
+  --color-good: #3dda8d;
 
   /* Farby olympijských kotúčov – svalové partie. */
   --color-plate-red: #ff4d6a;
@@ -21,8 +24,8 @@
 }
 
 @theme inline {
-  --font-display: var(--font-montserrat), system-ui, sans-serif;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-big-shoulders), system-ui, sans-serif;
+  --font-sans: var(--font-onest), system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
@@ -43,7 +46,7 @@ body {
 }
 
 ::selection {
-  background: rgb(155 92 255 / 0.45);
+  background: rgb(255 98 71 / 0.45);
 }
 
 :focus-visible {
@@ -52,7 +55,7 @@ body {
   border-radius: 6px;
 }
 
-/* Hlavná akcia: prechod modrá → fialová ako na logu. */
+/* Hlavná akcia: koralová → jantárová, energický športový prechod. */
 .btn-action {
   background-image: linear-gradient(90deg, var(--color-brand-blue), var(--color-brand-violet));
 }
@@ -60,8 +63,8 @@ body {
 /* Žiara a jemná mriežka za hero sekciou (ako AppBackground v appke). */
 .hero-glow {
   background:
-    radial-gradient(60% 55% at 78% 30%, rgb(155 92 255 / 0.22), transparent 70%),
-    radial-gradient(45% 40% at 10% 0%, rgb(84 104 255 / 0.16), transparent 70%);
+    radial-gradient(60% 55% at 78% 30%, rgb(255 98 71 / 0.22), transparent 70%),
+    radial-gradient(45% 40% at 10% 0%, rgb(255 154 61 / 0.16), transparent 70%);
 }
 
 .hero-grid {

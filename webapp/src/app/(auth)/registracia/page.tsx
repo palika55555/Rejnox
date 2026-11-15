@@ -11,7 +11,7 @@ export default function RegisterPage() {
       <Suspense fallback={null}>
         <RedirectIfSignedIn />
       </Suspense>
-      <h1 className="font-display text-4xl font-black tracking-[-0.03em]">Vytvor si účet</h1>
+      <h1 className="font-display text-5xl leading-none font-black uppercase">Vytvor si účet</h1>
       <p className="mt-3 mb-8 text-muted">Jeden účet pre web aj mobilnú appku.</p>
       <RegisterForm />
     </>

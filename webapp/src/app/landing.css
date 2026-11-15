@@ -15,11 +15,11 @@
   padding: 5px;
   /* Titánový rám: jemný kovový prechod s lesklou hranou. */
   background:
-    linear-gradient(145deg, #5d5a6e 0%, #2a2836 22%, #6f6b80 48%, #24222f 70%, #55526a 100%);
+    linear-gradient(145deg, #5e6268 0%, #2a2c30 22%, #71757c 48%, #24262a 70%, #56595f 100%);
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 0.18),
     inset 0 0 2px 2px rgb(0 0 0 / 0.5),
-    0 50px 120px -30px rgb(155 92 255 / 0.55),
+    0 50px 120px -30px rgb(255 98 71 / 0.55),
     0 30px 60px -30px rgb(0 0 0 / 0.8);
 }
 
@@ -36,7 +36,7 @@
   overflow: hidden;
   border-radius: calc(var(--frame) - 11px);
   background:
-    radial-gradient(120% 50% at 80% 0%, rgb(155 92 255 / 0.18), transparent 60%),
+    radial-gradient(120% 50% at 80% 0%, rgb(255 98 71 / 0.18), transparent 60%),
     var(--color-night);
   color: var(--color-ink);
 }
@@ -45,15 +45,15 @@
   position: absolute;
   width: 4px;
   border-radius: 2px;
-  background: linear-gradient(90deg, #3a3848, #77738a);
+  background: linear-gradient(90deg, #3a3c41, #7a7e85);
 }
 
 .iphone__btn--action { left: -3px; top: 17%; height: 4.5%; }
 .iphone__btn--vol-up { left: -3px; top: 24.5%; height: 8%; }
 .iphone__btn--vol-down { left: -3px; top: 34%; height: 8%; }
-.iphone__btn--power { right: -3px; top: 27%; height: 12%; background: linear-gradient(270deg, #3a3848, #77738a); }
+.iphone__btn--power { right: -3px; top: 27%; height: 12%; background: linear-gradient(270deg, #3a3c41, #7a7e85); }
 /* Ovládanie fotoaparátu: zapustené, so zafírovým leskom. */
-.iphone__btn--camera { right: -2px; top: 58%; height: 7%; width: 3px; background: linear-gradient(#8f8ba6, #3b3950); }
+.iphone__btn--camera { right: -2px; top: 58%; height: 7%; width: 3px; background: linear-gradient(#91959c, #3b3d42); }
 
 /* Menší Dynamic Island, ktorý sa pri živej aktivite roztiahne. */
 .iphone__island {
@@ -228,7 +228,7 @@
   border: 1px solid var(--color-line);
   border-radius: 1rem;
   /* Bez backdrop-filter: nad pohyblivým pozadím by sa rozmazanie počítalo stále. */
-  background: rgb(18 17 45 / 0.96);
+  background: rgb(26 30 35 / 0.96);
   will-change: transform;
   font-size: 0.72rem;
   line-height: 1.3;
@@ -256,7 +256,7 @@
 @keyframes hero-phone-in { from { opacity: 0; transform: translateY(60px) rotate(4deg) scale(0.92); } }
 
 .text-shimmer {
-  background: linear-gradient(90deg, #5468ff, #a48bff, #ff8a3d, #a48bff, #5468ff);
+  background: linear-gradient(90deg, #ff5436, #ff6247, #ff8a3d, #ff6247, #ff5436);
   background-size: 300% 100%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -287,8 +287,8 @@
  */
 .aurora { overflow: hidden; opacity: 0.55; }
 .aurora__blob { position: absolute; border-radius: 50%; will-change: transform; }
-.aurora__blob--a { width: 56vw; height: 56vw; left: 42%; top: -25%; background: radial-gradient(circle, #5468ff 0%, rgb(84 104 255 / 0) 65%); animation: blob-a 18s ease-in-out infinite; }
-.aurora__blob--b { width: 46vw; height: 46vw; left: 62%; top: 15%; background: radial-gradient(circle, #9b5cff 0%, rgb(155 92 255 / 0) 65%); animation: blob-b 22s ease-in-out infinite; }
+.aurora__blob--a { width: 56vw; height: 56vw; left: 42%; top: -25%; background: radial-gradient(circle, #ff5436 0%, rgb(255 154 61 / 0) 65%); animation: blob-a 18s ease-in-out infinite; }
+.aurora__blob--b { width: 46vw; height: 46vw; left: 62%; top: 15%; background: radial-gradient(circle, #ff9a3d 0%, rgb(255 98 71 / 0) 65%); animation: blob-b 22s ease-in-out infinite; }
 .aurora__blob--c { width: 34vw; height: 34vw; left: 2%; top: 50%; background: radial-gradient(circle, rgb(255 138 61 / 0.35) 0%, rgb(255 138 61 / 0) 65%); animation: blob-a 26s ease-in-out infinite reverse; }
 @keyframes blob-a { 50% { transform: translate(-18vw, 12vh) scale(1.2); } }
 @keyframes blob-b { 50% { transform: translate(-25vw, -10vh) scale(0.85); } }
@@ -332,7 +332,7 @@
 .glow-card { transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
 .glow-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 30px 60px -30px rgb(155 92 255 / 0.5);
+  box-shadow: 0 30px 60px -30px rgb(255 98 71 / 0.5);
 }
 
 /* Kód od trénera: blikajúci kurzor. */
@@ -379,3 +379,67 @@
 .cookie-in { animation: cookie-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
 @keyframes cookie-in { from { opacity: 0; transform: translateY(30px); } }
 @media (prefers-reduced-motion: reduce) { .cookie-in { animation: none; } }
+
+/* ---------------------------------------------------------------- galéria appky */
+
+/* Športový pás: diagonálne koralové pruhy ako na dráhe, jemne v pozadí. */
+.sport-band {
+  background:
+    radial-gradient(70% 60% at 85% 10%, rgb(255 98 71 / 0.16), transparent 70%),
+    radial-gradient(50% 50% at 0% 100%, rgb(255 154 61 / 0.1), transparent 70%);
+}
+
+.sport-band__stripes {
+  background-image: repeating-linear-gradient(
+    -24deg,
+    transparent 0 46px,
+    rgb(255 98 71 / 0.05) 46px 50px
+  );
+  mask-image: linear-gradient(180deg, black, transparent 85%);
+}
+
+.gallery {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: min(70vw, 17rem);
+  gap: 1.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 1rem;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  scrollbar-width: none;
+}
+
+.gallery__item {
+  scroll-snap-align: start;
+}
+
+.gallery__phone {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (min-width: 1024px) {
+  .gallery {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, 1fr);
+    overflow: visible;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  /* Telefóny v rytme: každý druhý nižšie, ako bežci na štarte. */
+  .gallery__item:nth-child(even) {
+    margin-top: 3.5rem;
+  }
+
+  .gallery__item:hover .gallery__phone {
+    transform: translateY(-10px) rotate(-1.5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery__phone {
+    transition: none;
+  }
+}

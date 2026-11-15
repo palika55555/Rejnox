@@ -1,3 +1,4 @@
+import { AppGallery } from "@/components/landing/AppGallery";
 import { Faq } from "@/components/landing/Faq";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { ForTrainers } from "@/components/landing/ForTrainers";
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <main>
         <Hero />
         <Marquee />
+        <AppGallery />
         <TwoScreens />
         <ForTrainers />
         <Faq />

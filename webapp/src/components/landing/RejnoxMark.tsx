@@ -1,14 +1,14 @@
 import { useId } from "react";
 
-/** Znak Rejnox: biele „R“ s fialovým pruhom (rovnaká geometria ako v appke). */
+/** Znak Rejnox: biele „R“ s koralovým pruhom (rovnaká geometria ako v appke). */
 export function RejnoxMark({ className = "w-9", title = "Rejnox" }: { className?: string; title?: string }) {
   const gradientId = useId();
   return (
     <svg viewBox="0 0 492 305" className={className} role="img" aria-label={title}>
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="235" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#9B5CFF" />
-          <stop offset="1" stopColor="#5B6CFF" />
+          <stop offset="0" stopColor="#ff9a3d" />
+          <stop offset="1" stopColor="#ff6247" />
         </linearGradient>
       </defs>
       <path

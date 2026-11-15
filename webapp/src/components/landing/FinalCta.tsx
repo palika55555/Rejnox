@@ -7,7 +7,7 @@ export function FinalCta() {
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-24 sm:px-6 md:grid-cols-[0.8fr_1.2fr] lg:py-32">
         <div className="reveal glow-card relative mx-auto aspect-[941/1672] w-full max-w-xs overflow-hidden rounded-3xl border border-line">
           <Image
-            src="/rejnox-poster.webp"
+            src="/rejnox-athlete.webp"
             alt="Rejnox – lepší pohyb, zdravší ty"
             fill
             sizes="(min-width: 768px) 320px, 80vw"

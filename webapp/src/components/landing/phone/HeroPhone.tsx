@@ -1,30 +1,55 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { HealthScreen, MapScreen, ProgressScreen } from "./AppScreens";
 import { IPhoneFrame } from "./IPhoneFrame";
-import { LogScreen } from "./LogScreen";
 
-type ScreenId = "log" | "progress" | "map" | "health";
+type ScreenId = "home" | "workout" | "chat" | "calendar" | "progress";
 
-const screens: { id: ScreenId; label: string; island: ReactNode }[] = [
-  { id: "log", label: "Zápis", island: null },
-  { id: "progress", label: "Progres", island: <IslandText icon="🏆" text="Nový rekord · Drep 100 kg" /> },
-  { id: "map", label: "Fitká", island: <IslandText icon="📍" text="3 fitká do 2 km" /> },
-  { id: "health", label: "Zdravie", island: <IslandText icon="♥" text="Tep 142 bpm" tone="text-plate-red" /> },
+/** Skutočné obrazovky appky (snímky z public/app, 390×844 @2x). */
+const screens: { id: ScreenId; label: string; alt: string; island: ReactNode }[] = [
+  {
+    id: "home",
+    label: "Dnes",
+    alt: "Domovská obrazovka: dnešný tréning od trénera, týždenný cieľ a séria dní",
+    island: <IslandText icon="🔥" text="Dnešný plán od trénera" />,
+  },
+  {
+    id: "workout",
+    label: "Tréning",
+    alt: "Zápis série: cvik, opakovania a váha veľkými tlačidlami",
+    island: <IslandText icon="✓" text="Séria uložená · 8 × 70 kg" tone="text-good" />,
+  },
+  {
+    id: "chat",
+    label: "Chat",
+    alt: "Chat s trénerom: správy o dnešnom pláne",
+    island: <IslandText icon="💬" text="Martin: 4×8 na 70 kg" />,
+  },
+  {
+    id: "calendar",
+    label: "Kalendár",
+    alt: "Kalendár tréningov u trénera s voľnými termínmi",
+    island: <IslandText icon="📅" text="Zajtra 18:00 · Osobný tréning" />,
+  },
+  {
+    id: "progress",
+    label: "Progres",
+    alt: "Progres: objem po týždňoch a osobné rekordy",
+    island: <IslandText icon="🏆" text="Nový rekord · Drep 75 kg" tone="text-flame" />,
+  },
 ];
 
 const AUTO_MS = 4800;
 const ISLAND_MS = 2400;
 
 /**
- * Telefón na úvode: obrazovky appky sa samy striedajú, Dynamic Island
+ * Telefón na úvode: skutočné obrazovky appky sa samy striedajú, Dynamic Island
  * ukazuje živé aktivity a pri pohybe myši sa telefón jemne nakláňa.
  * Keď návštevník s telefónom pracuje, striedanie sa zastaví.
  */
 export function HeroPhone() {
   const [active, setActive] = useState(0);
-  const [online, setOnline] = useState(true);
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(true);
   const [island, setIsland] = useState<ReactNode>(null);
@@ -108,12 +133,6 @@ export function HeroPhone() {
     };
   }, []);
 
-  function toggleSignal() {
-    setOnline((o) => !o);
-    setActive(0);
-    setPaused(true);
-  }
-
   return (
     <div className="hero-phone relative mx-auto w-full max-w-[21rem]">
       <FloatingCards />
@@ -126,7 +145,7 @@ export function HeroPhone() {
         onFocus={() => setPaused(true)}
         onBlur={() => setPaused(false)}
       >
-        <IPhoneFrame island={island} signal={{ label: online ? "5G" : "Bez signálu", offline: !online }}>
+        <IPhoneFrame island={island} signal={{ label: "5G", offline: false }}>
           {screens.map((s, i) => (
             <div
               key={s.id}
@@ -134,15 +153,14 @@ export function HeroPhone() {
               aria-hidden={i !== active}
               inert={i !== active}
             >
-              {s.id === "log" && (
-                <LogScreen
-                  online={online}
-                  onLogged={(text) => flashIsland(<IslandText icon={online ? "✓" : "⏳"} text={text} tone={online ? "text-plate-green" : "text-flame"} />)}
-                />
-              )}
-              {s.id === "progress" && <ProgressScreen />}
-              {s.id === "map" && <MapScreen />}
-              {s.id === "health" && <HealthScreen />}
+              <Image
+                src={`/app/${s.id}.webp`}
+                alt={s.alt}
+                fill
+                sizes="(min-width: 640px) 21rem, 80vw"
+                priority={i === 0}
+                className="object-cover object-top"
+              />
             </div>
           ))}
         </IPhoneFrame>
@@ -169,23 +187,6 @@ export function HeroPhone() {
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-3 text-sm text-muted">
-        <span id="signal-label">Skús to bez signálu</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={!online}
-          aria-labelledby="signal-label"
-          onClick={toggleSignal}
-          className={`relative h-6 w-11 rounded-full transition-colors ${online ? "bg-surface-hi" : "bg-flame"}`}
-        >
-          <span
-            className={`absolute top-1 left-1 size-4 rounded-full bg-white transition-transform ${
-              online ? "" : "translate-x-5"
-            }`}
-          />
-        </button>
-      </div>
     </div>
   );
 }
@@ -210,19 +211,19 @@ function FloatingCards() {
         <span className="text-lg">🏆</span>
         <span>
           <b className="block text-ink">Nový rekord</b>
-          Drep 100 kg · +5 kg
+          Drep 75 kg · +20 kg
         </span>
       </div>
       <div className="float-card right-[-40%] top-[38%]" style={{ ["--float-delay" as string]: "-2s" }}>
-        <span className="size-2.5 rounded-full bg-flame" />
+        <span className="text-lg">💬</span>
         <span>
-          <b className="block text-ink">Bez signálu</b>3 série v telefóne
+          <b className="block text-ink">Správa od trénera</b>Drep 4×8 na 70 kg
         </span>
       </div>
       <div className="float-card left-[-36%] bottom-[22%]" style={{ ["--float-delay" as string]: "-4s" }}>
-        <span className="font-display text-lg font-black text-plate-green">3/4</span>
+        <span className="font-display text-lg font-black text-good">5/3</span>
         <span>
-          <b className="block text-ink">Týždenný cieľ</b>ešte jeden tréning
+          <b className="block text-ink">Týždenný cieľ</b>splnený, 4 dni v rade
         </span>
       </div>
     </div>

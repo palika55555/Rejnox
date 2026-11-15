@@ -37,8 +37,8 @@ export function IntroSplash() {
         <svg viewBox="-8 -8 508 321" className="intro__mark">
           <defs>
             <linearGradient id="intro-stripe" x1="0" y1="0" x2="235" y2="0" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stopColor="#9B5CFF" />
-              <stop offset="1" stopColor="#5B6CFF" />
+              <stop offset="0" stopColor="#ff9a3d" />
+              <stop offset="1" stopColor="#ff6247" />
             </linearGradient>
           </defs>
           <path className="intro__letter" d={LETTER} pathLength={1} />

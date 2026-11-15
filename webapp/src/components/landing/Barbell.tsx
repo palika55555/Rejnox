@@ -25,8 +25,8 @@ export function Barbell({ plates, total, className }: Props) {
       aria-label={`Splnené ${plates.length} z ${total}`}
     >
       {/* Tyč a objímka */}
-      <rect x="0" y={mid - 3.5} width={width} height="7" rx="3.5" fill="#1E1B45" />
-      <rect x="4" y={mid - 9} width="12" height="18" rx="3" fill="#8B88B5" />
+      <rect x="0" y={mid - 3.5} width={width} height="7" rx="3.5" fill="#2a3038" />
+      <rect x="4" y={mid - 9} width="12" height="18" rx="3" fill="#939ead" />
 
       {Array.from({ length: total }, (_, i) => {
         // Kotúče sa smerom von zmenšujú, ako na skutočnej čince.
@@ -53,7 +53,7 @@ export function Barbell({ plates, total, className }: Props) {
             height={h - 1.5}
             rx="3"
             fill="none"
-            stroke="rgb(169 155 255 / 0.22)"
+            stroke="rgb(255 255 255 / 0.22)"
             strokeWidth="1.5"
             strokeDasharray="3 3"
           />
