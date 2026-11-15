@@ -33,29 +33,16 @@ workflows:
       - name: Balíčky
         script: flutter pub get
 
-      # Najprv len iPhone: táto IPA vznikne vždy, aj keby appka pre
-      # hodinky neprešla.
-      - name: IPA bez hodiniek (len iPhone)
-        script: |
-          set -euo pipefail
-          flutter build ios --release --no-codesign --dart-define=API_URL="$API_URL"
-          bash scripts/ios/package_unsigned_ipa.sh Rejnox-unsigned-bez-hodiniek.ipa
-
-      # Potom aj s Apple Watch (Rejnox.app/Watch): po inštalácii na iPhone
-      # ju ponúkne appka Watch. Ak zlyhá, IPA bez hodiniek ostane.
-      - name: IPA s Apple Watch
-        ignore_failure: true
+      # Jeden build iPhone + Apple Watch (Rejnox.app/Watch). Z neho dve IPA:
+      # s hodinkami a bez nich (pre Sideloadly s bezplatným Apple ID).
+      - name: IPA (iPhone + Apple Watch)
         script: |
           set -euo pipefail
           gem list xcodeproj -i >/dev/null || gem install xcodeproj
           ruby scripts/ios/add_watch_target.rb
-          # Pre diagnostiku: pre akú platformu sa appka hodiniek zostavuje.
-          xcodebuild -project ios/Runner.xcodeproj -target RejnoxWatch \
-            -configuration Release -showBuildSettings 2>/dev/null \
-            | grep -E ' (SDKROOT|PLATFORM_NAME|SUPPORTED_PLATFORMS|WATCHOS_DEPLOYMENT_TARGET|ASSETCATALOG_COMPILER_APPICON_NAME) = ' \
-            || true
           flutter build ios --release --no-codesign --dart-define=API_URL="$API_URL"
           bash scripts/ios/package_unsigned_ipa.sh Rejnox-unsigned.ipa
+          bash scripts/ios/package_unsigned_ipa.sh Rejnox-unsigned-bez-hodiniek.ipa bez-hodiniek
     artifacts:
       - build/ios/ipa/*.ipa
 

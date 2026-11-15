@@ -3,11 +3,14 @@
 # Spúšťa sa po `flutter build ios --no-codesign`:
 #
 #   bash scripts/ios/package_unsigned_ipa.sh Rejnox-unsigned.ipa
+#   bash scripts/ios/package_unsigned_ipa.sh Rejnox-bez.ipa bez-hodiniek
 #
+# Druhý parameter "bez-hodiniek" vynechá appku pre Apple Watch.
 # Skončí chybou, ak Runner.app chýba alebo je prázdny (žiadna 166 B IPA).
 set -euo pipefail
 
 NAME="${1:?Zadaj názov IPA, napr. Rejnox-unsigned.ipa}"
+VARIANT="${2:-}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
@@ -15,7 +18,7 @@ cd "$ROOT"
 # v build/ios/Release-iphoneos. Appka hodiniek (Runner.app/Watch/…) sa nepočíta.
 APP=""
 for dir in build/ios/iphoneos build/ios/Release-iphoneos; do
-  if [ -x "$dir/Runner.app/Runner" ]; then
+  if [ -f "$dir/Runner.app/Runner" ]; then
     APP="$dir/Runner.app"
     break
   fi
@@ -29,11 +32,14 @@ fi
 WORK="$(mktemp -d)"
 mkdir -p "$WORK/Payload" build/ios/ipa
 cp -R "$APP" "$WORK/Payload/"
+if [ "$VARIANT" = "bez-hodiniek" ]; then
+  rm -rf "$WORK/Payload/Runner.app/Watch"
+fi
 rm -f "build/ios/ipa/$NAME"
 (cd "$WORK" && zip -qry "$ROOT/build/ios/ipa/$NAME" Payload)
 rm -rf "$WORK"
 
-if [ -d "$APP/Watch" ]; then
+if [ "$VARIANT" != "bez-hodiniek" ] && [ -d "$APP/Watch" ]; then
   echo "Appka pre Apple Watch: $(ls "$APP/Watch")"
 fi
 ls -lh "build/ios/ipa/$NAME"
