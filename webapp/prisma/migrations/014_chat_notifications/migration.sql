@@ -4,20 +4,25 @@
 -- 2) Prečítanie sa pamätá na člena konverzácie (last_read_at).
 -- 3) Upozornenia (notifications) zapisujú len triggery v databáze, appka ich
 --    smie čítať, označiť ako prečítané a zmazať.
+-- Produkčná databáza už mala ručne pridané last_read_at a mark_conversation_read,
+-- preto je migrácia napísaná tak, aby prešla aj nad čiastočným stavom.
 
 -- ------------------------------------------------------------------ chat
 
 ALTER TABLE conversations
-  ADD COLUMN trainer_client_id uuid UNIQUE REFERENCES trainer_clients (id) ON DELETE CASCADE;
+  ADD COLUMN IF NOT EXISTS trainer_client_id uuid UNIQUE REFERENCES trainer_clients (id) ON DELETE CASCADE;
 
 ALTER TABLE conversation_members
-  ADD COLUMN last_read_at timestamptz NOT NULL DEFAULT now();
+  ADD COLUMN IF NOT EXISTS last_read_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE conversation_members ALTER COLUMN last_read_at SET DEFAULT now();
+UPDATE conversation_members SET last_read_at = now() WHERE last_read_at IS NULL;
+ALTER TABLE conversation_members ALTER COLUMN last_read_at SET NOT NULL;
 
-CREATE INDEX messages_conversation_desc_idx ON messages (conversation_id, sent_at DESC);
+CREATE INDEX IF NOT EXISTS messages_conversation_desc_idx ON messages (conversation_id, sent_at DESC);
 
 -- Konverzácia k prepojeniu (založí ju pri prvom použití). Smie len tréner
 -- alebo klient tohto prepojenia; založiť novú len pri aktívnej spolupráci.
-CREATE FUNCTION link_conversation(p_link uuid) RETURNS uuid
+CREATE OR REPLACE FUNCTION link_conversation(p_link uuid) RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
 DECLARE
@@ -54,7 +59,7 @@ END
 $$;
 
 -- Do konverzácie k prepojeniu sa píše len pri aktívnej spolupráci.
-CREATE FUNCTION can_send_message(conv_id uuid) RETURNS boolean
+CREATE OR REPLACE FUNCTION can_send_message(conv_id uuid) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
   SELECT is_conversation_member(conv_id) AND NOT EXISTS (
@@ -64,11 +69,12 @@ AS $$
   )
 $$;
 
-DROP POLICY messages_send ON messages;
+DROP POLICY IF EXISTS messages_send ON messages;
 CREATE POLICY messages_send ON messages FOR INSERT TO rejnox_app
   WITH CHECK (sender_id = app_user_id() AND can_send_message(conversation_id));
 
--- Označí konverzáciu ako prečítanú prihláseným.
+-- Označí konverzáciu ako prečítanú prihláseným (ručne pridanú verziu nahradí).
+DROP FUNCTION IF EXISTS mark_conversation_read(uuid);
 CREATE FUNCTION mark_conversation_read(conv_id uuid) RETURNS void
 LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
@@ -78,7 +84,7 @@ $$;
 
 -- ------------------------------------------------------------ upozornenia
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   kind       text NOT NULL CHECK (char_length(kind) BETWEEN 1 AND 40),
@@ -89,9 +95,9 @@ CREATE TABLE notifications (
   created_at timestamptz NOT NULL DEFAULT now(),
   read_at    timestamptz
 );
-CREATE INDEX notifications_user_idx ON notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications (user_id, created_at DESC);
 
-CREATE FUNCTION notify(p_user uuid, p_kind text, p_title text, p_body text, p_link uuid)
+CREATE OR REPLACE FUNCTION notify(p_user uuid, p_kind text, p_title text, p_body text, p_link uuid)
 RETURNS void
 LANGUAGE sql SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
@@ -100,12 +106,12 @@ AS $$
   WHERE p_user IS NOT NULL AND p_user IS DISTINCT FROM app_user_id()
 $$;
 
-CREATE FUNCTION display_name_of(p_user uuid) RETURNS text
+CREATE OR REPLACE FUNCTION display_name_of(p_user uuid) RETURNS text
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp
 AS $$ SELECT display_name FROM users WHERE id = p_user $$;
 
 -- Nový plán od trénera → klient.
-CREATE FUNCTION notify_new_workout() RETURNS trigger
+CREATE OR REPLACE FUNCTION notify_new_workout() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
 DECLARE
@@ -121,12 +127,13 @@ BEGIN
 END
 $$;
 
+DROP TRIGGER IF EXISTS notify_new_workout ON workouts;
 CREATE TRIGGER notify_new_workout
 AFTER INSERT ON workouts
 FOR EACH ROW EXECUTE FUNCTION notify_new_workout();
 
 -- Prijatá pozvánka → tréner, ukončená spolupráca → druhá strana.
-CREATE FUNCTION notify_link_change() RETURNS trigger
+CREATE OR REPLACE FUNCTION notify_link_change() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
 BEGIN
@@ -149,13 +156,14 @@ BEGIN
 END
 $$;
 
+DROP TRIGGER IF EXISTS notify_link_change ON trainer_clients;
 CREATE TRIGGER notify_link_change
 AFTER UPDATE OF status ON trainer_clients
 FOR EACH ROW EXECUTE FUNCTION notify_link_change();
 
 -- Rezervácie: žiadosť a rezervácia → tréner, potvrdenie a nový termín → klient,
 -- zrušenie → druhá strana.
-CREATE FUNCTION notify_booking() RETURNS trigger
+CREATE OR REPLACE FUNCTION notify_booking() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp
 AS $$
 DECLARE
@@ -190,11 +198,13 @@ BEGIN
 END
 $$;
 
+DROP TRIGGER IF EXISTS notify_booking ON bookings;
 CREATE TRIGGER notify_booking
 AFTER INSERT OR UPDATE OF status ON bookings
 FOR EACH ROW EXECUTE FUNCTION notify_booking();
 
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS notifications_own ON notifications;
 CREATE POLICY notifications_own ON notifications TO rejnox_app
   USING (user_id = app_user_id()) WITH CHECK (user_id = app_user_id());
 
