@@ -14,7 +14,8 @@
 # Workflow ios-sideload (bez platenej Apple Developer účtu a bez App Store
 # Connect kľúča): zostaví nepodpísanú .ipa, stiahneš ju z Artifacts a podpíšeš
 # v Sideloadly svojím Apple ID. IPA obsahuje aj appku pre Apple Watch
-# (Sideloadly ju podpíše s vlastným App ID). Adresa API je v premennej API_URL nižšie,
+# (Sideloadly ju podpíše s vlastným App ID). Ak to s bezplatným Apple ID
+# nejde, použi Rejnox-unsigned-bez-hodiniek.ipa (len iPhone). Adresa API je v premennej API_URL nižšie,
 # v Codemagicu sa nič nastavovať nemusí.
 workflows:
   ios-sideload:
@@ -46,6 +47,10 @@ workflows:
           mkdir -p build/ios/ipa Payload
           cp -R build/ios/iphoneos/Runner.app Payload/
           zip -qry build/ios/ipa/Rejnox-unsigned.ipa Payload
+          # Záloha bez appky pre hodinky: ak Sideloadly s bezplatným Apple ID
+          # nepodpíše appku pre Apple Watch, nainštaluj túto.
+          rm -rf Payload/Runner.app/Watch
+          zip -qry build/ios/ipa/Rejnox-unsigned-bez-hodiniek.ipa Payload
     artifacts:
       - build/ios/ipa/*.ipa
 
