@@ -76,6 +76,8 @@ class TodayWorkoutCard extends StatelessWidget {
     final shown = workout.exercises.take(_maxChips).toList();
     final rest = workout.exercises.length - shown.length;
     final trainer = workout.trainerName;
+    final kcal = workout.kcal;
+    final minutes = workout.minutes;
 
     return TmCard(
       grid: true,
@@ -92,10 +94,11 @@ class TodayWorkoutCard extends StatelessWidget {
                   icon: Icons.circle,
                 ),
               ),
-              _Pill(
-                icon: Icons.local_fire_department_rounded,
-                label: '${workout.kcal} kcal',
-              ),
+              if (kcal != null)
+                _Pill(
+                  icon: Icons.local_fire_department_rounded,
+                  label: '$kcal kcal',
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -103,14 +106,16 @@ class TodayWorkoutCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(
-                Icons.timer_outlined,
-                size: 16,
-                color: AppColors.accent,
-              ),
-              const SizedBox(width: 4),
-              Text('${workout.minutes} minút', style: text.bodySmall),
-              const SizedBox(width: 14),
+              if (minutes != null) ...[
+                const Icon(
+                  Icons.timer_outlined,
+                  size: 16,
+                  color: AppColors.accent,
+                ),
+                const SizedBox(width: 4),
+                Text('$minutes minút', style: text.bodySmall),
+                const SizedBox(width: 14),
+              ],
               const Icon(
                 Icons.format_list_bulleted_rounded,
                 size: 16,
@@ -146,6 +151,40 @@ class TodayWorkoutCard extends StatelessWidget {
     >= 2 && <= 4 => 'cviky',
     _ => 'cvikov',
   };
+}
+
+/// Na dnes nie je plán od trénera – dá sa cvičiť aj voľne.
+class NoWorkoutCard extends StatelessWidget {
+  const NoWorkoutCard({super.key, required this.onStart});
+
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return TmCard(
+      grid: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionLabel('Dnešný tréning', icon: Icons.circle),
+          const SizedBox(height: 12),
+          Text('Na dnes nemáš naplánovaný tréning', style: text.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Plán ti môže pripraviť tréner. Zatiaľ si zapíš série voľne.',
+            style: text.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          PrimaryButton(
+            label: 'Voľný tréning',
+            icon: Icons.play_arrow_rounded,
+            onPressed: onStart,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Zoznam cvikov dnešného tréningu.
@@ -224,7 +263,7 @@ class _ExerciseRow extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            '${exercise.scheme} • ${exercise.weightLabel}',
+            [exercise.scheme, ?exercise.weightLabel].join(' • '),
             style: text.bodyLarge!.copyWith(fontWeight: FontWeight.w800),
           ),
         ],

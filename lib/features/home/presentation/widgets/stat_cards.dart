@@ -70,6 +70,42 @@ class PersonalRecordTile extends StatelessWidget {
   }
 }
 
+/// Ešte žiadna odcvičená séria, teda ani rekord.
+class EmptyRecordTile extends StatelessWidget {
+  const EmptyRecordTile({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return TmCard(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.military_tech_rounded,
+            size: 28,
+            color: AppColors.muted,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Zatiaľ bez rekordu', style: text.titleMedium),
+                const SizedBox(height: 2),
+                Text(
+                  'Odcvič prvú sériu a uvidíš tu svoj osobný rekord.',
+                  style: text.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SparklinePainter extends CustomPainter {
   _SparklinePainter(this.values);
 

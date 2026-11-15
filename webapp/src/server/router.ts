@@ -3,6 +3,7 @@ import type { AuthUser } from "./auth";
 import type { Db } from "./db";
 import { HttpError, unauthorized, tooManyAttempts } from "./errors";
 import * as gyms from "./gyms";
+import * as home from "./home";
 import { bearerToken, clientIp, errorResponse, json, noContent, readJsonBody } from "./http";
 import { dbRateLimiter, limits, type Limit, type RateLimiter } from "./rateLimit";
 import * as trainer from "./trainer";
@@ -104,6 +105,7 @@ const routes: Route[] = [
   },
 
   // ------------------------------------------------------------ tréningy
+  { method: "GET", pattern: "/home", handler: async (ctx) => json(200, await home.overview(ctx.db, (await ctx.user()).id)) },
   {
     method: "GET",
     pattern: "/exercises",

@@ -6,7 +6,10 @@ import 'package:rejnox/features/coaching/domain/coaching_models.dart';
 import 'package:rejnox/features/gyms/application/gym_actions.dart';
 import 'package:rejnox/features/gyms/application/user_location.dart';
 import 'package:rejnox/features/gyms/data/gym_repository.dart';
+import 'package:rejnox/core/theme/app_colors.dart';
 import 'package:rejnox/features/gyms/domain/gym.dart';
+import 'package:rejnox/features/home/data/home_repository.dart';
+import 'package:rejnox/features/home/domain/home_overview.dart' as home;
 import 'package:rejnox/features/reminders/reminder_service.dart';
 import 'package:rejnox/features/training/data/set_storage.dart';
 import 'package:rejnox/features/training/domain/training_models.dart';
@@ -186,6 +189,89 @@ class FakeCoachingApi implements CoachingApi {
 
   @override
   Future<List<Plan>> myPlans(String token) async => [...plans];
+}
+
+/// Prehľad domovskej obrazovky bez servera.
+class FakeHomeRepository implements HomeRepository {
+  FakeHomeRepository([this.overview = sampleOverview]);
+
+  home.HomeOverview overview;
+  int calls = 0;
+
+  static const empty = home.HomeOverview(
+    streakDays: 0,
+    weeklyGoal: home.WeeklyGoal(done: 0, total: 3),
+    todayWorkout: null,
+    personalRecord: null,
+  );
+
+  static const sampleOverview = home.HomeOverview(
+    streakDays: 14,
+    weeklyGoal: home.WeeklyGoal(done: 4, total: 5),
+    todayWorkout: home.Workout(
+      title: 'Nohy & zadok',
+      trainerName: 'Marek',
+      exercises: [
+        home.Exercise(
+          name: 'Drep s činkou',
+          shortName: 'Drep s činkou',
+          sets: 4,
+          reps: 6,
+          weightKg: 120,
+          note: '4 série',
+          plate: Plate.red,
+        ),
+        home.Exercise(
+          name: 'Rumunský mŕtvy ťah',
+          shortName: 'Rumunský mŕtvy ťah',
+          sets: 3,
+          reps: 8,
+          weightKg: 90,
+          note: '3 série',
+          plate: Plate.blue,
+        ),
+        home.Exercise(
+          name: 'Bulharské výpady',
+          shortName: 'Bulharské výpady',
+          sets: 3,
+          reps: 10,
+          weightKg: null,
+          note: 'na každú nohu',
+          plate: Plate.yellow,
+        ),
+        home.Exercise(
+          name: 'Hip thrust',
+          shortName: 'Hip thrust',
+          sets: 3,
+          reps: 12,
+          weightKg: 100,
+          note: '3 série',
+          plate: Plate.green,
+        ),
+        home.Exercise(
+          name: 'Výpony na lýtka',
+          shortName: 'Výpony na lýtka',
+          sets: 4,
+          reps: 15,
+          weightKg: 60,
+          note: '4 série',
+          plate: Plate.red,
+        ),
+      ],
+    ),
+    personalRecord: home.PersonalRecord(
+      exercise: 'Drep',
+      weightKg: 140,
+      monthDeltaKg: 5,
+      trend: [125, 130, 135, 140],
+    ),
+  );
+
+  @override
+  Future<home.HomeOverview> fetchOverview(String token) async {
+    calls++;
+    return overview;
+  }
 }
 
 class FakeLocationSource implements LocationSource {

@@ -268,6 +268,68 @@ describe.skipIf(!url)("API proti databáze", () => {
     });
   });
 
+  describe("domovská obrazovka", () => {
+    const squat = "00000000-0000-4000-8000-000000000001";
+    const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Bratislava" }).format(new Date());
+
+    it("nový účet má všetko prázdne", async () => {
+      const fresh = await register("novacik");
+      const res = await call("GET", "/home", { token: fresh.token });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        streakDays: 0,
+        weeklyGoal: { done: 0, total: 3 },
+        todayWorkout: null,
+        personalRecord: null,
+      });
+    });
+
+    it("dnešný plán od trénera, séria a rekord aj zo sérií od trénera", async () => {
+      const coach = await register("domtrener", "trainer");
+      const member = await register("domclen");
+      let res = await call("POST", "/clients", { token: coach.token, body: { name: "Člen" } });
+      const linkId = res.body.id as string;
+      res = await call("POST", `/clients/${linkId}/invite`, { token: coach.token });
+      await call("POST", "/invites/accept", { token: member.token, body: { code: res.body.code } });
+
+      await call("POST", `/clients/${linkId}/workouts`, {
+        token: coach.token,
+        body: { title: "Zajtrajší", scheduledOn: "2099-01-01", exercises: [{ exerciseId: squat, sets: 1, reps: 1 }] },
+      });
+      await call("POST", `/clients/${linkId}/workouts`, {
+        token: coach.token,
+        body: { title: "Nohy dnes", scheduledOn: today, exercises: [{ exerciseId: squat, sets: 4, reps: 6, weightKg: 100 }] },
+      });
+
+      const now = new Date().toISOString();
+      await call("POST", "/sets/sync", {
+        token: member.token,
+        body: { sets: [{ id: crypto.randomUUID(), exerciseId: squat, reps: 5, weightKg: 90, performedAt: now }] },
+      });
+      await call("POST", `/clients/${linkId}/sets`, {
+        token: coach.token,
+        body: { id: crypto.randomUUID(), exerciseId: squat, reps: 3, weightKg: 105 },
+      });
+
+      res = await call("GET", "/home", { token: member.token });
+      expect(res.status).toBe(200);
+      expect(res.body.streakDays).toBe(1);
+      expect(res.body.weeklyGoal).toEqual({ done: 1, total: 3 });
+      expect(res.body.todayWorkout).toMatchObject({ title: "Nohy dnes", trainerName: "domtrener" });
+      expect(res.body.todayWorkout.exercises[0]).toMatchObject({ sets: 4, reps: 6, weightKg: 100 });
+      expect(res.body.personalRecord).toMatchObject({ weightKg: 105, monthDeltaKg: 0, trend: [105] });
+
+      // Tréner na svojej domovskej obrazovke série klienta nevidí ako svoje.
+      res = await call("GET", "/home", { token: coach.token });
+      expect(res.body.personalRecord).toBeNull();
+      expect(res.body.streakDays).toBe(0);
+    });
+
+    it("bez prihlásenia nič", async () => {
+      expect((await call("GET", "/home")).status).toBe(401);
+    });
+  });
+
   describe("fitká", () => {
     let anna: Account;
     let boris: Account;

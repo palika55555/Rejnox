@@ -12,6 +12,8 @@ import 'package:rejnox/features/training/domain/training_models.dart';
 import 'package:rejnox/features/auth/data/auth_repository.dart';
 import 'package:rejnox/features/auth/domain/auth_models.dart';
 import 'package:rejnox/features/auth/presentation/auth_controller.dart';
+import 'package:rejnox/core/theme/app_colors.dart';
+import 'package:rejnox/features/home/data/home_repository.dart';
 import 'package:rejnox/features/home/domain/home_overview.dart';
 import 'package:rejnox/features/reminders/reminder_service.dart';
 import 'package:rejnox/features/training/application/workout_log_controller.dart';
@@ -112,6 +114,7 @@ Future<void> _pumpApp(
   _FakeAuthRepository? repository,
   FakeTrainingApi? trainingApi,
   FakeCoachingApi? coachingApi,
+  FakeHomeRepository? home,
 }) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = const Size(390, 844);
@@ -134,6 +137,7 @@ Future<void> _pumpApp(
         locationSourceProvider.overrideWithValue(FakeLocationSource()),
         mapTilesEnabledProvider.overrideWithValue(false),
         gymRepositoryProvider.overrideWithValue(FakeGymRepository(const [])),
+        homeRepositoryProvider.overrideWithValue(home ?? FakeHomeRepository()),
       ],
       child: const RejnoxApp(webFonts: false),
     ),
@@ -198,7 +202,59 @@ void main() {
     expect(find.text('4 z 5 tréningov'), findsOneWidget);
     expect(find.text('80%'), findsOneWidget);
     expect(find.text('+2 cviky'), findsOneWidget);
+    // Bez zadanej váhy sa ukáže len schéma.
+    expect(find.text('3×10'), findsOneWidget);
+    expect(find.textContaining('140'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('nový účet bez dát: prázdne karty namiesto vymyslených čísel', (
+    tester,
+  ) async {
+    await _pumpApp(
+      tester,
+      tokens: _MemoryTokenStore('ok'),
+      home: FakeHomeRepository(FakeHomeRepository.empty),
+    );
+
+    expect(find.text('0 z 3 tréningov'), findsOneWidget);
+    expect(find.text('Na dnes nemáš naplánovaný tréning'), findsOneWidget);
+    expect(find.text('Zatiaľ bez rekordu'), findsOneWidget);
+    expect(find.text('Rebríček'), findsNothing);
+
+    await tester.tap(find.text('Voľný tréning'));
+    await tester.pumpAndSettle();
+    expect(find.text('TRÉNING'), findsOneWidget);
+  });
+
+  test('prehľad sa načíta z odpovede servera', () {
+    final overview = HomeOverview.fromJson({
+      'streakDays': 2,
+      'weeklyGoal': {'done': 1, 'total': 3},
+      'todayWorkout': {
+        'title': 'Nohy',
+        'trainerName': 'Marek',
+        'exercises': [
+          {'name': 'Drep', 'sets': 4, 'reps': 6, 'weightKg': 100, 'note': null},
+          {'name': 'Výpady', 'sets': 1, 'reps': 10, 'weightKg': null},
+        ],
+      },
+      'personalRecord': {
+        'exercise': 'Drep',
+        'weightKg': 105.5,
+        'monthDeltaKg': 0,
+        'trend': [100, 105.5],
+      },
+    });
+
+    final workout = overview.todayWorkout!;
+    expect(workout.exercises.map((e) => e.plate), [Plate.red, Plate.blue]);
+    expect(workout.exercises[0].note, '4 série');
+    expect(workout.exercises[0].weightLabel, '100 kg');
+    expect(workout.exercises[1].weightLabel, isNull);
+    expect(workout.exercises[1].note, '1 séria');
+    expect(overview.personalRecord!.weightLabel, '105,5');
+    expect(overview.ranking, isNull);
   });
 
   testWidgets('prepínač Dnes / Týždeň / Rekordy mení obsah', (tester) async {

@@ -34,35 +34,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final overview = ref.watch(homeOverviewProvider);
     final auth = ref.watch(authControllerProvider);
-    final firstName = auth is SignedIn ? auth.user.firstName : null;
+    final firstName = auth is SignedIn ? auth.user.firstName : '';
     return SafeArea(
       bottom: false,
       child: overview.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) =>
             _ErrorView(onRetry: () => ref.invalidate(homeOverviewProvider)),
-        data: (data) => SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Header(data, name: firstName ?? data.userName),
-              const SizedBox(height: 16),
-              _Segmented(
-                selected: _tab,
-                onChanged: (tab) => setState(() => _tab = tab),
-              ),
-              const SizedBox(height: 14),
-              ...switch (_tab) {
-                _HomeTab.today => _today(context, data),
-                _HomeTab.week => const [
-                  _ComingSoon('Týždenný prehľad tréningov a objemu.'),
-                ],
-                _HomeTab.records => const [
-                  _ComingSoon('Všetky tvoje osobné rekordy na jednom mieste.'),
-                ],
-              },
-            ],
+        data: (data) => RefreshIndicator(
+          onRefresh: () => ref.refresh(homeOverviewProvider.future),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _Header(data, name: firstName),
+                const SizedBox(height: 16),
+                _Segmented(
+                  selected: _tab,
+                  onChanged: (tab) => setState(() => _tab = tab),
+                ),
+                const SizedBox(height: 14),
+                ...switch (_tab) {
+                  _HomeTab.today => _today(context, data),
+                  _HomeTab.week => const [
+                    _ComingSoon('Týždenný prehľad tréningov a objemu.'),
+                  ],
+                  _HomeTab.records => const [
+                    _ComingSoon(
+                      'Všetky tvoje osobné rekordy na jednom mieste.',
+                    ),
+                  ],
+                },
+              ],
+            ),
           ),
         ),
       ),
@@ -72,25 +78,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Widget> _today(BuildContext context, HomeOverview data) {
     const gap = SizedBox(height: 12);
     final workout = data.todayWorkout;
+    final record = data.personalRecord;
+    final ranking = data.ranking;
     final gym = data.nearbyGym;
     final partner = data.partnerRequest;
+    final recordTile = record == null
+        ? const EmptyRecordTile()
+        : PersonalRecordTile(record);
     return [
       WeeklyGoalCard(data.weeklyGoal),
       gap,
-      if (workout != null) ...[
-        TodayWorkoutCard(workout, onStart: () => context.go('/workout')),
-        gap,
-      ],
-      IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: PersonalRecordTile(data.personalRecord)),
-            const SizedBox(width: 12),
-            Expanded(child: RankingTile(data.ranking)),
-          ],
+      if (workout != null)
+        TodayWorkoutCard(workout, onStart: () => context.go('/workout'))
+      else
+        NoWorkoutCard(onStart: () => context.go('/workout')),
+      gap,
+      if (ranking == null)
+        recordTile
+      else
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: recordTile),
+              const SizedBox(width: 12),
+              Expanded(child: RankingTile(ranking)),
+            ],
+          ),
         ),
-      ),
       if (workout != null) ...[gap, ExerciseListCard(workout)],
       if (gym != null) ...[
         gap,

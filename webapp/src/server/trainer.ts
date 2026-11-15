@@ -214,6 +214,16 @@ export function myPlans(db: Db, userId: string) {
   );
 }
 
+/** Najnovší plán od trénera na daný deň („YYYY-MM-DD“), inak null. Beží v transakcii volajúceho. */
+export async function planOn(tx: Tx, userId: string, day: string) {
+  const [plan] = await workouts(
+    tx,
+    "w.trainer_client_id IN (SELECT id FROM trainer_clients WHERE client_user_id = $1::uuid) AND w.scheduled_on = $2::date",
+    [userId, day],
+  );
+  return plan ?? null;
+}
+
 // ---------------------------------------------------------------- pomocné
 
 function myTrainersTx(tx: Tx, userId: string) {
