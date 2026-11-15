@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                WorkoutController.state.collect(::render)
+                WorkoutController.state.collect { render(it) }
             }
         }
         if (hasSensors()) WorkoutController.recover()

@@ -97,3 +97,35 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
+
+  # Android + Wear OS: APK pre telefón a samostatná APK pre hodinky.
+  # Do Google Play nahraj obe do tej istej appky (hodinky majú vyššie
+  # versionCode), potom ich Obchod Play na hodinkách ponúkne v časti
+  # „Appky v telefóne“. Bez Play: hodinky-release.apk nainštaluj cez
+  # adb (bezdrôtové ladenie na hodinkách).
+  android-wear:
+    name: Android + Wear OS → APK
+    max_build_duration: 45
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+      java: 17
+      vars:
+        # Verejná adresa API (nie je tajná), preto je priamo tu.
+        API_URL: https://rejnox.sk/api
+    scripts:
+      - name: Balíčky
+        script: flutter pub get
+
+      - name: Telefón (APK)
+        script: |
+          flutter build apk --release --dart-define=API_URL="$API_URL"
+
+      - name: Hodinky Wear OS (APK)
+        script: |
+          cd android
+          ./gradlew :wear:assembleRelease
+          cp ../build/wear/outputs/apk/release/wear-release.apk \
+            ../build/app/outputs/flutter-apk/hodinky-release.apk
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk

@@ -48,11 +48,17 @@ class WatchHeartRate {
   bool get paused => state == 'paused';
 }
 
-/// Spojenie s Rejnoxom na Apple Watch (cez appku pre iPhone). Iné hodinky
-/// (Garmin, Fitbit, Galaxy Watch…) zapisujú do Apple Health / Health Connect,
-/// pozri `wearable_sources.dart`.
+/// Spojenie s Rejnoxom na hodinkách: Apple Watch (iPhone) alebo Wear OS
+/// (Android, napr. Galaxy Watch, Pixel Watch). Iné hodinky (Garmin, Fitbit…)
+/// zapisujú do Apple Health / Health Connect, pozri `wearable_sources.dart`.
 abstract interface class WatchLink {
   bool get supported;
+
+  /// „Apple Watch“ alebo „Wear OS“ (do textov v appke).
+  String get name;
+
+  /// Ako nainštalovať Rejnox na hodinky, ak sa obchod nedá otvoriť.
+  String get installHint;
   Future<WatchStatus> status();
   Stream<WatchHeartRate> get heartRate;
 
@@ -65,7 +71,8 @@ abstract interface class WatchLink {
   Future<bool> pauseWorkout();
   Future<bool> resumeWorkout();
 
-  /// Otvorí appku Watch na iPhone, kde sa Rejnox nainštaluje na hodinky.
+  /// Otvorí appku Watch na iPhone / Obchod Play na hodinkách, kde sa
+  /// Rejnox nainštaluje na hodinky.
   Future<bool> openWatchApp();
 }
 
@@ -73,8 +80,21 @@ class NativeWatchLink implements WatchLink {
   static const _methods = MethodChannel('rejnox/watch');
   static const _events = EventChannel('rejnox/watch_heart_rate');
 
+  bool get _android =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   @override
-  bool get supported => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  bool get supported =>
+      _android || (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS);
+
+  @override
+  String get name => _android ? 'Wear OS' : 'Apple Watch';
+
+  @override
+  String get installHint => _android
+      ? 'Na hodinkách otvor Obchod Play → Appky v telefóne → Rejnox.'
+      : 'Otvor appku Watch na iPhone → Dostupné appky → Rejnox → '
+            'Inštalovať.';
 
   @override
   Future<WatchStatus> status() async {
