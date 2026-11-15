@@ -49,6 +49,11 @@ workflows:
           set -euo pipefail
           gem list xcodeproj -i >/dev/null || gem install xcodeproj
           ruby scripts/ios/add_watch_target.rb
+          # Pre diagnostiku: pre akú platformu sa appka hodiniek zostavuje.
+          xcodebuild -project ios/Runner.xcodeproj -target RejnoxWatch \
+            -configuration Release -showBuildSettings 2>/dev/null \
+            | grep -E ' (SDKROOT|PLATFORM_NAME|SUPPORTED_PLATFORMS|WATCHOS_DEPLOYMENT_TARGET|ASSETCATALOG_COMPILER_APPICON_NAME) = ' \
+            || true
           flutter build ios --release --no-codesign --dart-define=API_URL="$API_URL"
           bash scripts/ios/package_unsigned_ipa.sh Rejnox-unsigned.ipa
     artifacts:
