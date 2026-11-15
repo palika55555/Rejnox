@@ -21,7 +21,7 @@ String agoLabel(DateTime at, DateTime now) {
 }
 
 /// Karta Tréning: tep počas tréningu.
-/// - s Apple Watch: spustí tréning na hodinkách, tep a kalórie naživo,
+/// - s Apple Watch / Wear OS: spustí tréning na hodinkách, tep a kalórie naživo,
 ///   pauza / pokračovanie / ukončenie z telefónu,
 /// - iné hodinky (Garmin, Fitbit, Galaxy Watch…) alebo bez hodiniek:
 ///   posledné meranie z Apple Health / Health Connect (oneskorené o sekundy
@@ -169,14 +169,9 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
 
   Future<void> _install() async {
     if (await _watch.openWatchApp() || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Otvor appku Watch na iPhone → Dostupné appky → Rejnox → '
-          'Inštalovať.',
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(_watch.installHint)));
   }
 
   Widget _bigBpm(TextTheme text, int? bpm, String note) => Row(
@@ -219,7 +214,7 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
           text,
           last.bpm?.round(),
           [
-            last.paused ? 'pozastavené' : 'naživo z Apple Watch',
+            last.paused ? 'pozastavené' : 'naživo z ${_watch.name}',
             if (kcal != null) '$kcal kcal',
           ].join('\n'),
         ),
@@ -260,7 +255,7 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
       body = [
         Text(
           'V mobilnej appke tu uvidíš tep počas tréningu z Apple Health, '
-          'Health Connect alebo naživo z Apple Watch.',
+          'Health Connect alebo naživo z Apple Watch / Wear OS.',
           style: text.bodySmall,
         ),
       ];

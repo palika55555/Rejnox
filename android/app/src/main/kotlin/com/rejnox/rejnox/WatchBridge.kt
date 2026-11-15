@@ -143,7 +143,7 @@ class WatchBridge(private val context: Context, messenger: BinaryMessenger) :
     override fun onMessageReceived(event: MessageEvent) {
         if (event.path != HEART_RATE_PATH) return
         val json = runCatching { JSONObject(String(event.data)) }.getOrNull() ?: return
-        val payload = buildMap {
+        val payload = buildMap<String, Any> {
             put("state", json.optString("state", "running"))
             put("at", json.optDouble("at", System.currentTimeMillis() / 1000.0))
             if (json.has("bpm")) put("bpm", json.getDouble("bpm"))

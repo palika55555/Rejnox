@@ -133,7 +133,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
     final liveBpm = _live?.bpm;
     final bpm = (liveBpm ?? latest?.bpm)?.round();
     final caption = liveBpm != null
-        ? 'Naživo z Apple Watch'
+        ? 'Naživo z ${ref.read(watchLinkProvider).name}'
         : latest == null
         ? (_status ?? 'Zatiaľ bez merania')
         : 'Posledné meranie\n${hhmm(latest.at)}';
@@ -173,7 +173,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                     padding: const EdgeInsets.all(12),
                     child: Text(
                       'Ukážkové údaje. Skutočný tep z Apple Health / Health '
-                      'Connect (a Apple Watch) uvidíš v mobilnej appke.',
+                      'Connect (a Apple Watch / Wear OS) uvidíš v mobilnej appke.',
                       style: text.bodySmall,
                     ),
                   ),
@@ -183,7 +183,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                   child: HeartRing(bpm: bpm, caption: caption),
                 ),
                 const SizedBox(height: 12),
-                // Apple Watch existuje len pri iPhone.
+                // Rejnox na hodinkách: Apple Watch (iPhone), Wear OS (Android).
                 if (_demo || ref.read(watchLinkProvider).supported)
                   Center(
                     child: _WatchChip(demo: _demo, live: liveBpm != null),
@@ -309,15 +309,16 @@ class _WatchChip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     final status = ref.watch(watchStatusProvider).value;
+    final name = ref.watch(watchLinkProvider).name;
     final (ok, label) = demo
         ? (true, 'Apple Watch (ukážka)')
         : live
-        ? (true, 'Apple Watch · naživo')
+        ? (true, '$name · naživo')
         : status == null || !status.paired
         ? (false, 'Hodinky nie sú spárované')
         : !status.installed
         ? (false, 'Nainštaluj Rejnox na hodinky')
-        : (true, 'Pripojené Apple Watch');
+        : (true, 'Pripojené $name');
     final color = ok ? Plate.green.color : AppColors.muted;
     final canInstall = !demo && status != null && status.canInstall;
     final chip = Container(

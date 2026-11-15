@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -67,6 +68,12 @@ class _FakeWatch implements WatchLink {
 
   @override
   bool get supported => true;
+
+  @override
+  String get name => 'Apple Watch';
+
+  @override
+  String get installHint => 'Nainštaluj cez appku Watch.';
 
   @override
   Future<WatchStatus> status() async =>
@@ -161,6 +168,20 @@ void main() {
       );
       expect(pickLatestWatchReading([]), isNull);
     });
+  });
+
+  test('Rejnox na hodinkách: Apple Watch na iPhone, Wear OS na Androide', () {
+    final link = NativeWatchLink();
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    expect(link.supported, isTrue);
+    expect(link.name, 'Wear OS');
+    expect(link.installHint, contains('Obchod Play'));
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    expect(link.name, 'Apple Watch');
+    expect(link.installHint, contains('appku Watch'));
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    expect(link.supported, isFalse);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   group('iné hodinky', () {
