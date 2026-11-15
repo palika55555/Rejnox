@@ -49,6 +49,9 @@ watch.build_configurations.each do |config|
   s['CODE_SIGN_STYLE'] = 'Automatic'
   s['ASSETCATALOG_COMPILER_APPICON_NAME'] = 'AppIcon'
   s['SDKROOT'] = 'watchos'
+  # Flutter má v projekte SUPPORTED_PLATFORMS = iphoneos; hodinky by ho
+  # zdedili a actool by ikonu hodiniek nepoužil ("no applicable content").
+  s['SUPPORTED_PLATFORMS'] = 'watchos watchsimulator'
   s['WATCHOS_DEPLOYMENT_TARGET'] = WATCHOS_VERSION
   s['TARGETED_DEVICE_FAMILY'] = '4'
   s['SWIFT_VERSION'] = '5.0'
