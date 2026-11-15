@@ -36,6 +36,8 @@ class NotificationBell extends ConsumerWidget {
 IconData _icon(String kind) => switch (kind) {
   'plan' => Icons.assignment_rounded,
   'booking' => Icons.event_rounded,
+  'slot' => Icons.event_available_rounded,
+  'training' => Icons.fitness_center_rounded,
   'link' => Icons.handshake_outlined,
   'link_ended' => Icons.link_off_rounded,
   _ => Icons.notifications_none_rounded,
@@ -54,8 +56,10 @@ class NotificationsScreen extends ConsumerWidget {
     switch (n.kind) {
       case 'plan' when !trainer:
         context.go('/home');
-      case 'booking' when !trainer:
+      case 'booking' || 'slot' when !trainer:
         context.push('/trainer/$link/calendar');
+      case 'training' when !trainer:
+        context.go('/workout');
       case 'link_ended':
         break;
       default:

@@ -25,7 +25,7 @@ class AppNotification {
 
   final String id;
 
-  /// plan, booking, link, link_ended.
+  /// plan, booking, slot (voľný termín), training (rozpis), link, link_ended.
   final String kind;
   final String title;
   final String? body;

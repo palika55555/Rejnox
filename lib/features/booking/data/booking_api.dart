@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_client.dart';
 import '../domain/booking_models.dart';
+import '../domain/my_training.dart';
 
 abstract interface class BookingApi {
   // Tréner.
@@ -31,6 +32,9 @@ abstract interface class BookingApi {
   });
   Future<Booking> confirm(String token, String bookingId);
 
+  /// Pripojí k tréningu plán klienta (`null` = odpojí).
+  Future<Booking> setPlan(String token, String bookingId, String? workoutId);
+
   // Tréner aj klient.
   Future<void> cancel(String token, String bookingId);
 
@@ -49,6 +53,9 @@ abstract interface class BookingApi {
     required DateTime endsAt,
     String? note,
   });
+
+  /// Moje tréningy u trénerov na najbližších 30 dní.
+  Future<List<MyTraining>> myTrainings(String token);
 }
 
 class HttpBookingApi implements BookingApi {
@@ -132,6 +139,20 @@ class HttpBookingApi implements BookingApi {
       );
 
   @override
+  Future<Booking> setPlan(
+    String token,
+    String bookingId,
+    String? workoutId,
+  ) async => Booking.fromJson(
+    await _api.send(
+      'PUT',
+      '/bookings/$bookingId/plan',
+      token: token,
+      body: {'workoutId': workoutId},
+    ),
+  );
+
+  @override
   Future<void> cancel(String token, String bookingId) =>
       _api.send('POST', '/bookings/$bookingId/cancel', token: token);
 
@@ -179,6 +200,15 @@ class HttpBookingApi implements BookingApi {
       },
     ),
   );
+
+  @override
+  Future<List<MyTraining>> myTrainings(String token) async {
+    final json = await _api.send('GET', '/me/trainings', token: token);
+    return [
+      for (final t in json['trainings'] as List)
+        MyTraining.fromJson(t as Map<String, dynamic>),
+    ];
+  }
 }
 
 final bookingApiProvider = Provider<BookingApi>(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../domain/booking_models.dart';
+import '../domain/calendar_period.dart';
 
 /// Čo je v daný deň v kalendári (farebná bodka pod dňom).
 enum DayMark {
@@ -16,19 +17,17 @@ enum DayMark {
   final String label;
 }
 
-/// Zoskupí udalosti týždňa po dňoch (0 = pondelok); mimo týždňa sa ignorujú.
+/// Zoskupí udalosti po dňoch od [monday] (0 = pondelok); udalosti mimo
+/// obdobia [days] dní sa ignorujú.
 Map<int, Set<DayMark>> markDays(
   DateTime monday,
-  Iterable<(DateTime, DayMark)> events,
-) {
+  Iterable<(DateTime, DayMark)> events, {
+  int days = 7,
+}) {
   final marks = <int, Set<DayMark>>{};
   for (final (time, mark) in events) {
-    final i = DateTime(
-      time.year,
-      time.month,
-      time.day,
-    ).difference(monday).inDays;
-    if (i >= 0 && i < 7) (marks[i] ??= {}).add(mark);
+    final i = daysBetween(monday, DateTime(time.year, time.month, time.day));
+    if (i >= 0 && i < days) (marks[i] ??= {}).add(mark);
   }
   return marks;
 }
@@ -36,81 +35,9 @@ Map<int, Set<DayMark>> markDays(
 DayMark bookingMark(Booking b) =>
     b.isPending ? DayMark.pending : DayMark.training;
 
-/// Týždeň s dňami na výber. `marks` = čo je v ktorý deň (0 = pondelok).
-class WeekStrip extends StatelessWidget {
-  const WeekStrip({
-    super.key,
-    required this.monday,
-    required this.selected,
-    required this.onSelect,
-    required this.onWeek,
-    this.marks = const {},
-  });
-
-  final DateTime monday;
-  final DateTime selected;
-  final ValueChanged<DateTime> onSelect;
-
-  /// -1 = predošlý týždeň, +1 = ďalší.
-  final ValueChanged<int> onWeek;
-  final Map<int, Set<DayMark>> marks;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final sunday = monday.add(const Duration(days: 6));
-    final today = DateTime.now();
-    return TmCard(
-      padding: const EdgeInsets.fromLTRB(6, 6, 6, 12),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              IconButton(
-                tooltip: 'Predošlý týždeň',
-                onPressed: () => onWeek(-1),
-                icon: const Icon(Icons.chevron_left_rounded),
-              ),
-              Expanded(
-                child: Text(
-                  '${monday.day}. ${monday.month}. – '
-                  '${sunday.day}. ${sunday.month}. ${sunday.year}',
-                  style: text.titleMedium,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              IconButton(
-                tooltip: 'Ďalší týždeň',
-                onPressed: () => onWeek(1),
-                icon: const Icon(Icons.chevron_right_rounded),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              for (var i = 0; i < 7; i++)
-                Expanded(
-                  child: _DayChip(
-                    day: monday.add(Duration(days: i)),
-                    selected: sameDay(monday.add(Duration(days: i)), selected),
-                    today: sameDay(monday.add(Duration(days: i)), today),
-                    marks: marks[i] ?? const {},
-                    onTap: () => onSelect(monday.add(Duration(days: i))),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const _Legend(),
-        ],
-      ),
-    );
-  }
-}
-
 /// Vysvetlivky k bodkám.
-class _Legend extends StatelessWidget {
-  const _Legend();
+class CalendarLegend extends StatelessWidget {
+  const CalendarLegend({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -147,18 +74,23 @@ class _Dot extends StatelessWidget {
   );
 }
 
-class _DayChip extends StatelessWidget {
-  const _DayChip({
+class DayChip extends StatelessWidget {
+  const DayChip({
+    super.key,
     required this.day,
     required this.selected,
     required this.today,
     required this.marks,
     required this.onTap,
+    this.showWeekday = true,
   });
 
   final DateTime day;
   final bool selected;
   final bool today;
+
+  /// V mriežke mesiaca sú dni týždňa v hlavičke, nie pri každom dni.
+  final bool showWeekday;
   final Set<DayMark> marks;
   final VoidCallback onTap;
 
@@ -191,13 +123,15 @@ class _DayChip extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Text(
-                weekdayShort(day),
-                style: text.bodySmall!.copyWith(
-                  color: today ? AppColors.accent : AppColors.muted,
+              if (showWeekday) ...[
+                Text(
+                  weekdayShort(day),
+                  style: text.bodySmall!.copyWith(
+                    color: today ? AppColors.accent : AppColors.muted,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
+                const SizedBox(height: 2),
+              ],
               Text(
                 '${day.day}',
                 style: text.titleMedium!.copyWith(

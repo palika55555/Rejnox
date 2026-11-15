@@ -7,6 +7,7 @@ import type { Db } from "./db";
 import { HttpError, unauthorized, tooManyAttempts } from "./errors";
 import * as gyms from "./gyms";
 import * as home from "./home";
+import * as myTrainings from "./myTrainings";
 import * as progress from "./progress";
 import { bearerToken, clientIp, errorResponse, image, json, noContent, readBytes, readJsonBody } from "./http";
 import { dbRateLimiter, limits, type Limit, type RateLimiter } from "./rateLimit";
@@ -328,6 +329,21 @@ const routes: Route[] = [
       const body = await readJsonBody(ctx.request);
       return json(201, await calendar.addClientBooking(ctx.db, me.id, id(ctx), calendar.parseClientBooking(body)));
     },
+  },
+
+  {
+    method: "PUT",
+    pattern: "/bookings/:id/plan",
+    async handler(ctx) {
+      const me = await calendarWriter(ctx, await trainerUser(ctx));
+      const body = await readJsonBody(ctx.request);
+      return json(200, await myTrainings.setBookingPlan(ctx.db, me.id, id(ctx), myTrainings.parseBookingPlan(body)));
+    },
+  },
+  {
+    method: "GET",
+    pattern: "/me/trainings",
+    handler: async (ctx) => json(200, { trainings: await myTrainings.upcoming(ctx.db, (await ctx.user()).id) }),
   },
 
   // ------------------------------------------------------------ chat

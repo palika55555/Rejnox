@@ -150,7 +150,7 @@ function bookingsWhere(tx: Tx, where: string, params: unknown[]) {
   );
 }
 
-async function bookingById(tx: Tx, bookingId: string) {
+export async function bookingById(tx: Tx, bookingId: string) {
   const [booking] = await bookingsWhere(tx, "b.id = $1::uuid", [bookingId]);
   if (!booking) throw notFound();
   return booking;

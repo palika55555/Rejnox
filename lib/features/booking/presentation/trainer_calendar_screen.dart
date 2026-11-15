@@ -9,7 +9,9 @@ import '../../../core/widgets/tm_card.dart';
 import '../../coaching/presentation/coaching_widgets.dart';
 import '../application/booking_providers.dart';
 import '../domain/booking_models.dart';
+import '../domain/calendar_period.dart';
 import 'calendar_widgets.dart';
+import 'month_grid.dart';
 import 'trainer_calendar_sheets.dart';
 
 /// Kalendár trénera: vypísané termíny, tréningy klientov a žiadosti.
@@ -23,11 +25,15 @@ class TrainerCalendarScreen extends ConsumerStatefulWidget {
 
 class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
   DateTime _day = DateTime.now();
+  CalendarView _view = CalendarView.day;
 
-  DateTime get _monday => weekStart(_day);
+  /// Prvý pondelok zobrazeného obdobia (5 týždňov).
+  DateTime get _monday => periodStart(_day);
 
-  void _week(int delta) =>
-      setState(() => _day = _day.add(Duration(days: 7 * delta)));
+  void _period(int delta) => setState(() {
+    final start = _monday;
+    _day = DateTime(start.year, start.month, start.day + delta * calendarDays);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -99,12 +105,20 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
                       ),
                       const SizedBox(height: 14),
                     ],
-                    WeekStrip(
-                      monday: _monday,
+                    MonthGrid(
+                      start: _monday,
                       selected: _day,
-                      onSelect: (d) => setState(() => _day = d),
-                      onWeek: _week,
+                      onSelect: (d) => setState(() {
+                        _day = d;
+                        _view = CalendarView.day;
+                      }),
+                      onPeriod: _period,
                       marks: data == null ? const {} : _marks(data, _monday),
+                    ),
+                    const SizedBox(height: 12),
+                    CalendarViewToggle(
+                      view: _view,
+                      onChanged: (v) => setState(() => _view = v),
                     ),
                     const SizedBox(height: 14),
                     ...calendar.when(
@@ -130,7 +144,13 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
                           ),
                         ),
                       ],
-                      data: (cal) => _dayItems(context, cal),
+                      data: (cal) => _view == CalendarView.day
+                          ? _dayItems(context, cal, _day)
+                          : agendaItems(
+                              _monday,
+                              (d) => _dayItems(context, cal, d, empty: false),
+                              empty: 'V tomto období nič nemáš.',
+                            ),
                     ),
                   ],
                 ),
@@ -142,9 +162,15 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
     );
   }
 
-  List<Widget> _dayItems(BuildContext context, TrainerCalendar cal) {
-    final slots = cal.slots.where((s) => sameDay(s.startsAt, _day));
-    final bookings = cal.bookings.where((b) => sameDay(b.startsAt, _day));
+  /// Udalosti dňa. Bez [empty] vráti pri prázdnom dni prázdny zoznam.
+  List<Widget> _dayItems(
+    BuildContext context,
+    TrainerCalendar cal,
+    DateTime day, {
+    bool empty = true,
+  }) {
+    final slots = cal.slots.where((s) => sameDay(s.startsAt, day));
+    final bookings = cal.bookings.where((b) => sameDay(b.startsAt, day));
     final items = <(DateTime, Widget)>[
       for (final s in slots)
         (
@@ -186,8 +212,11 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
     ]..sort((a, b) => a.$1.compareTo(b.$1));
 
     if (items.isEmpty) {
-      return const [
-        EmptyDay('V tento deň nič nemáš. Vypíš termín alebo zapíš tréning.'),
+      return [
+        if (empty)
+          const EmptyDay(
+            'V tento deň nič nemáš. Vypíš termín alebo zapíš tréning.',
+          ),
       ];
     }
     return [
@@ -196,16 +225,16 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
   }
 }
 
-/// Koľko udalostí má ktorý deň týždňa (0 = pondelok).
+/// Čo je v ktorý deň obdobia (0 = prvý pondelok).
 /// Zelená = tréning s klientom, oranžová = žiadosť, sivá = termín bez klientov.
 Map<int, Set<DayMark>> _marks(TrainerCalendar cal, DateTime monday) =>
     markDays(monday, [
       for (final s in cal.slots)
         (s.startsAt, s.bookings.isEmpty ? DayMark.open : DayMark.training),
       for (final b in cal.bookings) (b.startsAt, bookingMark(b)),
-    ]);
+    ], days: calendarDays);
 
-/// Žiadosti klientov, ktoré čakajú na odpoveď (v zobrazenom týždni).
+/// Žiadosti klientov, ktoré čakajú na odpoveď (v zobrazenom období).
 class _PendingCard extends StatelessWidget {
   const _PendingCard(this.pending);
 

@@ -10,6 +10,7 @@ import '../../coaching/domain/coaching_models.dart';
 import '../../coaching/presentation/coaching_widgets.dart';
 import '../application/booking_providers.dart';
 import '../domain/booking_models.dart';
+import 'booking_plan_sheet.dart';
 import 'calendar_widgets.dart';
 
 /// Spoločný rám spodných panelov: nadpis, obsah, odsadenie nad klávesnicou.
@@ -419,6 +420,21 @@ class TrainerBookingDetailSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
         ],
+        if (b.status != BookingStatus.cancelled) ...[
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              showCalendarSheet<bool>(context, BookingPlanSheet(b));
+            },
+            icon: const Icon(Icons.assignment_rounded),
+            label: Text(
+              b.workoutTitle == null
+                  ? 'Pripojiť plán (rozpis pre klienta)'
+                  : 'Zmeniť plán',
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         OutlinedButton.icon(
           onPressed: () {
             Navigator.pop(context);
@@ -479,7 +495,10 @@ class SlotDetailSheet extends ConsumerWidget {
         for (final b in slot.bookings)
           AppRow(
             title: b.clientName,
-            subtitle: b.requestedByClient ? 'Rezervoval sám' : 'Pridal si ty',
+            subtitle: [
+              b.requestedByClient ? 'Rezervoval sám' : 'Pridal si ty',
+              b.workoutTitle == null ? 'bez plánu' : 'plán ${b.workoutTitle}',
+            ].join(' · '),
             trailing: IconButton(
               tooltip: 'Zrušiť miesto',
               icon: const Icon(Icons.close_rounded, color: AppColors.muted),
@@ -492,7 +511,7 @@ class SlotDetailSheet extends ConsumerWidget {
             ),
             onTap: () {
               Navigator.pop(context);
-              context.go('/clients/${b.clientId}');
+              showCalendarSheet<void>(context, TrainerBookingDetailSheet(b));
             },
           ),
         const SizedBox(height: 14),

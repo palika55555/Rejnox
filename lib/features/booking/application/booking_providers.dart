@@ -4,19 +4,23 @@ import '../../../core/api/api_client.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/booking_api.dart';
 import '../domain/booking_models.dart';
+import '../domain/calendar_period.dart';
+import '../domain/my_training.dart';
 
 const _signedOut = ApiError(401, 'unauthorized', 'Prihlás sa, prosím.');
 
 String _token(AuthState auth) =>
     auth is SignedIn ? auth.token : throw _signedOut;
 
-/// Kalendár sa načítava po týždňoch (od pondelka, miestny čas).
-({DateTime from, DateTime to}) _week(DateTime monday) =>
-    (from: monday, to: monday.add(const Duration(days: 7)));
+/// Kalendár sa načítava po obdobiach 5 týždňov (od pondelka, miestny čas).
+({DateTime from, DateTime to}) _week(DateTime monday) => (
+  from: monday,
+  to: DateTime(monday.year, monday.month, monday.day + calendarDays),
+);
 
 // ------------------------------------------------------------------ tréner
 
-/// Týždeň v kalendári trénera; kľúč je pondelok.
+/// Obdobie v kalendári trénera; kľúč je jeho prvý pondelok.
 final trainerCalendarProvider = FutureProvider.autoDispose
     .family<TrainerCalendar, DateTime>((ref, monday) {
       final week = _week(monday);
@@ -89,6 +93,11 @@ class TrainerCalendarActions {
     _refresh();
   }
 
+  Future<void> setPlan(String bookingId, String? workoutId) async {
+    await _api.setPlan(_t, bookingId, workoutId);
+    _refresh();
+  }
+
   Future<void> cancel(String bookingId) async {
     await _api.cancel(_t, bookingId);
     _refresh();
@@ -104,7 +113,7 @@ final trainerCalendarActionsProvider = Provider<TrainerCalendarActions>(
 
 typedef ClientWeek = ({String linkId, DateTime monday});
 
-/// Kalendár môjho trénera na týždeň.
+/// Kalendár môjho trénera na obdobie (5 týždňov).
 final clientCalendarProvider = FutureProvider.autoDispose
     .family<ClientCalendar, ClientWeek>((ref, key) {
       final week = _week(key.monday);
@@ -127,7 +136,9 @@ class ClientCalendarActions {
   BookingApi get _api => _ref.read(bookingApiProvider);
   String get _t => _token(_ref.read(authControllerProvider));
 
-  void _refresh() => _ref.invalidate(clientCalendarProvider);
+  void _refresh() => _ref
+    ..invalidate(clientCalendarProvider)
+    ..invalidate(myTrainingsProvider);
 
   Future<void> bookSlot(String slotId) async {
     await _api.bookSlot(_t, linkId, slotId);
@@ -157,3 +168,10 @@ class ClientCalendarActions {
 
 final clientCalendarActionsProvider =
     Provider.family<ClientCalendarActions, String>(ClientCalendarActions.new);
+
+/// Moje tréningy u trénerov na najbližších 30 dní (s rozpisom a plánom).
+final myTrainingsProvider = FutureProvider.autoDispose<List<MyTraining>>(
+  (ref) => ref
+      .watch(bookingApiProvider)
+      .myTrainings(_token(ref.watch(authControllerProvider))),
+);

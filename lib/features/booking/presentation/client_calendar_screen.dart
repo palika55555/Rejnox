@@ -9,7 +9,9 @@ import '../../../core/widgets/tm_card.dart';
 import '../../coaching/presentation/coaching_widgets.dart';
 import '../application/booking_providers.dart';
 import '../domain/booking_models.dart';
+import '../domain/calendar_period.dart';
 import 'calendar_widgets.dart';
+import 'month_grid.dart';
 import 'trainer_calendar_sheets.dart';
 
 /// Kalendár môjho trénera: voľné termíny, rezervácia miesta a žiadosť o tréning.
@@ -26,8 +28,9 @@ class ClientCalendarScreen extends ConsumerStatefulWidget {
 
 class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
   DateTime _day = DateTime.now();
+  CalendarView _view = CalendarView.day;
 
-  ClientWeek get _key => (linkId: widget.linkId, monday: weekStart(_day));
+  ClientWeek get _key => (linkId: widget.linkId, monday: periodStart(_day));
 
   ClientCalendarActions get _actions =>
       ref.read(clientCalendarActionsProvider(widget.linkId));
@@ -109,16 +112,29 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    WeekStrip(
-                      monday: _key.monday,
+                    MonthGrid(
+                      start: _key.monday,
                       selected: _day,
-                      onSelect: (d) => setState(() => _day = d),
-                      onWeek: (delta) => setState(
-                        () => _day = _day.add(Duration(days: 7 * delta)),
-                      ),
+                      onSelect: (d) => setState(() {
+                        _day = d;
+                        _view = CalendarView.day;
+                      }),
+                      onPeriod: (delta) => setState(() {
+                        final start = _key.monday;
+                        _day = DateTime(
+                          start.year,
+                          start.month,
+                          start.day + delta * calendarDays,
+                        );
+                      }),
                       marks: data == null
                           ? const {}
                           : _marks(data, _key.monday),
+                    ),
+                    const SizedBox(height: 12),
+                    CalendarViewToggle(
+                      view: _view,
+                      onChanged: (v) => setState(() => _view = v),
                     ),
                     const SizedBox(height: 14),
                     ...calendar.when(
@@ -144,7 +160,13 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
                           ),
                         ),
                       ],
-                      data: _dayItems,
+                      data: (cal) => _view == CalendarView.day
+                          ? _dayItems(cal, _day)
+                          : agendaItems(
+                              _key.monday,
+                              (d) => _dayItems(cal, d, empty: false),
+                              empty: 'Tréner v tomto období nič nevypísal.',
+                            ),
                     ),
                   ],
                 ),
@@ -156,13 +178,18 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
     );
   }
 
-  List<Widget> _dayItems(ClientCalendar cal) {
+  /// Udalosti dňa. Bez [empty] vráti pri prázdnom dni prázdny zoznam.
+  List<Widget> _dayItems(
+    ClientCalendar cal,
+    DateTime day, {
+    bool empty = true,
+  }) {
     final now = DateTime.now();
     final items = <(DateTime, Widget)>[
-      for (final s in cal.slots.where((s) => sameDay(s.startsAt, _day)))
+      for (final s in cal.slots.where((s) => sameDay(s.startsAt, day)))
         (s.startsAt, _slotTile(cal, s, now)),
       for (final b in cal.bookings.where(
-        (b) => b.slotId == null && sameDay(b.startsAt, _day),
+        (b) => b.slotId == null && sameDay(b.startsAt, day),
       ))
         (
           b.startsAt,
@@ -179,7 +206,7 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
             trailing: b.endsAt.isAfter(now) ? _cancelButton(b) : null,
           ),
         ),
-      for (final busy in cal.busy.where((t) => sameDay(t.startsAt, _day)))
+      for (final busy in cal.busy.where((t) => sameDay(t.startsAt, day)))
         (
           busy.startsAt,
           CalendarEventTile(
@@ -193,10 +220,11 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
     ]..sort((a, b) => a.$1.compareTo(b.$1));
 
     if (items.isEmpty) {
-      return const [
-        EmptyDay(
-          'Tréner na tento deň nevypísal termín. Môžeš ho požiadať o vlastný čas.',
-        ),
+      return [
+        if (empty)
+          const EmptyDay(
+            'Tréner na tento deň nevypísal termín. Môžeš ho požiadať o vlastný čas.',
+          ),
       ];
     }
     return [
@@ -211,7 +239,10 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
       start: s.startsAt,
       end: s.endsAt,
       title: s.title,
-      subtitle: s.note,
+      subtitle: [
+        if (mine?.workoutTitle case final plan?) 'Plán: $plan',
+        ?s.note,
+      ].join(' · ').ifEmpty(null),
       accent: mine != null ? AppColors.good : AppColors.info,
       pill: mine != null
           ? const AppPill(
@@ -257,7 +288,7 @@ Map<int, Set<DayMark>> _marks(ClientCalendar cal, DateTime monday) {
         (s.startsAt, DayMark.open),
     for (final b in cal.bookings.where((b) => b.slotId == null))
       (b.startsAt, bookingMark(b)),
-  ]);
+  ], days: calendarDays);
 }
 
 /// Klient požiada trénera o tréning vo vlastnom čase.
@@ -272,7 +303,7 @@ class RequestTrainingSheet extends ConsumerStatefulWidget {
   final String linkId;
   final DateTime day;
 
-  /// Obsadené časy trénera v zobrazenom týždni (na upozornenie vopred).
+  /// Obsadené časy trénera v zobrazenom období (na upozornenie vopred).
   final List<BusyTime> busy;
 
   @override

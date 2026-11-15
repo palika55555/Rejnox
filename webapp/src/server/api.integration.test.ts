@@ -512,6 +512,86 @@ describe.skipIf(!url)("API proti databáze", () => {
       expect(res.body.error.code).toBe("time_taken");
     });
 
+    it("voľné termíny: upozornenia klientom, rozpis tréningu a plán pre klienta", async () => {
+      const unreadSlots = async (who: Account) =>
+        ((await call("GET", "/notifications", { token: who.token })).body.notifications as Json[]).filter(
+          (n) => !n.read && n.kind === "slot",
+        );
+      for (const who of [anna, boris]) await call("POST", "/notifications/read", { token: who.token, body: {} });
+
+      // Nový termín → upozornenie každému klientovi, druhý sa zlúči do jedného.
+      let res = await call("POST", "/calendar/slots", {
+        token: coach.token,
+        body: { startsAt: at(96), endsAt: at(97), capacity: 2, title: "Joga", note: "Strečing a core" },
+      });
+      const slotId = res.body.id as string;
+      let slots = await unreadSlots(boris);
+      expect(slots).toEqual([expect.objectContaining({ title: "Nový voľný termín", linkId: borisLink })]);
+      expect(slots[0].body).toContain("Joga");
+      await call("POST", "/calendar/slots", {
+        token: coach.token,
+        body: { startsAt: at(100), endsAt: at(101), title: "Kruh" },
+      });
+      slots = await unreadSlots(anna);
+      expect(slots).toEqual([expect.objectContaining({ title: "Nové voľné termíny" })]);
+
+      // Anna si rezervuje miesto a vidí ho v najbližších tréningoch aj s rozpisom.
+      res = await call("POST", `/me/trainers/${annaLink}/bookings`, { token: anna.token, body: { slotId } });
+      const bookingId = res.body.id as string;
+      res = await call("GET", "/me/trainings", { token: anna.token });
+      expect(res.status).toBe(200);
+      const mine = (res.body.trainings as Json[]).find((t) => t.id === bookingId);
+      expect(mine).toMatchObject({
+        linkId: annaLink,
+        title: "Joga",
+        slotNote: "Strečing a core",
+        inSlot: true,
+        status: "confirmed",
+        startsAt: at(96),
+        workout: null,
+      });
+
+      // Tréner pripojí plán → klient ho vidí s cvikmi a dostane upozornenie.
+      const exercises = (await call("GET", "/exercises", { token: coach.token })).body.exercises;
+      res = await call("POST", `/clients/${annaLink}/workouts`, {
+        token: coach.token,
+        body: { title: "Mobilita", exercises: [{ exerciseId: exercises[0].id, sets: 2, reps: 12 }] },
+      });
+      const planId = res.body.id as string;
+      res = await call("PUT", `/bookings/${bookingId}/plan`, { token: anna.token, body: { workoutId: planId } });
+      expect(res.status).toBe(403);
+      const borisPlan = (await call("POST", `/clients/${borisLink}/workouts`, {
+        token: coach.token,
+        body: { title: "Cudzí", exercises: [{ exerciseId: exercises[0].id, sets: 1, reps: 1 }] },
+      })).body.id;
+      res = await call("PUT", `/bookings/${bookingId}/plan`, { token: coach.token, body: { workoutId: borisPlan } });
+      expect(res.status).toBe(404);
+      res = await call("PUT", `/bookings/${bookingId}/plan`, { token: coach.token, body: { workoutId: planId } });
+      expect(res.status).toBe(200);
+      expect(res.body.workout).toEqual({ id: planId, title: "Mobilita" });
+      res = await call("GET", "/me/trainings", { token: anna.token });
+      const planned = (res.body.trainings as Json[]).find((t) => t.id === bookingId)!;
+      expect(planned.workout).toMatchObject({ id: planId, title: "Mobilita", exercises: [{ sets: 2, reps: 12 }] });
+      res = await call("GET", "/notifications", { token: anna.token });
+      expect(res.body.notifications[0]).toMatchObject({ kind: "training", title: "Rozpis tréningu" });
+      // Boris Annin tréning nevidí.
+      res = await call("GET", "/me/trainings", { token: boris.token });
+      expect(JSON.stringify(res.body)).not.toContain(bookingId);
+
+      // Anna miesto zruší → Boris sa dozvie, že je voľné; Anna nie.
+      for (const who of [anna, boris]) await call("POST", "/notifications/read", { token: who.token, body: {} });
+      expect((await call("POST", `/bookings/${bookingId}/cancel`, { token: anna.token })).status).toBe(204);
+      expect(await unreadSlots(boris)).toEqual([expect.objectContaining({ title: "Uvoľnilo sa miesto" })]);
+      expect(await unreadSlots(anna)).toEqual([]);
+
+      // Zrušenie celého termínu voľné miesto neponúka.
+      res = await call("POST", `/me/trainers/${borisLink}/bookings`, { token: boris.token, body: { slotId } });
+      expect(res.status).toBe(201);
+      for (const who of [anna, boris]) await call("POST", "/notifications/read", { token: who.token, body: {} });
+      expect((await call("DELETE", `/calendar/slots/${slotId}`, { token: coach.token })).status).toBe(204);
+      expect(await unreadSlots(anna)).toEqual([]);
+    });
+
     it("cudzí človek kalendár nevidí a nerezervuje", async () => {
       expect((await call("GET", `/me/trainers/${annaLink}/calendar?${range}`, { token: outsider.token })).status).toBe(404);
       const res = await call("POST", `/me/trainers/${annaLink}/bookings`, {

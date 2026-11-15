@@ -5,6 +5,7 @@ import 'package:rejnox/features/auth/domain/auth_models.dart';
 import 'package:rejnox/features/auth/presentation/auth_controller.dart';
 import 'package:rejnox/features/booking/data/booking_api.dart';
 import 'package:rejnox/features/booking/domain/booking_models.dart';
+import 'package:rejnox/features/booking/domain/my_training.dart';
 import 'package:rejnox/features/booking/presentation/calendar_widgets.dart';
 import 'package:rejnox/features/booking/presentation/client_calendar_screen.dart';
 import 'package:rejnox/features/booking/presentation/trainer_calendar_screen.dart';
@@ -63,6 +64,19 @@ class FakeBookingApi implements BookingApi {
   @override
   Future<void> cancel(String token, String bookingId) async =>
       calls.add('cancel $bookingId');
+
+  @override
+  Future<Booking> setPlan(
+    String token,
+    String bookingId,
+    String? workoutId,
+  ) async {
+    calls.add('plan $bookingId $workoutId');
+    return _booking();
+  }
+
+  @override
+  Future<List<MyTraining>> myTrainings(String token) async => const [];
 
   @override
   Future<Booking> request(
@@ -147,11 +161,7 @@ Future<void> _pump(
     ),
   );
   await tester.pumpAndSettle();
-  // Termíny sú zajtra: ak zajtra začína nový týždeň, prepni naň.
-  if (weekStart(_tomorrow) != weekStart(DateTime.now())) {
-    await tester.tap(find.byTooltip('Ďalší týždeň'));
-    await tester.pumpAndSettle();
-  }
+  // Termíny sú zajtra, to je vždy v prvom zobrazenom období (5 týždňov).
   await tester.tap(find.text('${_tomorrow.day}').first);
   await tester.pumpAndSettle();
 }

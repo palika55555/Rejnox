@@ -10,6 +10,8 @@ import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../../coaching/application/coaching_providers.dart';
 import '../../coaching/domain/coaching_models.dart';
+import '../../booking/application/booking_providers.dart';
+import '../../booking/presentation/upcoming_trainings_section.dart';
 import '../../coaching/presentation/trainer_plans_section.dart';
 import '../../health/workout_heart_rate_card.dart';
 import '../application/exercise_stats.dart';
@@ -264,6 +266,8 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
     final log = ref.watch(workoutLogProvider);
     final hasPlans =
         ref.watch(myPlansProvider).value?.plans.isNotEmpty ?? false;
+    final hasTrainings =
+        ref.watch(myTrainingsProvider).value?.isNotEmpty ?? false;
     final history = ExerciseHistory.fromSets(log.sets);
     final today = _todaySets();
     final todayIds = {for (final s in today) s.id};
@@ -331,6 +335,12 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                     children: [
                       if (log.offline && log.pendingCount > 0)
                         OfflineBanner(pending: log.pendingCount),
+                      if (hasTrainings)
+                        UpcomingTrainingsSection(
+                          onStart: active == null && !_submitting
+                              ? _startPlan
+                              : null,
+                        ),
                       AppSection(
                         title: 'Nová séria',
                         trailing: SetKindPicker(
