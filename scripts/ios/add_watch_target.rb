@@ -60,7 +60,7 @@ watch.build_configurations.each do |config|
   s['MARKETING_VERSION'] = '$(FLUTTER_BUILD_NAME)'
   s['CURRENT_PROJECT_VERSION'] = '$(FLUTTER_BUILD_NUMBER)'
   s['LD_RUNPATH_SEARCH_PATHS'] = ['$(inherited)', '@executable_path/Frameworks']
-  s['DEVELOPMENT_TEAM'] = ENV['APPLE_TEAM_ID'] if ENV['APPLE_TEAM_ID']
+  s['DEVELOPMENT_TEAM'] = ENV.fetch('APPLE_TEAM_ID', 'UP7V2YUXRZ')
 end
 
 # iPhone appka hodinky zostaví a vloží do Rejnox.app/Watch.
