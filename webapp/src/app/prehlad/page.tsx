@@ -75,6 +75,19 @@ async function Dashboard({ searchParams }: Pick<PageProps<"/prehlad">, "searchPa
         {user.email}
       </p>
 
+      {user.role === "trainer" && (
+        <Link
+          href="/trener"
+          className="group mt-10 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-accent/50 bg-gradient-to-br from-accent/20 via-surface to-surface p-6 transition-transform hover:-translate-y-0.5 sm:p-8"
+        >
+          <div>
+            <p className="font-display text-2xl font-extrabold">Trénerská zóna</p>
+            <p className="mt-1 text-muted">Klienti, jedálničky rovno do ich appky a progres na jednom mieste.</p>
+          </div>
+          <span className="btn-action rounded-full px-5 py-2.5 text-sm font-bold text-white">Otvoriť →</span>
+        </Link>
+      )}
+
       <section className="mt-12 rounded-3xl border border-line bg-surface/50 p-6 sm:p-8">
         <h2 className="font-display text-xl font-extrabold">Webovú verziu práve staviame</h2>
         <p className="mt-2 max-w-[40rem] text-muted">

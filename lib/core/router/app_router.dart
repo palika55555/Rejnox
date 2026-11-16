@@ -23,6 +23,7 @@ import '../../features/health/health_screen.dart';
 import '../../features/health/heart_rate_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
+import '../../features/nutrition/presentation/meal_plan_screen.dart';
 import '../../features/profile/about_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/progress/presentation/progress_screen.dart';
@@ -72,6 +73,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HealthScreen(),
       ),
       GoRoute(path: '/body', builder: (context, state) => const BodyScreen()),
+      GoRoute(
+        path: '/nutrition',
+        builder: (context, state) => const MealPlanScreen(),
+      ),
       GoRoute(
         path: '/calendar',
         builder: (context, state) => const TrainerCalendarScreen(),

@@ -16,6 +16,7 @@ import '../../notifications/notifications_screen.dart';
 import '../data/home_repository.dart';
 import '../domain/home_overview.dart';
 import 'widgets/dashboard_sections.dart';
+import '../../nutrition/presentation/meal_plan_home_card.dart';
 import 'widgets/session_heroes.dart';
 import 'widgets/stat_cards.dart';
 import 'widgets/workout_cards.dart';
@@ -156,7 +157,10 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       if (user?.role != UserRole.trainer) const TrainerSection(),
-      const UpcomingSection(),
+      if (user?.role == UserRole.trainer)
+        const UpcomingSection()
+      else
+        const MealPlanHomeCard(fallback: UpcomingSection()),
     ];
   }
 }

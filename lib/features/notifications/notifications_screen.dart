@@ -35,6 +35,7 @@ class NotificationBell extends ConsumerWidget {
 
 IconData _icon(String kind) => switch (kind) {
   'plan' => Icons.assignment_rounded,
+  'meal_plan' => Icons.restaurant_menu_rounded,
   'booking' => Icons.event_rounded,
   'slot' => Icons.event_available_rounded,
   'training' => Icons.fitness_center_rounded,
@@ -56,6 +57,8 @@ class NotificationsScreen extends ConsumerWidget {
     final auth = ref.read(authControllerProvider);
     final trainer = auth is SignedIn && auth.user.role == UserRole.trainer;
     switch (n.kind) {
+      case 'meal_plan' when !trainer:
+        context.push('/nutrition');
       case 'plan' when !trainer:
         context.go('/home');
       case 'booking' || 'slot' when !trainer:

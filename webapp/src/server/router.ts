@@ -3,6 +3,7 @@ import * as calendar from "./calendar";
 import * as chat from "./chat";
 import { communityRoutes } from "./communityRoutes";
 import { conversationRoutes } from "./conversationRoutes";
+import { mealPlanRoutes } from "./mealPlanRoutes";
 import * as notifications from "./notifications";
 import type { AuthUser } from "./auth";
 import type { Db } from "./db";
@@ -384,6 +385,8 @@ const routes: Route[] = [
   ...conversationRoutes,
   // Komunita (príspevky, parťáci, udalosti, výzvy, rebríček): communityRoutes.ts.
   ...communityRoutes,
+  // Jedálničky od trénera: mealPlanRoutes.ts.
+  ...mealPlanRoutes,
 
   // ----------------------------------------------------------- upozornenia
   { method: "GET", pattern: "/notifications", handler: async (ctx) => json(200, await notifications.feed(ctx.db, (await ctx.user()).id)) },
