@@ -264,8 +264,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Zapíš si váhu'), findsNothing);
+    // Karta „Zapísať váhu“ aj sekcia váhy ukážu posledné váženie.
+    expect(find.textContaining('82,4'), findsAtLeastNWidgets(2));
     expect(find.text('Váha · dnes'), findsOneWidget);
-    expect(find.textContaining('82,4'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

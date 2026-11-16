@@ -10,6 +10,7 @@ import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/tm_card.dart';
 import '../../../coaching/application/coaching_providers.dart';
 import '../../../coaching/domain/coaching_models.dart';
+import '../../../health/health_summary.dart';
 import '../../../training/application/exercise_stats.dart';
 import '../../../training/application/workout_log_controller.dart';
 import '../../../training/domain/training_models.dart';
@@ -301,6 +302,12 @@ class DashboardActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final weights = ref.watch(bodyWeightProvider);
+    final steps = ref.watch(todayStepsProvider).value;
+    final weightValue = weights.isEmpty
+        ? null
+        : '${formatKg(weights.last.kg)} kg';
+    final stepsValue = steps == null ? null : formatSteps(steps);
     return LayoutBuilder(
       builder: (context, constraints) {
         final stacked =
@@ -318,6 +325,7 @@ class DashboardActions extends ConsumerWidget {
               child: _QuickAction(
                 label: 'Zapísať váhu',
                 detail: 'Sleduj svoj progres',
+                value: weightValue,
                 icon: const Icon(
                   Icons.monitor_weight_outlined,
                   color: AppColors.accent,
@@ -332,6 +340,7 @@ class DashboardActions extends ConsumerWidget {
               child: _QuickAction(
                 label: 'Zdravie a aktivita',
                 detail: 'Tvoje telo v číslach',
+                value: stepsValue,
                 icon: const _PumpingHeart(color: _heartRed),
                 color: _heartRed,
                 onTap: () => context.push('/health'),
@@ -351,12 +360,41 @@ class _QuickAction extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.onTap,
+    this.value,
   });
   final String label;
   final String detail;
+
+  /// Posledný zapísaný údaj. Keď je, karta ho ukáže veľkým písmom
+  /// a pod ním názov; inak názov a popis.
+  final String? value;
   final Widget icon;
   final Color color;
   final VoidCallback onTap;
+
+  List<Widget> _texts(TextTheme text) {
+    final shown = value;
+    if (shown == null) {
+      return [
+        Text(label, style: text.bodyLarge),
+        const SizedBox(height: AppSpacing.xs),
+        Text(detail, style: text.bodySmall),
+      ];
+    }
+    return [
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(
+          shown,
+          maxLines: 1,
+          style: text.headlineSmall!.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      Text(label, style: text.bodySmall),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -398,9 +436,7 @@ class _QuickAction extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  Text(label, style: Theme.of(context).textTheme.bodyLarge),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(detail, style: Theme.of(context).textTheme.bodySmall),
+                  ..._texts(Theme.of(context).textTheme),
                 ],
               ),
             ),

@@ -223,3 +223,21 @@ class AppleHealthSummary implements HealthSummarySource {
 final healthSummarySourceProvider = Provider<HealthSummarySource>(
   (ref) => AppleHealthSummary(),
 );
+
+/// Dnešné kroky pre prehľad. Null, keď platforma zdravie nepodporuje,
+/// chýba povolenie alebo načítanie zlyhá — prehľad potom ukáže len popis.
+final todayStepsProvider = FutureProvider.autoDispose<int?>((ref) async {
+  final source = ref.watch(healthSummarySourceProvider);
+  if (!source.supported) return null;
+  try {
+    return (await source.load()).steps;
+  } on Object {
+    return null;
+  }
+});
+
+/// Kroky s medzerou medzi tisícami: 8420 → „8 420“.
+String formatSteps(int steps) => steps.toString().replaceAllMapped(
+  RegExp(r'\B(?=(\d{3})+(?!\d))'),
+  (_) => ' ',
+);
