@@ -8,8 +8,8 @@
 #    pridaj App Store Connect API kľúč s názvom "Rejnox".
 # 3. Codemagic → aplikácia → Environment variables: skupina "rejnox_signing"
 #    s premennou CERTIFICATE_PRIVATE_KEY (súkromný RSA kľúč certifikátu,
-#    označ ako Secure) a APP_STORE_APPLE_ID (číselné ID appky v App Store
-#    Connect). API_URL a APPLE_TEAM_ID sú priamo vo workflow nižšie.
+#    označ ako Secure). APP_STORE_APPLE_ID, API_URL a APPLE_TEAM_ID sú
+#    priamo vo workflow nižšie.
 #
 # Workflow ios-sideload (bez platenej Apple Developer účtu a bez App Store
 # Connect kľúča): zostaví nepodpísanú .ipa, stiahneš ju z Artifacts a podpíšeš
@@ -61,6 +61,8 @@ workflows:
       vars:
         # Team ID z developer.apple.com (nie je tajné).
         APPLE_TEAM_ID: UP7V2YUXRZ
+        # Číselné Apple ID appky v App Store Connect (nie je tajné).
+        APP_STORE_APPLE_ID: "6835581291"
         # Verejná adresa API (nie je tajná), preto je priamo tu.
         API_URL: https://rejnox.sk/api
     scripts:
@@ -86,7 +88,7 @@ workflows:
 
       - name: Zostavenie IPA
         script: |
-          : "${APP_STORE_APPLE_ID:?Chýba APP_STORE_APPLE_ID v Codemagic (skupina rejnox_signing)}"
+          : "${APP_STORE_APPLE_ID:?Chýba APP_STORE_APPLE_ID}"
           LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
           # API_URL je v environment.vars vyššie.
           flutter build ipa --release \
