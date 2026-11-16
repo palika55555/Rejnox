@@ -22,6 +22,7 @@ class FlatMapView extends StatelessWidget {
     required this.showTiles,
     required this.onReady,
     this.onLongPress,
+    this.route = const [],
   });
 
   final MapController controller;
@@ -36,6 +37,9 @@ class FlatMapView extends StatelessWidget {
 
   /// Dlhé podržanie na mape (pridanie fitka na tomto mieste).
   final ValueChanged<GeoPoint>? onLongPress;
+
+  /// Body trasy k vybranému fitku (prázdne = bez trasy).
+  final List<GeoPoint> route;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +69,23 @@ class FlatMapView extends StatelessWidget {
             userAgentPackageName: MapStyle.packageName,
             tileBuilder: (context, tile, _) =>
                 ColorFiltered(colorFilter: MapStyle.darkFilter, child: tile),
+          ),
+        if (route.length > 1)
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: [for (final p in route) toLatLng(p)],
+                strokeWidth: 9,
+                color: AppColors.accent.withValues(alpha: 0.25),
+              ),
+              Polyline(
+                points: [for (final p in route) toLatLng(p)],
+                strokeWidth: 4.5,
+                color: AppColors.accent,
+                borderStrokeWidth: 1.5,
+                borderColor: AppColors.accentDeep,
+              ),
+            ],
           ),
         MarkerLayer(
           markers: [

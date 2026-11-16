@@ -1,20 +1,26 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart' show LatLng;
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/tm_card.dart';
+import '../application/gym_actions.dart';
 import '../application/user_location.dart';
 import '../data/gym_repository.dart';
+import '../data/route_source.dart';
 import '../domain/gym.dart';
+import '../domain/gym_route.dart';
 import 'flat_map_view.dart';
 import 'globe_texture.dart';
 import 'globe_view.dart';
 import 'gym_map_widgets.dart';
+import 'gym_nav_card.dart';
 import 'map_style.dart';
 import '../../../core/theme/app_spacing.dart';
 
@@ -37,6 +43,14 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
   bool _mapReady = false;
   MapMode _mode = MapMode.globe;
   String? _selectedId;
+  TravelMode _travel = TravelMode.car;
+  RouteView _route = const RouteIdle();
+
+  /// Fitko, ku ktorému patrí [_route]; iné fitko trasu zahodí.
+  String? _routeGymId;
+
+  /// Poradie požiadavky – neskoro prišlé staré odpovede ignorujeme.
+  int _routeRequest = 0;
 
   @override
   void initState() {
@@ -86,8 +100,84 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
   }
 
   void _select(Gym? gym, {bool move = false}) {
-    setState(() => _selectedId = gym?.id);
+    setState(() {
+      _selectedId = gym?.id;
+      if (gym?.id != _routeGymId) _clearRouteState();
+    });
     if (gym != null && move) _focus(gym.location, zoom: 15);
+  }
+
+  void _clearRouteState() {
+    _routeRequest++;
+    _route = const RouteIdle();
+    _routeGymId = null;
+  }
+
+  void _clearRoute() => setState(_clearRouteState);
+
+  /// Trasa z polohy používateľa k fitku, vykreslená na mape.
+  /// Bez polohy aspoň priblíži fitko (ako „near me“ v Mapách).
+  Future<void> _showRoute(Gym gym, GeoPoint? from) async {
+    if (from == null) {
+      _focus(gym.location, zoom: 15.2);
+      setState(() {
+        _routeGymId = gym.id;
+        _route = const RouteFailed(
+          'Na trasu potrebujeme tvoju polohu. Navigáciu spustíš v Mapách.',
+        );
+      });
+      ref.invalidate(userLocationProvider);
+      return;
+    }
+    final request = ++_routeRequest;
+    setState(() {
+      _selectedId = gym.id;
+      _routeGymId = gym.id;
+      _route = const RouteLoading();
+    });
+    RouteView next;
+    try {
+      final route = await ref
+          .read(routeSourceProvider)
+          .route(from, gym.location, _travel);
+      next = route == null
+          ? const RouteFailed('Trasu k tomuto fitku sa nepodarilo nájsť.')
+          : RouteShown(route);
+    } on Exception {
+      next = const RouteFailed('Trasa sa nenačítala. Skontroluj pripojenie.');
+    }
+    if (!mounted || request != _routeRequest) return;
+    setState(() => _route = next);
+    if (next is RouteShown) _fitRoute(next.route);
+  }
+
+  void _fitRoute(GymRoute route) {
+    if (!_mapReady) return;
+    _map.fitCamera(
+      CameraFit.coordinates(
+        coordinates: [for (final p in route.points) LatLng(p.lat, p.lng)],
+        // Spodok necháme voľný pre kartu fitka.
+        padding: const EdgeInsets.fromLTRB(40, 60, 64, 200),
+        maxZoom: 17,
+      ),
+    );
+  }
+
+  void _changeTravel(TravelMode mode, Gym gym, GeoPoint? from) {
+    if (mode == _travel) return;
+    setState(() => _travel = mode);
+    unawaited(_showRoute(gym, from));
+  }
+
+  Future<void> _startNavigation(Gym gym) async {
+    final opened = await ref
+        .read(externalActionsProvider)
+        .openUrl(navigationUrl(gym));
+    if (!opened && mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text('Mapy sa nepodarilo otvoriť.')),
+      );
+    }
   }
 
   void _openDetail(Gym gym) {
@@ -236,6 +326,11 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
             showTiles: showTiles,
             onReady: _onMapReady,
             onLongPress: _addGym,
+            route: switch (_route) {
+              RouteShown(:final route) when _routeGymId == cardGym?.id =>
+                route.points,
+              _ => const [],
+            },
           ),
           Positioned(
             right: 10,
@@ -263,13 +358,19 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
               left: 10,
               right: 10,
               bottom: 10,
-              child: GymCard(
+              child: GymNavCard(
                 gym: cardGym,
                 distance: distanceTo(cardGym),
                 caption: selected == null && user != null
                     ? 'Najbližšie fitko'
                     : null,
-                onTap: () => _openDetail(cardGym),
+                route: _routeGymId == cardGym.id ? _route : const RouteIdle(),
+                mode: _travel,
+                onModeChanged: (mode) => _changeTravel(mode, cardGym, user),
+                onRoute: () => unawaited(_showRoute(cardGym, user)),
+                onStartNavigation: () => unawaited(_startNavigation(cardGym)),
+                onClearRoute: _clearRoute,
+                onOpenDetail: () => _openDetail(cardGym),
               ),
             ),
         ],
