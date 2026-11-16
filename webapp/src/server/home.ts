@@ -1,5 +1,6 @@
 import type { Db, Tx } from "./db";
 import { planOn } from "./trainer";
+import { myRanking, nextBuddyRequest, type BuddyRequest, type MyRanking } from "./communityMeet";
 
 /** Rejnox je slovenská appka: „dnes“ a týždeň sa rátajú podľa slovenského času. */
 export const ZONE = "Europe/Bratislava";
@@ -50,6 +51,10 @@ export type HomeOverview = {
   weeklyGoal: { done: number; total: number };
   todayWorkout: Awaited<ReturnType<typeof planOn>>;
   personalRecord: { exercise: string; weightKg: number; monthDeltaKg: number; trend: number[] } | null;
+  /** Moje miesto v týždennom rebríčku komunity (null = rebríček vypnutý). */
+  ranking: MyRanking | null;
+  /** Najbližší spoločný tréning od niekoho iného. */
+  partnerRequest: BuddyRequest | null;
 };
 
 /**
@@ -112,6 +117,8 @@ export function overview(db: Db, userId: string): Promise<HomeOverview> {
       weeklyGoal: { done: weekDays(days, today), total: WEEKLY_GOAL_DAYS },
       todayWorkout: await planOn(tx, userId, today),
       personalRecord: await personalRecord(tx, userId, today),
+      ranking: await myRanking(tx, userId),
+      partnerRequest: await nextBuddyRequest(tx, userId),
     };
   });
 }

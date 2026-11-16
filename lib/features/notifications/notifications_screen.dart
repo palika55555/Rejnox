@@ -49,6 +49,8 @@ class NotificationsScreen extends ConsumerWidget {
   /// Ťuknutie: označí ako prečítané a otvorí, k čomu patrí.
   void _open(BuildContext context, WidgetRef ref, AppNotification n) {
     ref.read(notificationsProvider.notifier).markRead(n.id).ignore();
+    // Lajk, komentár, nový parťák alebo účastník → Komunita.
+    if (n.kind == 'community') return context.go('/community');
     final link = n.linkId;
     if (link == null) return;
     final auth = ref.read(authControllerProvider);

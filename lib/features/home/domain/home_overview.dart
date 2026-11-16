@@ -2,8 +2,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../training/domain/training_models.dart' show MuscleGroup;
 
 /// Všetko, čo potrebuje domovská obrazovka klienta (GET /home).
-/// Čo ešte nemá dáta na serveri (rebríček, fitko v okolí, parťák), je null
-/// a karta sa neukáže.
+/// Čo nemá dáta (rebríček vypnutý, nikto nehľadá parťáka, fitko v okolí
+/// zatiaľ server neráta), je null a karta sa neukáže.
 class HomeOverview {
   const HomeOverview({
     required this.streakDays,
@@ -19,6 +19,8 @@ class HomeOverview {
     final goal = json['weeklyGoal'] as Map<String, dynamic>;
     final workout = json['todayWorkout'] as Map<String, dynamic>?;
     final record = json['personalRecord'] as Map<String, dynamic>?;
+    final ranking = json['ranking'] as Map<String, dynamic>?;
+    final partner = json['partnerRequest'] as Map<String, dynamic>?;
     return HomeOverview(
       streakDays: json['streakDays'] as int,
       weeklyGoal: WeeklyGoal(
@@ -27,6 +29,8 @@ class HomeOverview {
       ),
       todayWorkout: workout == null ? null : Workout.fromJson(workout),
       personalRecord: record == null ? null : PersonalRecord.fromJson(record),
+      ranking: ranking == null ? null : Ranking.fromJson(ranking),
+      partnerRequest: partner == null ? null : PartnerRequest.fromJson(partner),
     );
   }
 
@@ -162,18 +166,23 @@ class PersonalRecord {
       '${monthDeltaKg >= 0 ? '+' : ''}${_trim(monthDeltaKg)} kg tento mesiac';
 }
 
+/// Moje miesto v týždennom rebríčku komunity (dni s tréningom za 7 dní).
 class Ranking {
   const Ranking({
     required this.position,
-    required this.region,
-    required this.topPercent,
-    required this.gymName,
+    required this.total,
+    required this.days,
   });
 
+  factory Ranking.fromJson(Map<String, dynamic> json) => Ranking(
+    position: json['position'] as int,
+    total: json['total'] as int,
+    days: json['days'] as int,
+  );
+
   final int position;
-  final String region;
-  final int topPercent;
-  final String gymName;
+  final int total;
+  final int days;
 }
 
 class NearbyGym {
@@ -190,16 +199,29 @@ class NearbyGym {
   String get distanceLabel => '${distanceKm.toStringAsFixed(1)} km';
 }
 
+/// Najbližší spoločný tréning od niekoho iného (z komunity).
 class PartnerRequest {
   const PartnerRequest({
+    required this.id,
     required this.name,
-    required this.when,
-    required this.focus,
+    required this.startsAt,
+    this.focus,
+    this.place,
   });
 
+  factory PartnerRequest.fromJson(Map<String, dynamic> json) => PartnerRequest(
+    id: json['id'] as String,
+    name: json['hostName'] as String? ?? 'Niekto',
+    startsAt: DateTime.parse(json['startsAt'] as String).toLocal(),
+    focus: json['focus'] as String?,
+    place: json['place'] as String?,
+  );
+
+  final String id;
   final String name;
-  final String when;
-  final String focus;
+  final DateTime startsAt;
+  final String? focus;
+  final String? place;
 }
 
 String _seriesWord(int n) => switch (n) {

@@ -1,6 +1,7 @@
 import * as auth from "./auth";
 import * as calendar from "./calendar";
 import * as chat from "./chat";
+import { communityRoutes } from "./communityRoutes";
 import { conversationRoutes } from "./conversationRoutes";
 import * as notifications from "./notifications";
 import type { AuthUser } from "./auth";
@@ -381,6 +382,8 @@ const routes: Route[] = [
 
   // Nový chat (skupiny, súkromné správy...): pozri conversationRoutes.ts.
   ...conversationRoutes,
+  // Komunita (príspevky, parťáci, udalosti, výzvy, rebríček): communityRoutes.ts.
+  ...communityRoutes,
 
   // ----------------------------------------------------------- upozornenia
   { method: "GET", pattern: "/notifications", handler: async (ctx) => json(200, await notifications.feed(ctx.db, (await ctx.user()).id)) },

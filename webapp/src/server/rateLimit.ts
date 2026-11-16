@@ -40,6 +40,10 @@ export const limits = {
   // Hádanie kódov skupín: rovnako ako pozvánky trénera, na účet aj na IP.
   groupJoin: { name: "group-join", max: 10, windowSeconds: 60 * 60 },
   groupJoinIp: { name: "group-join-ip", max: 30, windowSeconds: 60 * 60 },
+  // Komunita: nové príspevky, tréningy, udalosti a výzvy – rozumné množstvo, nie spam.
+  communityCreate: { name: "community-create", max: 20, windowSeconds: 60 * 60 },
+  // Lajky, komentáre, prihlásenia a odhlásenia.
+  communityWrite: { name: "community-write", max: 120, windowSeconds: 60 },
 } satisfies Record<string, Limit>;
 
 /** Počítadlo pokusov v databáze (spoločné pre všetky inštancie Workera). */

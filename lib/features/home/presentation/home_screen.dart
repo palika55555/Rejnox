@@ -8,6 +8,8 @@ import '../../../core/widgets/rejnox_mark.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../../auth/domain/auth_models.dart';
 import '../../coaching/application/coaching_providers.dart';
+import '../../community/application/community_providers.dart';
+import '../../community/presentation/community_format.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../notifications/notifications_controller.dart';
 import '../../notifications/notifications_screen.dart';
@@ -74,6 +76,7 @@ class HomeScreen extends ConsumerWidget {
                         children: [
                           for (final (i, w) in _sections(
                             context,
+                            ref,
                             data,
                             user,
                           ).indexed)
@@ -96,6 +99,7 @@ class HomeScreen extends ConsumerWidget {
 
   List<Widget> _sections(
     BuildContext context,
+    WidgetRef ref,
     HomeOverview data,
     AuthUser? user,
   ) {
@@ -146,11 +150,7 @@ class HomeScreen extends ConsumerWidget {
               if (partner != null)
                 PartnerRequestRow(
                   partner,
-                  onJoin: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Spoločné tréningy pribudnú čoskoro.'),
-                    ),
-                  ),
+                  onJoin: () => _joinPartner(context, ref, partner.id),
                 ),
             ],
           ),
@@ -400,5 +400,24 @@ class _ErrorView extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Prihlási sa na spoločný tréning z karty „V okolí“.
+Future<void> _joinPartner(
+  BuildContext context,
+  WidgetRef ref,
+  String sessionId,
+) async {
+  try {
+    await ref.read(communityActionsProvider).joinBuddy(sessionId, true);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Pridal si sa k tréningu.')));
+  } on Object catch (e) {
+    if (context.mounted) {
+      showCommunityError(context, e, 'Pridať sa nepodarilo.');
+    }
   }
 }

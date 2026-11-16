@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/tm_card.dart';
+import '../../../community/presentation/community_format.dart';
 import '../../domain/home_overview.dart';
 
 /// Osobný rekord: veľké číslo, krivka vývoja a zmena za mesiac.
@@ -166,9 +167,15 @@ class RankingRow extends StatelessWidget {
           ),
         ),
       ),
-      title: 'Rebríček · ${ranking.region}',
-      subtitle: ranking.gymName,
-      trailing: AppPill('Top ${ranking.topPercent} %', tone: PillTone.accent),
+      title: 'Týždenný rebríček',
+      subtitle:
+          '${ranking.position}. z ${ranking.total} · '
+          '${ranking.days} ${plural(ranking.days, 'deň', 'dni', 'dní')} '
+          's tréningom',
+      trailing: const Icon(
+        Icons.emoji_events_outlined,
+        color: AppColors.accent,
+      ),
     );
   }
 }
@@ -204,7 +211,11 @@ class PartnerRequestRow extends StatelessWidget {
     return AppRow(
       leading: const _RoundIcon(Icons.handshake_outlined),
       title: '${request.name} hľadá parťáka',
-      subtitle: '${request.when} · ${request.focus}',
+      subtitle: [
+        whenLabel(request.startsAt),
+        ?request.focus,
+        ?request.place,
+      ].join(' · '),
       trailing: PrimaryButton(
         label: 'Pridať sa',
         compact: true,
