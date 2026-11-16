@@ -16,7 +16,7 @@
     "db:new": "node scripts/new-migration.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.9.0",
+    "@google/genai": "2.31.0",
     "@opennextjs/cloudflare": "^1.20.17",
     "bcryptjs": "^3.0.3",
     "next": "16.4.6",

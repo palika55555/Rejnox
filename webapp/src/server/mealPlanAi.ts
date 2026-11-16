@@ -1,10 +1,11 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { HttpError } from "./errors";
 import { MAX_ITEMS, parseMealPlan, type MealPlanInput, type Targets } from "./mealPlans";
 
 /** AI pomocník trénera: návrh jedálnička na týždeň (tréner ho pred odoslaním skontroluje). */
 
-export const MODEL = "claude-opus-5-5";
+/** Gemini 3.5 Flash-Lite: zadarmo v bezplatnej úrovni Gemini API, rýchly. Dá sa zmeniť cez GEMINI_MODEL. */
+export const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 
 /** Čo tréner zadá pomocníkovi. */
 export type AiRequest = {
@@ -80,8 +81,8 @@ export function buildPrompt(req: AiRequest): string {
     t.carbsG ? `${t.carbsG} g sacharidov` : null,
     t.fatG ? `${t.fatG} g tukov` : null,
   ].filter(Boolean);
+  // Meno klienta sa modelu neposiela (bezplatná úroveň Gemini môže obsah použiť na zlepšovanie služieb).
   return [
-    `Klient: ${req.clientName}`,
     req.clientNote ? `Poznámka trénera ku klientovi: ${req.clientNote}` : null,
     `Počet jedál denne: ${req.mealsPerDay}`,
     `Denné ciele: ${targets.length ? targets.join(", ") : "nezadané – navrhni"}`,
@@ -131,54 +132,61 @@ export function toPlanInput(raw: RawPlan, req: AiRequest): MealPlanInput {
   });
 }
 
-function client(): Anthropic {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new HttpError(503, "ai_not_configured", "AI pomocník ešte nie je zapnutý (chýba kľúč ANTHROPIC_API_KEY).");
+/** Najdlhšie, čo čakáme na návrh (potom radšej chyba, než visiaca stránka). */
+const TIMEOUT_MS = 90_000;
+
+function client(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new HttpError(503, "ai_not_configured", "AI pomocník ešte nie je zapnutý (chýba kľúč GEMINI_API_KEY).");
   }
-  // Pri výpadku jedna rýchla opakovaná požiadavka stačí, tréner môže skúsiť znova.
-  return new Anthropic({ maxRetries: 1, timeout: 5 * 60 * 1000 });
+  return new GoogleGenAI({ apiKey, httpOptions: { timeout: TIMEOUT_MS } });
 }
 
 /** Zavolá model a vráti návrh jedálnička (neuložený). */
 export async function generateMealPlan(req: AiRequest): Promise<MealPlanInput> {
-  let message: Anthropic.Beta.BetaMessage;
+  const ai = client();
+  let text: string | undefined;
   try {
-    message = await client()
-      .beta.messages.stream({
-        model: MODEL,
-        max_tokens: 32000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-        system: SYSTEM,
-        output_config: { effort: "low", format: { type: "json_schema", schema: RESPONSE_SCHEMA } },
-        messages: [{ role: "user", content: buildPrompt(req) }],
-      })
-      .finalMessage();
+    const response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
+      contents: buildPrompt(req),
+      config: {
+        systemInstruction: SYSTEM,
+        responseMimeType: "application/json",
+        responseJsonSchema: RESPONSE_SCHEMA,
+        // Jedálniček nepotrebuje dlhé premýšľanie: rýchlejšie a v rámci bezplatných limitov.
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        maxOutputTokens: 32_000,
+      },
+    });
+    if (response.promptFeedback?.blockReason) {
+      throw new HttpError(422, "ai_refused", "AI pomocník toto zadanie nespracuje. Skús ho preformulovať.");
+    }
+    const finish = response.candidates?.[0]?.finishReason;
+    if (finish === "MAX_TOKENS") {
+      throw new HttpError(422, "ai_too_long", "Návrh bol príliš dlhý. Skús menej jedál denne.");
+    }
+    if (finish && finish !== "STOP") {
+      throw new HttpError(422, "ai_refused", "AI pomocník toto zadanie nespracuje. Skús ho preformulovať.");
+    }
+    text = response.text;
   } catch (error) {
-    if (error instanceof Anthropic.RateLimitError) {
-      throw new HttpError(429, "ai_busy", "AI pomocník je práve vyťažený. Skús to o minútu.");
-    }
-    if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
-      console.error("AI pomocník: neplatný kľúč alebo prístup", error.status);
+    if (error instanceof HttpError) throw error;
+    if (error instanceof ApiError) {
+      if (error.status === 429) {
+        throw new HttpError(429, "ai_busy", "Bezplatný limit AI je na chvíľu vyčerpaný. Skús to o minútu.");
+      }
+      console.error("AI pomocník: chyba Gemini API", error.status);
       throw unavailable();
     }
-    if (error instanceof Anthropic.APIError) {
-      console.error("AI pomocník: chyba API", error.status);
-      throw unavailable();
-    }
-    throw error;
+    console.error("AI pomocník: Gemini neodpovedá", error instanceof Error ? error.name : "unknown");
+    throw unavailable();
   }
 
-  if (message.stop_reason === "refusal") {
-    throw new HttpError(422, "ai_refused", "AI pomocník toto zadanie nespracuje. Skús ho preformulovať.");
-  }
-  if (message.stop_reason === "max_tokens") {
-    throw new HttpError(422, "ai_too_long", "Návrh bol príliš dlhý. Skús menej jedál denne.");
-  }
-  const text = message.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
   let raw: RawPlan;
   try {
-    raw = JSON.parse(text) as RawPlan;
+    raw = JSON.parse(text ?? "") as RawPlan;
   } catch {
     throw unavailable();
   }
@@ -186,4 +194,3 @@ export async function generateMealPlan(req: AiRequest): Promise<MealPlanInput> {
   if (plan.items.length === 0) throw unavailable();
   return plan;
 }
-

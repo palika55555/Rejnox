@@ -23,9 +23,9 @@ const item = (over: Record<string, unknown> = {}) => ({
 });
 
 describe("AI pomocník – zadanie", () => {
-  it("obsahuje klienta, počet jedál, ciele a zadanie trénera", () => {
+  it("obsahuje poznámku, počet jedál, ciele a zadanie, ale nie meno klienta", () => {
     const prompt = buildPrompt(req);
-    expect(prompt).toContain("Klient: Jana");
+    expect(prompt).not.toContain("Jana");
     expect(prompt).toContain("koleno");
     expect(prompt).toContain("Počet jedál denne: 4");
     expect(prompt).toContain("1900 kcal, 140 g bielkovín");
@@ -81,7 +81,7 @@ describe("AI pomocník – bez kľúča", () => {
   afterEach(() => vi.unstubAllEnvs());
 
   it("povie, že pomocník nie je zapnutý", async () => {
-    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    vi.stubEnv("GEMINI_API_KEY", "");
     const error = await generateMealPlan(req).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(HttpError);
     expect((error as HttpError).code).toBe("ai_not_configured");
