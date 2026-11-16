@@ -13,6 +13,8 @@ import '../domain/gym.dart';
 import 'gym_detail_widgets.dart';
 import 'gym_photos.dart';
 import 'gym_prices.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/adaptive_dialog.dart';
 
 /// Detail fitka: fotka, hodnotenie, akcie a informácie.
 class GymDetailScreen extends ConsumerWidget {
@@ -30,7 +32,8 @@ class GymDetailScreen extends ConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 480),
             child: gym.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () =>
+                  const Center(child: CircularProgressIndicator.adaptive()),
               error: (_, _) => const _Missing(),
               data: (gym) => gym == null ? const _Missing() : _Detail(gym),
             ),
@@ -80,22 +83,27 @@ class _Detail extends ConsumerWidget {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.xxxl,
+          ),
           sliver: SliverList.list(
             children: [
               Text(
                 gym.name,
-                style: text.titleLarge!.copyWith(fontSize: 24, height: 1.15),
+                style: text.headlineMedium!.copyWith(height: 1.15),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
                   const Icon(
                     Icons.star_rounded,
                     size: 18,
-                    color: Color(0xFFF0BE2E),
+                    color: AppColors.rating,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSpacing.xs),
                   Text(
                     rating == null || rating.count == 0
                         ? 'Zatiaľ bez hodnotení'
@@ -104,7 +112,7 @@ class _Detail extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Row(
                 children: [
                   Expanded(
@@ -115,7 +123,7 @@ class _Detail extends ConsumerWidget {
                       onTap: (_) => open(navigationUrl(gym)),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: DetailActionTile(
                       icon: saved
@@ -127,7 +135,7 @@ class _Detail extends ConsumerWidget {
                           .toggle(gym.id),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: DetailActionTile(
                       icon: Icons.ios_share_rounded,
@@ -140,7 +148,7 @@ class _Detail extends ConsumerWidget {
                     ),
                   ),
                   if (gym.website case final website?) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: DetailActionTile(
                         icon: Icons.language_rounded,
@@ -151,9 +159,9 @@ class _Detail extends ConsumerWidget {
                   ],
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               TmCard(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                 child: Column(
                   children: [
                     DetailInfoRow(
@@ -177,9 +185,9 @@ class _Detail extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               GymPhotoStrip(gym: gym),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               GymRatingCard(
                 rating,
                 myStars: gym.myStars,
@@ -192,7 +200,7 @@ class _Detail extends ConsumerWidget {
                   }
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               GymPricesCard(gym: gym),
             ],
           ),
@@ -207,26 +215,14 @@ extension on _Detail {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
-    final sure = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Zmazať fitko?'),
-        content: Text(
+    final sure = await showAppConfirm(
+      context,
+      title: 'Zmazať fitko?',
+      message:
           '${gym.name} zmizne z mapy aj s fotkami, cenníkom a hodnoteniami. '
           'Nedá sa to vrátiť.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Nechať'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Zmazať'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Zmazať',
+      cancelLabel: 'Nechať',
     );
     if (sure != true) return;
     try {
@@ -279,14 +275,14 @@ class _Hero extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0x66000000), Colors.transparent, AppColors.bg],
+                colors: [AppColors.scrim, Colors.transparent, AppColors.bg],
                 stops: [0, 0.45, 1],
               ),
             ),
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -302,7 +298,7 @@ class _Hero extends StatelessWidget {
                       tooltip: 'Upraviť fitko',
                       onPressed: onEdit!,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                   ],
                   if (onDelete != null) ...[
                     _CircleButton(
@@ -310,7 +306,7 @@ class _Hero extends StatelessWidget {
                       tooltip: 'Zmazať fitko',
                       onPressed: onDelete!,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                   ],
                   _CircleButton(
                     icon: saved
@@ -367,7 +363,7 @@ class _Missing extends StatelessWidget {
           'Toto fitko sme nenašli.',
           style: Theme.of(context).textTheme.bodyLarge,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         TextButton(
           onPressed: () => context.go('/map'),
           child: const Text('Späť na mapu'),

@@ -9,6 +9,7 @@ import '../../coaching/presentation/coaching_widgets.dart';
 import '../application/booking_providers.dart';
 import '../domain/booking_models.dart';
 import 'trainer_calendar_sheets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Tréner pripojí k tréningu plán klienta, aby klient vedel, čo sa bude robiť.
 class BookingPlanSheet extends ConsumerStatefulWidget {
@@ -62,9 +63,9 @@ class _BookingPlanSheetState extends ConsumerState<BookingPlanSheet> {
           '${timeRange(b.startsAt, b.endsAt)}',
           style: text.bodyLarge,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         if (detail.isLoading && !detail.hasValue)
-          const Center(child: CircularProgressIndicator())
+          const Center(child: CircularProgressIndicator.adaptive())
         else if (detail.hasError && !detail.hasValue)
           Text(errorText(detail.error!), style: text.bodySmall)
         else if (plans.isEmpty) ...[
@@ -73,7 +74,7 @@ class _BookingPlanSheetState extends ConsumerState<BookingPlanSheet> {
             'a potom ho sem pripoj.',
             style: text.bodyMedium,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           OutlinedButton.icon(
             onPressed: () {
               Navigator.pop(context);
@@ -95,10 +96,10 @@ class _BookingPlanSheetState extends ConsumerState<BookingPlanSheet> {
             onChanged: (id) => setState(() => _planId = id),
           ),
           if (selected != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             PlanCard(selected),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           PrimaryButton(
             label: _busy ? 'Ukladám…' : 'Uložiť',
             icon: Icons.check_rounded,

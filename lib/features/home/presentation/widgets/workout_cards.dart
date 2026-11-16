@@ -7,6 +7,7 @@ import '../../../../core/widgets/plate_chip.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/tm_card.dart';
 import '../../domain/home_overview.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 /// Invertovaná (tmavá) plocha – na obrazovke je vždy len jedna.
 class HeroPanel extends StatelessWidget {
@@ -17,24 +18,26 @@ class HeroPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
+      ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: AppColors.heroGradient,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(AppRadius.sheet),
             border: Border.all(color: AppColors.heroLine),
           ),
           child: CustomPaint(
             painter: const _TrainingAura(),
             child: Padding(
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   for (var i = 0; i < children.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 18),
+                    if (i > 0) const SizedBox(height: AppSpacing.lg),
                     children[i],
                   ],
                 ],
@@ -94,10 +97,13 @@ class HeroTitle extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           decoration: BoxDecoration(
             color: AppColors.accentSoft,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(AppRadius.sheet),
             border: Border.all(color: AppColors.heroLine),
           ),
           child: SectionLabel(
@@ -106,11 +112,10 @@ class HeroTitle extends StatelessWidget {
             color: AppColors.onHero2,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           title.toUpperCase(),
-          style: text.headlineLarge!.copyWith(
-            fontSize: 46,
+          style: text.displayMedium!.copyWith(
             fontWeight: FontWeight.w900,
             height: 0.92,
             color: AppColors.onHero,
@@ -130,8 +135,7 @@ class HeroMeta extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       label,
-      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-        fontSize: 14.5,
+      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
         fontWeight: FontWeight.w500,
         color: AppColors.onHero2,
       ),
@@ -215,16 +219,16 @@ class _HeroLoad extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final kg = exercise.weightKg ?? 0;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.bg.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.heroLine),
       ),
       child: Row(
         children: [
           BarbellLoad(weightKg: kg, height: 60),
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,12 +246,9 @@ class _HeroLoad extends StatelessWidget {
                       ),
                     ],
                   ),
-                  style: text.headlineLarge!.copyWith(
-                    fontSize: 28,
-                    color: AppColors.onHero,
-                  ),
+                  style: text.headlineLarge!.copyWith(color: AppColors.onHero),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   '${exercise.name} · ${exercise.sets} × ${exercise.reps}',
                   overflow: TextOverflow.ellipsis,
@@ -393,7 +394,7 @@ class ExerciseList extends StatelessWidget {
                         children: [
                           if (e.isPr) ...[
                             const AppPill('Rekord', tone: PillTone.accent),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                           ],
                           Text(
                             [e.scheme, ?e.weightLabel].join(' · '),

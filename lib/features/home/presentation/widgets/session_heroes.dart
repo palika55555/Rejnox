@@ -13,6 +13,7 @@ import '../../../training/domain/training_models.dart' show MuscleGroup;
 import '../../../training/presentation/workout_session_widgets.dart';
 import '../../domain/home_overview.dart';
 import 'workout_cards.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 /// Hlavná karta dňa. Poradie: prebiehajúci tréning, dnes už hotový,
 /// plán od trénera, voľno.
@@ -87,8 +88,7 @@ class ActiveWorkoutHero extends ConsumerWidget {
     final sets = workout.setsFrom(logged);
     final volume = sets.fold(0.0, (v, s) => v + s.volumeKg);
     final progress = workout.progressFrom(logged);
-    final metaStyle = text.bodyMedium!.copyWith(
-      fontSize: 14.5,
+    final metaStyle = text.bodyLarge!.copyWith(
       fontWeight: FontWeight.w500,
       color: AppColors.onHero2,
     );
@@ -113,7 +113,7 @@ class ActiveWorkoutHero extends ConsumerWidget {
         ),
         if (progress.total > 0)
           ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
             child: LinearProgressIndicator(
               value: progress.done / progress.total,
               minHeight: 6,

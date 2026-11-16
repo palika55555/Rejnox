@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../domain/progress_models.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// „24. 8.“
 String shortDate(DateTime d) => '${d.day}. ${d.month}.';
@@ -33,7 +34,7 @@ class WeeklyVolumeChart extends StatelessWidget {
             child: CustomPaint(painter: _BarsPainter(weeks)),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         if (weeks.isNotEmpty)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -76,8 +77,8 @@ class _BarsPainter extends CustomPainter {
       canvas.drawRRect(
         RRect.fromRectAndCorners(
           Rect.fromLTWH(left, size.height - h, barWidth, h.toDouble()),
-          topLeft: const Radius.circular(4),
-          topRight: const Radius.circular(4),
+          topLeft: const Radius.circular(AppRadius.xs),
+          topRight: const Radius.circular(AppRadius.xs),
         ),
         Paint()
           ..color = isLast
@@ -104,7 +105,7 @@ class ExerciseTrendChart extends StatelessWidget {
     final small = Theme.of(context).textTheme.labelSmall!;
     if (points.length < 2) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
         child: Text(
           'Krivka sa ukáže po druhom tréningu tohto cviku.',
           style: Theme.of(context).textTheme.bodySmall,
@@ -119,7 +120,7 @@ class ExerciseTrendChart extends StatelessWidget {
           height: 150,
           child: CustomPaint(painter: _TrendPainter(points)),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

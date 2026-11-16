@@ -10,6 +10,8 @@ import '../application/chat_actions.dart';
 import '../application/chat_providers.dart';
 import '../domain/chat_models.dart';
 import 'chat_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Správy: konverzácie s trénerom / klientmi, súkromné správy a skupiny.
 class ChatsScreen extends ConsumerStatefulWidget {
@@ -52,7 +54,12 @@ class _ChatsScreenState extends ConsumerState<ChatsScreen> {
           ),
           if ((conversations.value?.length ?? 0) > 5)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.sm,
+              ),
               child: TextField(
                 onChanged: (v) => setState(() => _query = v),
                 decoration: const InputDecoration(
@@ -63,12 +70,12 @@ class _ChatsScreenState extends ConsumerState<ChatsScreen> {
               ),
             ),
           Expanded(
-            child: RefreshIndicator(
+            child: RefreshIndicator.adaptive(
               onRefresh: () => ref.refresh(conversationsProvider.future),
               child: conversations.when(
                 skipLoadingOnRefresh: true,
                 skipLoadingOnReload: true,
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const SkeletonList(),
                 error: (e, _) => ChatEmptyState(
                   icon: Icons.cloud_off_rounded,
                   title: chatErrorText(e),
@@ -101,9 +108,15 @@ class _ChatsScreenState extends ConsumerState<ChatsScreen> {
                     );
                   }
                   return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.sm,
+                      AppSpacing.lg,
+                      AppSpacing.xxxl,
+                    ),
                     itemCount: list.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppSpacing.sm),
                     itemBuilder: (_, i) => ConversationTile(
                       list[i],
                       onTap: () => context.push(
@@ -150,11 +163,11 @@ class ConversationTile extends StatelessWidget {
     final unread = c.unread > 0;
     return TmCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
           ChatAvatar(c.title, group: c.isGroup),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +184,7 @@ class ConversationTile extends StatelessWidget {
                     ),
                     if (c.muted)
                       const Padding(
-                        padding: EdgeInsets.only(right: 4),
+                        padding: EdgeInsets.only(right: AppSpacing.xs),
                         child: Icon(
                           Icons.notifications_off_outlined,
                           size: 15,
@@ -189,7 +202,7 @@ class ConversationTile extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
                     Expanded(
@@ -209,12 +222,12 @@ class ConversationTile extends StatelessWidget {
                       ),
                     ),
                     if (unread) ...[
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       CountBadge(c.unread, muted: c.muted),
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   c.subtitle,
                   style: text.bodySmall!.copyWith(color: AppColors.muted),
@@ -235,7 +248,12 @@ Future<void> showNewChatMenu(BuildContext context, WidgetRef ref) =>
       showDragHandle: true,
       builder: (sheet) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.lg,
+          ),
           child: AppList(
             children: [
               AppRow(

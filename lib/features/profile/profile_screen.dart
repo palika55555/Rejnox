@@ -11,6 +11,7 @@ import '../auth/presentation/auth_controller.dart';
 import '../coaching/presentation/my_trainer_card.dart';
 import '../health/heart_rate_tile.dart';
 import '../reminders/reminder_card.dart';
+import '../../core/theme/app_spacing.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -33,7 +34,12 @@ class ProfileScreen extends ConsumerWidget {
           const ScreenHeader('Profil'),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.xxxl,
+              ),
               child: SectionStack(
                 children: [
                   if (user != null) _UserCard(user),
@@ -118,7 +124,7 @@ class _UserCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,13 +134,13 @@ class _UserCard extends StatelessWidget {
                   style: text.headlineMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   user.email,
                   style: text.bodySmall,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 AppPill(user.role.label, tone: PillTone.accent),
               ],
             ),

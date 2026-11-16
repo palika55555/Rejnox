@@ -329,24 +329,30 @@ class ChatRoomController extends AsyncNotifier<ChatRoom> {
   Future<void> edit(String messageId, String body) async =>
       _replace(await _api.edit(chatToken(ref), messageId, body.trim()));
 
+  /// Skryje správu len v telefóne (pred potvrdením zmazania na serveri).
+  void hideLocally(ChatMessage message) => _replace(_tombstone(message));
+
+  /// Vráti skrytú správu späť (používateľ ťukol na „Späť“).
+  void restoreLocally(ChatMessage message) => _replace(message);
+
   Future<void> delete(ChatMessage message) async {
     await _api.deleteMessage(chatToken(ref), message.id);
-    _replace(
-      ChatMessage(
-        id: message.id,
-        kind: message.kind,
-        body: null,
-        sentAt: message.sentAt,
-        rawSentAt: message.rawSentAt,
-        rawUpdatedAt: message.rawUpdatedAt,
-        mine: message.mine,
-        senderId: message.senderId,
-        senderName: message.senderName,
-        deleted: true,
-      ),
-    );
+    _replace(_tombstone(message));
     ref.invalidate(conversationsProvider);
   }
+
+  ChatMessage _tombstone(ChatMessage message) => ChatMessage(
+    id: message.id,
+    kind: message.kind,
+    body: null,
+    sentAt: message.sentAt,
+    rawSentAt: message.rawSentAt,
+    rawUpdatedAt: message.rawUpdatedAt,
+    mine: message.mine,
+    senderId: message.senderId,
+    senderName: message.senderName,
+    deleted: true,
+  );
 
   /// Ťuk na reakciu: rovnaká ju odoberie, iná ju nahradí.
   Future<void> toggleReaction(ChatMessage message, String emoji) async {

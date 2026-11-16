@@ -9,6 +9,7 @@ import '../../training/presentation/workout_log_widgets.dart';
 import '../application/coaching_providers.dart';
 import '../data/coaching_api.dart';
 import 'coaching_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Formulár trénera na nový plán pre klienta.
 class AddPlanSheet extends ConsumerStatefulWidget {
@@ -112,10 +113,10 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
         key: _form,
         child: ListView(
           shrinkWrap: true,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           children: [
             Text('NOVÝ PLÁN', style: text.headlineMedium),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             TextFormField(
               controller: _title,
               textCapitalization: TextCapitalization.sentences,
@@ -128,7 +129,7 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
                 return t.isEmpty || t.length > 120 ? 'Zadaj názov.' : null;
               },
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             TextButton.icon(
               onPressed: _pickDate,
               icon: const Icon(Icons.event_rounded, size: 18),
@@ -136,7 +137,7 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
                 _date == null ? 'Dátum (nepovinné)' : formatDay(_date!),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             for (var i = 0; i < _rows.length; i++) _rowEditor(i),
             Align(
               alignment: Alignment.centerLeft,
@@ -150,7 +151,7 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
                 label: const Text('Pridať cvik'),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             PrimaryButton(
               label: _busy ? 'Ukladám…' : 'Uložiť plán',
               onPressed: _busy ? null : _save,
@@ -164,11 +165,11 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
   Widget _rowEditor(int i) {
     final row = _rows[i];
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.bg.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -187,7 +188,7 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
                         child: Row(
                           children: [
                             PlateDot(e.group.plate, size: 9),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
                                 e.name,
@@ -211,7 +212,7 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
                 ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
@@ -222,7 +223,7 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
                   validator: (v) => _intIn(v, 20),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: TextFormField(
                   controller: row.reps,
@@ -231,7 +232,7 @@ class _AddPlanSheetState extends ConsumerState<AddPlanSheet> {
                   validator: (v) => _intIn(v, 1000),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: TextFormField(
                   controller: row.weight,

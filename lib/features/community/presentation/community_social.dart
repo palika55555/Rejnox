@@ -12,6 +12,7 @@ import '../domain/community_models.dart';
 import 'community_async.dart';
 import 'community_format.dart';
 import 'community_glass.dart';
+import '../../../core/theme/app_spacing.dart';
 
 // Rebríček a skupiny.
 
@@ -74,7 +75,12 @@ class _OptInCardState extends ConsumerState<_OptInCard> {
   Widget build(BuildContext context) {
     return FrostCard(
       highlight: widget.optedIn,
-      padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
       child: SwitchListTile(
         contentPadding: EdgeInsets.zero,
         value: widget.optedIn,
@@ -100,7 +106,12 @@ class _Podium extends StatelessWidget {
     const heights = [92.0, 120.0, 72.0];
     final medals = [Plate.yellow.color, AppColors.steel, AppColors.accentDeep];
     return FrostCard(
-      padding: const EdgeInsets.fromLTRB(12, 18, 12, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+        0,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -109,7 +120,7 @@ class _Podium extends StatelessWidget {
               child: Column(
                 children: [
                   GlassAvatar(top[i].name, size: i == 0 ? 56 : 46),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     top[i].me ? '${top[i].name} (ty)' : top[i].name,
                     maxLines: 1,
@@ -120,19 +131,21 @@ class _Podium extends StatelessWidget {
                     '${top[i].days} ${plural(top[i].days, 'deň', 'dni', 'dní')}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0, end: heights[slot]),
                     duration: Duration(milliseconds: 600 + slot * 120),
                     curve: Curves.easeOutBack,
                     builder: (context, h, _) => Container(
                       height: h,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xs,
+                      ),
                       alignment: Alignment.topCenter,
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
                       decoration: BoxDecoration(
                         borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(14),
+                          top: Radius.circular(AppRadius.lg),
                         ),
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
@@ -169,12 +182,15 @@ class _RankRow extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return FrostCard(
       highlight: entry.me,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: Row(
         children: [
           SizedBox(width: 28, child: Text('$rank', style: text.titleMedium)),
           GlassAvatar(entry.name, size: 36),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,7 +228,7 @@ class GroupsSection extends ConsumerWidget {
             onPressed: () => context.push('/chat-new?group=1'),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: PrimaryButton(
             label: 'Mám kód',
@@ -240,11 +256,14 @@ class GroupsSection extends ConsumerWidget {
         for (final c in list.where((c) => c.kind == ConversationKind.group))
           FrostCard(
             onTap: () => context.push('/conversation/${c.id}'),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.lg,
+            ),
             child: Row(
               children: [
                 GlassAvatar(c.title),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

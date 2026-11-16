@@ -12,6 +12,7 @@ import '../../home/presentation/widgets/stat_cards.dart';
 import '../application/body_measurements_log.dart';
 import '../domain/body_measurements.dart';
 import 'body_figure.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Telo: váha a rozmery (pás, brucho, obvody) zapisované na postave.
 class BodyScreen extends ConsumerWidget {
@@ -40,7 +41,12 @@ class BodyScreen extends ConsumerWidget {
                   ),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.sm,
+                        AppSpacing.lg,
+                        AppSpacing.xxxl,
+                      ),
                       children: [
                         SectionStack(
                           children: [
@@ -52,15 +58,15 @@ class BodyScreen extends ConsumerWidget {
                               title: 'Rozmery',
                               child: TmCard(
                                 padding: const EdgeInsets.fromLTRB(
-                                  10,
-                                  14,
-                                  10,
-                                  12,
+                                  AppSpacing.sm,
+                                  AppSpacing.lg,
+                                  AppSpacing.sm,
+                                  AppSpacing.md,
                                 ),
                                 child: Column(
                                   children: [
                                     BodyFigure(latest: latest, onTap: open),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: AppSpacing.sm),
                                     Text(
                                       'Ťukni na časť tela a zapíš obvod v cm.',
                                       style: text.bodySmall,
@@ -135,7 +141,7 @@ class _PartRow extends StatelessWidget {
               ),
             ),
           if (change != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             AppPill('${formatCmChange(change)} cm'),
           ],
         ],
@@ -223,9 +229,9 @@ class _MeasurementSheetState extends State<_MeasurementSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(part.label.toUpperCase(), style: text.headlineMedium),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(part.hint, style: text.bodySmall),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             TextFormField(
               controller: _cm,
               autofocus: true,
@@ -251,15 +257,15 @@ class _MeasurementSheetState extends State<_MeasurementSheet> {
               },
               onFieldSubmitted: (_) => _save(),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             PrimaryButton(label: 'Uložiť', onPressed: _save),
             if (recent.isNotEmpty) ...[
-              const SizedBox(height: 18),
+              const SizedBox(height: AppSpacing.lg),
               const SectionLabel('Posledné merania'),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.sm),
               for (final m in recent)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                   child: Row(
                     children: [
                       Expanded(

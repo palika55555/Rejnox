@@ -8,6 +8,8 @@ import '../../../core/widgets/tm_card.dart';
 import '../application/coaching_providers.dart';
 import '../domain/coaching_models.dart';
 import 'coaching_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Zoznam klientov trénera.
 class ClientsScreen extends ConsumerWidget {
@@ -32,10 +34,15 @@ class ClientsScreen extends ConsumerWidget {
 
     return SafeArea(
       bottom: false,
-      child: RefreshIndicator(
+      child: RefreshIndicator.adaptive(
         onRefresh: () => ref.refresh(clientsProvider.future),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.xl,
+            AppSpacing.lg,
+            AppSpacing.xxl,
+          ),
           children: [
             Row(
               children: [
@@ -53,20 +60,15 @@ class ClientsScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             ...clients.when(
-              loading: () => const [
-                Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ],
+              loading: () => const [SkeletonList(count: 4)],
               error: (e, _) => [
                 TmCard(
                   child: Column(
                     children: [
                       Text(errorText(e), textAlign: TextAlign.center),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       TextButton(
                         onPressed: () => ref.invalidate(clientsProvider),
                         child: const Text('Skúsiť znova'),
@@ -78,7 +80,7 @@ class ClientsScreen extends ConsumerWidget {
               data: (list) => list.isEmpty
                   ? [
                       TmCard(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(AppSpacing.xxl),
                         child: Text(
                           'Zatiaľ nemáš klientov. Pridaj prvého – stačí meno, '
                           'appku mať nemusí.',
@@ -90,7 +92,7 @@ class ClientsScreen extends ConsumerWidget {
                   : [
                       for (final c in list) ...[
                         _ClientTile(c),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: AppSpacing.sm),
                       ],
                     ],
             ),
@@ -111,7 +113,7 @@ class _ClientTile extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return TmCard(
       onTap: () => context.go('/clients/${client.id}'),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
           Container(
@@ -128,7 +130,7 @@ class _ClientTile extends StatelessWidget {
               style: text.titleMedium,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +141,7 @@ class _ClientTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (client.note != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.xxs),
                   Text(
                     client.note!,
                     style: text.bodySmall,
@@ -150,7 +152,7 @@ class _ClientTile extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           LinkStatusChip(client.status),
           const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
         ],
@@ -211,12 +213,12 @@ class _AddClientSheetState extends ConsumerState<_AddClientSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('NOVÝ KLIENT', style: text.headlineMedium),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Klient nemusí mať appku. Pozvať ho môžeš hneď alebo neskôr.',
               style: text.bodySmall,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             TextFormField(
               controller: _name,
               autofocus: true,
@@ -229,7 +231,7 @@ class _AddClientSheetState extends ConsumerState<_AddClientSheet> {
                     : null;
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _note,
               maxLines: 2,
@@ -240,7 +242,7 @@ class _AddClientSheetState extends ConsumerState<_AddClientSheet> {
               validator: (v) =>
                   (v ?? '').trim().length > 500 ? 'Najviac 500 znakov.' : null,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.lg),
             PrimaryButton(
               label: _busy ? 'Ukladám…' : 'Pridať klienta',
               onPressed: _busy ? null : _save,

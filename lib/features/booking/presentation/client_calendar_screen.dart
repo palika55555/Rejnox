@@ -13,6 +13,8 @@ import '../domain/calendar_period.dart';
 import 'calendar_widgets.dart';
 import 'month_grid.dart';
 import 'trainer_calendar_sheets.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Kalendár môjho trénera: voľné termíny, rezervácia miesta a žiadosť o tréning.
 class ClientCalendarScreen extends ConsumerStatefulWidget {
@@ -68,11 +70,16 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
-              child: RefreshIndicator(
+              child: RefreshIndicator.adaptive(
                 onRefresh: () =>
                     ref.refresh(clientCalendarProvider(_key).future),
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.xxxl,
+                  ),
                   children: [
                     Row(
                       children: [
@@ -98,7 +105,7 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.sm),
                     PrimaryButton(
                       label: 'Požiadať o tréning',
                       icon: Icons.edit_calendar_rounded,
@@ -111,7 +118,7 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSpacing.lg),
                     MonthGrid(
                       start: _key.monday,
                       selected: _day,
@@ -131,20 +138,15 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
                           ? const {}
                           : _marks(data, _key.monday),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     CalendarViewToggle(
                       view: _view,
                       onChanged: (v) => setState(() => _view = v),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSpacing.lg),
                     ...calendar.when(
                       skipLoadingOnReload: true,
-                      loading: () => const [
-                        Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      ],
+                      loading: () => const [SkeletonList(count: 3)],
                       error: (e, _) => [
                         TmCard(
                           child: Column(
@@ -228,7 +230,7 @@ class _ClientCalendarScreenState extends ConsumerState<ClientCalendarScreen> {
       ];
     }
     return [
-      for (final i in items) ...[i.$2, const SizedBox(height: 10)],
+      for (final i in items) ...[i.$2, const SizedBox(height: AppSpacing.sm)],
     ];
   }
 
@@ -363,7 +365,7 @@ class _RequestTrainingSheetState extends ConsumerState<RequestTrainingSheet> {
           'Vyber čas, ktorý ti vyhovuje. Tréner žiadosť potvrdí alebo odmietne.',
           style: text.bodySmall,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         TimeSlotPicker(
           start: _start,
           minutes: _minutes,
@@ -371,13 +373,13 @@ class _RequestTrainingSheetState extends ConsumerState<RequestTrainingSheet> {
           onMinutes: (m) => setState(() => _minutes = m),
         ),
         if (_collides) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'V tomto čase má tréner iný tréning, vyber iný čas.',
             style: text.bodySmall!.copyWith(color: AppColors.warn),
           ),
         ],
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         TextField(
           controller: _note,
           maxLength: 500,
@@ -387,7 +389,7 @@ class _RequestTrainingSheetState extends ConsumerState<RequestTrainingSheet> {
             counterText: '',
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         PrimaryButton(
           label: _busy ? 'Odosielam…' : 'Odoslať žiadosť',
           icon: Icons.send_rounded,

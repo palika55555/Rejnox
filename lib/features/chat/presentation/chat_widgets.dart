@@ -7,6 +7,8 @@ import '../../../core/api/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/chat_api.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/adaptive_dialog.dart';
 
 String _two(int n) => n.toString().padLeft(2, '0');
 
@@ -106,18 +108,20 @@ class CountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(minWidth: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: muted ? AppColors.muted : AppColors.accent,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
         count > 99 ? '99+' : '$count',
         textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+        style: Theme.of(context).textTheme.labelMedium!.copyWith(
           color: AppColors.bg,
           fontWeight: FontWeight.w800,
-          fontSize: 11,
         ),
       ),
     );
@@ -174,7 +178,7 @@ class _ImagePlaceholder extends StatelessWidget {
         ? const SizedBox(
             width: 22,
             height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: CircularProgressIndicator.adaptive(strokeWidth: 2),
           )
         : const Icon(Icons.broken_image_outlined, color: AppColors.muted),
   );
@@ -242,13 +246,18 @@ class ChatEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(32, 48, 32, 28),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xxxl,
+        AppSpacing.huge,
+        AppSpacing.xxxl,
+        AppSpacing.xxxl,
+      ),
       children: [
         Icon(icon, size: 40, color: AppColors.muted),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Text(title, style: text.titleMedium, textAlign: TextAlign.center),
         if (body != null) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             body!,
             style: text.bodyMedium!.copyWith(color: AppColors.muted),
@@ -256,7 +265,7 @@ class ChatEmptyState extends StatelessWidget {
           ),
         ],
         if (action != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Center(child: action),
         ],
       ],
@@ -270,23 +279,9 @@ Future<bool> confirmChatAction(
   required String title,
   required String body,
   required String confirm,
-}) async =>
-    await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Zrušiť'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text(confirm),
-          ),
-        ],
-      ),
-    ) ??
-    false;
+}) async => await showAppConfirm(
+  context,
+  title: title,
+  message: body,
+  confirmLabel: confirm,
+);

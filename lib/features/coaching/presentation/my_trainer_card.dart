@@ -8,6 +8,7 @@ import '../../../core/widgets/tm_card.dart';
 import '../application/coaching_providers.dart';
 import '../domain/coaching_models.dart';
 import 'coaching_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Profil klienta: moji tréneri a zadanie pozývacieho kódu.
 class MyTrainerCard extends ConsumerWidget {
@@ -58,9 +59,9 @@ class MyTrainerCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SectionLabel('Môj tréner', icon: Icons.sports_rounded),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           if (trainers.isLoading && !trainers.hasValue)
-            const Center(child: CircularProgressIndicator())
+            const Center(child: CircularProgressIndicator.adaptive())
           else if (trainers.hasError && !trainers.hasValue)
             Text(errorText(trainers.error!), style: text.bodySmall)
           else if (active.isEmpty)
@@ -88,7 +89,7 @@ class MyTrainerCard extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(child: Text(t.trainerName, style: text.titleMedium)),
                 IconButton(
                   tooltip: 'Napísať trénerovi',
@@ -108,7 +109,7 @@ class MyTrainerCard extends ConsumerWidget {
                 ),
               ],
             ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           PrimaryButton(
             label: 'Mám kód od trénera',
             icon: Icons.key_rounded,

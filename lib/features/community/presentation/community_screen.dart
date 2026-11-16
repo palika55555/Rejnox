@@ -11,6 +11,7 @@ import 'community_cards.dart';
 import 'community_glass.dart';
 import 'community_sheets.dart';
 import 'community_social.dart';
+import '../../../core/theme/app_spacing.dart';
 
 enum CommunitySection {
   feed('Príspevky', Icons.dynamic_feed_rounded),
@@ -76,7 +77,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   selected: _section,
                   onChanged: (s) => setState(() => _section = s),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 280),
@@ -229,10 +230,13 @@ class _SectionChips extends StatelessWidget {
     return SizedBox(
       height: 44,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.xxs,
+        ),
         scrollDirection: Axis.horizontal,
         itemCount: CommunitySection.values.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, i) {
           final section = CommunitySection.values[i];
           final on = section == selected;
@@ -244,9 +248,9 @@ class _SectionChips extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 240),
                 curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(AppRadius.xxl),
                   gradient: on
                       ? const LinearGradient(
                           colors: [AppColors.accent, AppColors.accentDeep],
@@ -275,7 +279,7 @@ class _SectionChips extends StatelessWidget {
                       size: 16,
                       color: on ? AppColors.onAccent : AppColors.ink2,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSpacing.sm),
                     Text(
                       section.label,
                       style: text.bodyMedium!.copyWith(
@@ -311,7 +315,7 @@ class _CreateButton extends StatelessWidget {
       builder: (context, s, child) => Transform.scale(scale: s, child: child),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(AppRadius.sheet),
           boxShadow: [
             BoxShadow(
               color: AppColors.accent.withValues(alpha: 0.45),

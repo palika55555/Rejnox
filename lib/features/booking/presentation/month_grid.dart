@@ -5,6 +5,7 @@ import '../../../core/widgets/tm_card.dart';
 import '../domain/booking_models.dart';
 import '../domain/calendar_period.dart';
 import 'calendar_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Mriežka 5 týždňov s bodkami udalostí. `marks` = čo je v ktorý deň
 /// (0 = prvý pondelok obdobia).
@@ -34,7 +35,12 @@ class MonthGrid extends StatelessWidget {
     final last = _day(calendarDays - 1);
     final today = DateTime.now();
     return TmCard(
-      padding: const EdgeInsets.fromLTRB(6, 6, 6, 12),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.md,
+      ),
       child: Column(
         children: [
           Row(
@@ -71,10 +77,10 @@ class MonthGrid extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           for (var w = 0; w < calendarWeeks; w++)
             Padding(
-              padding: const EdgeInsets.only(bottom: 2),
+              padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
               child: Row(
                 children: [
                   for (var d = 0; d < 7; d++)
@@ -91,7 +97,7 @@ class MonthGrid extends StatelessWidget {
                 ],
               ),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           const CalendarLegend(),
         ],
       ),
@@ -142,7 +148,7 @@ class AgendaDayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = sameDay(day, DateTime.now());
     return Padding(
-      padding: const EdgeInsets.only(top: 6, bottom: 8),
+      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.sm),
       child: Text(
         '${today ? 'Dnes · ' : ''}${weekdayShort(day)} ${day.day}. ${day.month}.',
         style: Theme.of(context).textTheme.titleMedium!.copyWith(

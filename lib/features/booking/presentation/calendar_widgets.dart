@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../domain/booking_models.dart';
 import '../domain/calendar_period.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Čo je v daný deň v kalendári (farebná bodka pod dňom).
 enum DayMark {
@@ -52,7 +53,7 @@ class CalendarLegend extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _Dot(m.color),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppSpacing.xs),
               Text(m.label, style: style),
             ],
           ),
@@ -108,15 +109,15 @@ class DayChip extends StatelessWidget {
           '${weekdayShort(day)} ${day.day}. ${day.month}.'
           '${described.isEmpty ? ', nič' : ', ${described.join(', ')}'}',
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         onTap: onTap,
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           decoration: BoxDecoration(
             // Vybraný deň len podfarbený, aby bolo vidno farebné bodky.
             color: selected ? AppColors.accentSoft : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: selected ? AppColors.accent : Colors.transparent,
             ),
@@ -130,7 +131,7 @@ class DayChip extends StatelessWidget {
                     color: today ? AppColors.accent : AppColors.muted,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xxs),
               ],
               Text(
                 '${day.day}',
@@ -139,7 +140,7 @@ class DayChip extends StatelessWidget {
                   fontWeight: today || selected ? FontWeight.w800 : null,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               SizedBox(
                 height: 7,
                 child: Row(
@@ -148,7 +149,9 @@ class DayChip extends StatelessWidget {
                     for (final m in DayMark.values)
                       if (marks.contains(m))
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xxs,
+                          ),
                           child: _Dot(m.color),
                         ),
                   ],
@@ -190,7 +193,7 @@ class CalendarEventTile extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return TmCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
           Container(
@@ -198,10 +201,10 @@ class CalendarEventTile extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: accent,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           SizedBox(
             width: 52,
             child: Column(
@@ -229,7 +232,7 @@ class CalendarEventTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 if (pill case final pill?) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   // Dlhý štítok sa radšej zmenší, než aby pretiekol.
                   FittedBox(
                     fit: BoxFit.scaleDown,
@@ -309,7 +312,7 @@ class TimeSlotPicker extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () => _pickTime(context),
@@ -319,7 +322,7 @@ class TimeSlotPicker extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: 8,
           children: [
@@ -357,7 +360,7 @@ class EmptyDay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 24),
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
     child: Text(
       message,
       textAlign: TextAlign.center,

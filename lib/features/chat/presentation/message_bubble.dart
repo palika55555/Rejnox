@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../domain/chat_models.dart';
 import 'chat_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Čo chce používateľ so správou urobiť (z ponuky po podržaní).
 sealed class MessageAction {
@@ -35,7 +36,10 @@ class SystemNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 24),
+    padding: const EdgeInsets.symmetric(
+      vertical: AppSpacing.sm,
+      horizontal: AppSpacing.xxl,
+    ),
     child: Text(
       message.body ?? '',
       textAlign: TextAlign.center,
@@ -108,7 +112,7 @@ class MessageBubble extends StatelessWidget {
     final content = <Widget>[
       if (showSender && !mine && m.senderName != null)
         Padding(
-          padding: const EdgeInsets.only(bottom: 3),
+          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
           child: Text(
             m.senderName!,
             style: text.bodySmall!.copyWith(
@@ -132,7 +136,7 @@ class MessageBubble extends StatelessWidget {
               ? null
               : () => ChatImageViewer.open(context, messageId: m.id),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             // Pevný rozmer, aby sa zoznam pri načítaní fotky neposúval.
             child: SizedBox(
               width: maxWidth < 240 ? maxWidth - 24 : 240,
@@ -149,14 +153,14 @@ class MessageBubble extends StatelessWidget {
           m.body ?? '',
           style: text.bodyMedium!.copyWith(color: AppColors.text),
         ),
-      const SizedBox(height: 2),
+      const SizedBox(height: AppSpacing.xxs),
       Text(
         [
           if (m.edited && !m.deleted) 'upravené',
           if (m.pending) 'Odosiela sa…' else clockTime(m.sentAt),
         ].join(' · '),
         textAlign: TextAlign.right,
-        style: text.bodySmall!.copyWith(color: AppColors.muted, fontSize: 11),
+        style: text.labelMedium!.copyWith(color: AppColors.muted),
       ),
     ];
 
@@ -180,14 +184,19 @@ class MessageBubble extends StatelessWidget {
                 child: Opacity(
                   opacity: m.pending ? 0.7 : 1,
                   child: Container(
-                    margin: const EdgeInsets.only(top: 3),
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+                    margin: const EdgeInsets.only(top: AppSpacing.xs),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                    ),
                     decoration: BoxDecoration(
                       color: bubbleColor,
                       border: Border.all(color: borderColor),
                       borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(16),
-                        topRight: const Radius.circular(16),
+                        topLeft: const Radius.circular(AppRadius.lg),
+                        topRight: const Radius.circular(AppRadius.lg),
                         bottomLeft: Radius.circular(mine ? 16 : 4),
                         bottomRight: Radius.circular(mine ? 4 : 16),
                       ),
@@ -205,7 +214,7 @@ class MessageBubble extends StatelessWidget {
             ),
             if (m.reactions.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 3),
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
                 child: Wrap(
                   spacing: 4,
                   runSpacing: 4,
@@ -222,13 +231,13 @@ class MessageBubble extends StatelessWidget {
               ),
             if (seen)
               Padding(
-                padding: const EdgeInsets.only(top: 2, right: 4),
+                padding: const EdgeInsets.only(
+                  top: AppSpacing.xxs,
+                  right: AppSpacing.xs,
+                ),
                 child: Text(
                   'Videné',
-                  style: text.bodySmall!.copyWith(
-                    color: AppColors.muted,
-                    fontSize: 11,
-                  ),
+                  style: text.labelMedium!.copyWith(color: AppColors.muted),
                 ),
               ),
           ],
@@ -247,14 +256,19 @@ class _Quote extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.sm,
+        AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: AppColors.bg.withValues(alpha: 0.35),
         border: const Border(
           left: BorderSide(color: AppColors.accent, width: 3),
         ),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,10 +277,9 @@ class _Quote extends StatelessWidget {
           if (reply.senderName != null)
             Text(
               reply.senderName!,
-              style: text.bodySmall!.copyWith(
+              style: text.labelMedium!.copyWith(
                 color: AppColors.accent,
                 fontWeight: FontWeight.w700,
-                fontSize: 11.5,
               ),
             ),
           Text(
@@ -301,7 +314,10 @@ class _ReactionChip extends StatelessWidget {
       customBorder: const StadiumBorder(),
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xxs,
+        ),
         child: Text(
           reaction.count > 1
               ? '${reaction.emoji} ${reaction.count}'
@@ -335,7 +351,12 @@ class _MessageMenu extends StatelessWidget {
         children: [
           if (canInteract)
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
               child: Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 4,

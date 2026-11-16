@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../domain/body_measurements.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Postava spredu s bodmi na meranie. Každá časť má štítok vľavo alebo
 /// vpravo s posledným rozmerom; ťuknutie na štítok alebo bod otvorí zápis.
@@ -116,30 +117,25 @@ class _PartChip extends StatelessWidget {
       child: Material(
         color: v == null ? AppColors.surface : AppColors.surfaceHi,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           side: BorderSide(
             color: v == null ? AppColors.border : AppColors.buttonBorder,
           ),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  part.label,
-                  maxLines: 1,
-                  style: text.bodySmall!.copyWith(fontSize: 11.5),
-                ),
+                Text(part.label, maxLines: 1, style: text.labelMedium),
                 Text(
                   v == null ? '+ zapísať' : '${formatCm(v)} cm',
                   maxLines: 1,
-                  style: text.bodyLarge!.copyWith(
-                    fontSize: 14,
+                  style: text.bodyMedium!.copyWith(
                     fontWeight: FontWeight.w800,
                     color: v == null ? AppColors.accent : AppColors.text,
                   ),

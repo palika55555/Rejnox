@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../data/gym_repository.dart';
 import '../domain/gym.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Cenník fitka od používateľov: permanentky a produkty.
 class GymPricesCard extends ConsumerWidget {
@@ -27,15 +28,23 @@ class GymPricesCard extends ConsumerWidget {
     }
 
     return TmCard(
-      padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Cenník', style: text.titleMedium),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           if (gym.prices.isEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 8, right: 8),
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                right: AppSpacing.sm,
+              ),
               child: Text(
                 'Ceny zatiaľ nikto nezadal. Poznáš ich? Pridaj ich ostatným.',
                 style: text.bodyMedium!.copyWith(color: AppColors.muted),
@@ -44,7 +53,10 @@ class GymPricesCard extends ConsumerWidget {
           for (final kind in GymPriceKind.values)
             if (gym.prices.any((p) => p.kind == kind)) ...[
               Padding(
-                padding: const EdgeInsets.only(top: 10, bottom: 2),
+                padding: const EdgeInsets.only(
+                  top: AppSpacing.sm,
+                  bottom: AppSpacing.xxs,
+                ),
                 child: Text(
                   kind.label,
                   style: text.bodySmall!.copyWith(color: AppColors.ink2),
@@ -57,7 +69,7 @@ class GymPricesCard extends ConsumerWidget {
                     onDelete: price.mine ? () => delete(price) : null,
                   ),
             ],
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           TextButton.icon(
             onPressed: () => showModalBottomSheet<void>(
               context: context,
@@ -110,7 +122,6 @@ class _PriceRow extends StatelessWidget {
           if (onDelete != null)
             IconButton(
               tooltip: 'Zmazať moju cenu',
-              visualDensity: VisualDensity.compact,
               onPressed: onDelete,
               icon: const Icon(
                 Icons.delete_outline_rounded,
@@ -119,7 +130,7 @@ class _PriceRow extends StatelessWidget {
               ),
             )
           else
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
         ],
       ),
     );
@@ -192,7 +203,7 @@ class _AddPriceSheetState extends ConsumerState<AddPriceSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('Nová cena', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             SegmentedButton<GymPriceKind>(
               segments: const [
                 ButtonSegment(
@@ -207,7 +218,7 @@ class _AddPriceSheetState extends ConsumerState<AddPriceSheet> {
               selected: {_kind},
               onSelectionChanged: (s) => setState(() => _kind = s.first),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _title,
               maxLength: 120,
@@ -239,7 +250,7 @@ class _AddPriceSheetState extends ConsumerState<AddPriceSheet> {
                         : null,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: TextFormField(
                     controller: _period,
@@ -252,7 +263,7 @@ class _AddPriceSheetState extends ConsumerState<AddPriceSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             FilledButton(
               onPressed: _saving ? null : _save,
               child: Text(_saving ? 'Ukladám…' : 'Pridať do cenníka'),

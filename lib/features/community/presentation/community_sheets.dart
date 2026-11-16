@@ -6,6 +6,7 @@ import '../../../core/widgets/primary_button.dart';
 import '../application/community_providers.dart';
 import 'community_format.dart';
 import 'community_glass.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Spodný panel s formulárom; zatvorí sa po úspešnom odoslaní.
 Future<void> showCommunitySheet(BuildContext context, Widget child) =>
@@ -66,9 +67,12 @@ class _SheetFormState extends State<_SheetForm> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            for (final f in widget.fields) ...[f, const SizedBox(height: 12)],
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.lg),
+            for (final f in widget.fields) ...[
+              f,
+              const SizedBox(height: AppSpacing.md),
+            ],
+            const SizedBox(height: AppSpacing.xs),
             PrimaryButton(
               label: _saving ? 'Ukladám…' : widget.submitLabel,
               onPressed: _saving ? null : _submit,
@@ -120,7 +124,7 @@ class _DateTimeField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       onTap: () => _pick(context),
       child: InputDecorator(
         decoration: InputDecoration(
@@ -229,7 +233,8 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
             Text('Komentáre', style: text.titleLarge),
             Expanded(
               child: comments.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () =>
+                    const Center(child: CircularProgressIndicator.adaptive()),
                 error: (e, _) => Center(
                   child: Text(errorText(e, 'Komentáre sa nenačítali.')),
                 ),
@@ -241,7 +246,7 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
                         ),
                       )
                     : ListView(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         children: [
                           for (final c in list)
                             ListTile(
@@ -273,7 +278,12 @@ class _CommentsSheetState extends ConsumerState<CommentsSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 8, 16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.xs,
+                AppSpacing.sm,
+                AppSpacing.lg,
+              ),
               child: Row(
                 children: [
                   Expanded(
@@ -495,7 +505,7 @@ class _NewChallengeSheetState extends ConsumerState<NewChallengeSheet> {
                 }),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: _DateTimeField(
                 label: 'Do',
@@ -511,7 +521,7 @@ class _NewChallengeSheetState extends ConsumerState<NewChallengeSheet> {
           'Cieľ: $goal ${plural(goal, 'deň', 'dni', 'dní')} s tréningom',
           style: Theme.of(context).textTheme.titleSmall,
         ),
-        Slider(
+        Slider.adaptive(
           value: goal.toDouble(),
           min: 1,
           max: maxGoal.toDouble().clamp(2, 366),

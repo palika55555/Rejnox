@@ -14,6 +14,7 @@ import 'heart_rate_sections.dart';
 import 'heart_rate_service.dart';
 import 'heart_rate_stats.dart';
 import 'watch_link.dart';
+import '../../core/theme/app_spacing.dart';
 
 enum _Tab { overview, zones, trends }
 
@@ -138,10 +139,15 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: RefreshIndicator(
+          child: RefreshIndicator.adaptive(
             onRefresh: _refresh,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.xxxl,
+              ),
               children: [
                 Row(
                   children: [
@@ -163,9 +169,9 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                 Text('Tvoj tep dnes', style: text.headlineLarge),
                 Text('Zdravie · Výkon · Rovnováha', style: text.bodySmall),
                 if (_unsupported) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.sm),
                   TmCard(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Text(
                       'Tu zatiaľ nie sú žiadne merania. Tep z Apple Health / '
                       'Health Connect (a Apple Watch / Wear OS) uvidíš '
@@ -174,23 +180,23 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                     ),
                   ),
                 ],
-                const SizedBox(height: 18),
+                const SizedBox(height: AppSpacing.lg),
                 Center(
                   child: HeartRing(bpm: bpm, caption: caption),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 // Rejnox na hodinkách: Apple Watch (iPhone), Wear OS (Android).
                 if (!_unsupported && ref.read(watchLinkProvider).supported)
                   Center(child: _WatchChip(live: liveBpm != null)),
                 if (!_unsupported && !_connected) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   PrimaryButton(
                     label: _loading ? 'Pripájam…' : 'Pripojiť $healthStoreName',
                     icon: Icons.favorite_border_rounded,
                     onPressed: _loading ? null : _connect,
                   ),
                 ],
-                const SizedBox(height: 18),
+                const SizedBox(height: AppSpacing.lg),
                 Segments<_Tab>(
                   values: _Tab.values,
                   selected: _tab,
@@ -201,7 +207,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                   },
                   onChanged: (t) => setState(() => _tab = t),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 ...switch (_tab) {
                   _Tab.overview => [
                     Segments<_Period>(
@@ -213,7 +219,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                         _refresh();
                       },
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     OverviewChartCard(
                       title: _period == _Period.today
                           ? 'Tvoj tep počas dňa'
@@ -222,9 +228,9 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                       from: now.subtract(_period.window),
                       to: now,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     InsightCard(samples: samples),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     Row(
                       children: [
                         Expanded(
@@ -239,7 +245,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                             unit: 'ms',
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: StatTile(
                             icon: Icons.nightlight_round,
@@ -253,7 +259,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     if (history != null)
                       RecentMeasurements(history: history, now: now),
                   ],
@@ -270,14 +276,14 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                       from: now.subtract(_period.window),
                       to: now,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.sm),
                     Text(
                       'Obdobie zmeníš v Prehľade (Dnes / 7 dní / 30 dní).',
                       style: text.bodySmall,
                     ),
                   ],
                 },
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Rejnox údaje zo zdravia len číta. Ostávajú v telefóne '
                   'a na server sa neposielajú.',
@@ -313,17 +319,20 @@ class _WatchChip extends ConsumerWidget {
     final color = ok ? Plate.green.color : AppColors.muted;
     final canInstall = status != null && status.canInstall;
     final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: AppColors.sheet.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.watch_outlined, size: 16, color: color),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSpacing.sm),
           Flexible(
             child: Text(
               label,
@@ -332,7 +341,7 @@ class _WatchChip extends ConsumerWidget {
             ),
           ),
           if (canInstall) ...[
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSpacing.xs),
             Icon(Icons.download_rounded, size: 16, color: AppColors.accent),
           ],
         ],
@@ -343,7 +352,7 @@ class _WatchChip extends ConsumerWidget {
       button: true,
       label: 'Nainštalovať Rejnox na hodinky',
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         onTap: () => ref.read(watchLinkProvider).openWatchApp(),
         child: chip,
       ),

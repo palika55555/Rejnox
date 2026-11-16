@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/tm_card.dart';
 import 'health_platform.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Odkaz na sekciu Zdravie (v profile).
 class HeartRateTile extends StatelessWidget {
@@ -14,11 +15,11 @@ class HeartRateTile extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return TmCard(
       onTap: () => context.push('/health'),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
           const Icon(Icons.health_and_safety_outlined, color: AppColors.accent),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

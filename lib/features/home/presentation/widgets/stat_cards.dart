@@ -5,6 +5,7 @@ import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/tm_card.dart';
 import '../../../community/presentation/community_format.dart';
 import '../../domain/home_overview.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 /// Osobný rekord: veľké číslo, krivka vývoja a zmena za mesiac.
 class PersonalRecordRow extends StatelessWidget {
@@ -16,7 +17,10 @@ class PersonalRecordRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact =
@@ -36,12 +40,9 @@ class PersonalRecordRow extends StatelessWidget {
                   children: [
                     Text(
                       '${record.exercise} · osobný rekord',
-                      style: text.bodyMedium!.copyWith(
-                        color: AppColors.ink2,
-                        fontSize: 13.5,
-                      ),
+                      style: text.bodyMedium!.copyWith(color: AppColors.ink2),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     Text.rich(
                       TextSpan(
                         text: record.weightLabel,
@@ -55,12 +56,12 @@ class PersonalRecordRow extends StatelessWidget {
                           ),
                         ],
                       ),
-                      style: text.headlineLarge!.copyWith(fontSize: 36),
+                      style: text.displaySmall,
                     ),
                   ],
                 ),
               ),
-              if (compact) const SizedBox(height: 12),
+              if (compact) const SizedBox(height: AppSpacing.md),
               Column(
                 crossAxisAlignment: compact
                     ? CrossAxisAlignment.start
@@ -71,7 +72,7 @@ class PersonalRecordRow extends StatelessWidget {
                     height: 30,
                     child: CustomPaint(painter: SparklinePainter(record.trend)),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   if (compact)
                     Text(record.deltaLabel, style: text.bodySmall)
                   else
@@ -161,10 +162,7 @@ class RankingRow extends StatelessWidget {
         child: Text(
           '${ranking.position}',
           textAlign: TextAlign.center,
-          style: text.headlineLarge!.copyWith(
-            fontSize: 26,
-            color: AppColors.accent,
-          ),
+          style: text.headlineLarge!.copyWith(color: AppColors.accent),
         ),
       ),
       title: 'Týždenný rebríček',

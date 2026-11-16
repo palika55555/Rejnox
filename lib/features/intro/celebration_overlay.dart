@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../auth/presentation/celebration_state.dart';
 import 'intro_animation.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Ukáže oslavu cez celú obrazovku hneď po prihlásení / registrácii.
 class CelebrationGate extends ConsumerWidget {
@@ -181,7 +182,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                           ],
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: AppSpacing.lg),
                       Opacity(
                         opacity: heading,
                         child: Transform.scale(
@@ -195,7 +196,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSpacing.sm),
                       Opacity(
                         opacity: subtitle,
                         child: Text(
@@ -225,7 +226,7 @@ class _Heading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 24),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
     child: Text(
       celebration.title,
       textAlign: TextAlign.center,
@@ -263,7 +264,7 @@ class _BarbellPainter extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(center: c, width: half * 2, height: 8),
-        const Radius.circular(4),
+        const Radius.circular(AppRadius.xs),
       ),
       Paint()..color = const Color(0xFFB9BCCB),
     );
@@ -276,7 +277,7 @@ class _BarbellPainter extends CustomPainter {
             width: 10,
             height: 26,
           ),
-          const Radius.circular(3),
+          const Radius.circular(AppRadius.xs),
         ),
         Paint()..color = const Color(0xFFE6E7EE),
       );
@@ -296,11 +297,14 @@ class _BarbellPainter extends CustomPainter {
           height: h,
         );
         canvas.drawRRect(
-          RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+          RRect.fromRectAndRadius(rect, const Radius.circular(AppRadius.xs)),
           Paint()..color = _colors[i],
         );
         canvas.drawRRect(
-          RRect.fromRectAndRadius(rect.deflate(3), const Radius.circular(3)),
+          RRect.fromRectAndRadius(
+            rect.deflate(3),
+            const Radius.circular(AppRadius.xs),
+          ),
           Paint()
             ..color = Colors.white.withValues(alpha: 0.12)
             ..style = PaintingStyle.stroke

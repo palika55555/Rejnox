@@ -9,6 +9,7 @@ import '../../core/widgets/screen_header.dart';
 import '../../core/widgets/tm_card.dart';
 import '../gyms/application/gym_actions.dart';
 import '../gyms/presentation/map_style.dart';
+import '../../core/theme/app_spacing.dart';
 
 class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
@@ -34,7 +35,12 @@ class AboutScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.xxl,
+                  ),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 480),
@@ -49,7 +55,7 @@ class AboutScreen extends ConsumerWidget {
                                     const ExcludeSemantics(
                                       child: RejnoxMark(width: 48),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.md),
                                     Expanded(
                                       child: Text(
                                         'REJNOX',
@@ -58,7 +64,7 @@ class AboutScreen extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 14),
+                                const SizedBox(height: AppSpacing.lg),
                                 const Text(
                                   'Rejnox je tréningový denník a mapa fitiek. Zapisuj si série aj bez internetu, sleduj svoj progres a cvič podľa plánov od trénera.',
                                 ),

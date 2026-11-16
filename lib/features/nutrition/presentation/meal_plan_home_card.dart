@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../application/meal_plans_controller.dart';
 import '../domain/meal_plan.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Karta na Domove: dnešný jedálniček od trénera (len keď nejaký je).
 class MealPlanHomeCard extends ConsumerWidget {
@@ -30,23 +31,23 @@ class MealPlanHomeCard extends ConsumerWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
               color: AppColors.accentSoft,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: const Icon(
               Icons.restaurant_menu_rounded,
               color: AppColors.accent,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Jedálniček na dnes', style: text.bodyLarge),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   items.isEmpty
                       ? plan.title

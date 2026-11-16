@@ -11,6 +11,8 @@ import '../domain/chat_models.dart';
 import 'chat_composer.dart';
 import 'chat_widgets.dart';
 import 'message_bubble.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/undo_snack.dart';
 
 /// Chat tréner–klient podľa ID prepojenia (z karty trénera/klienta
 /// a z upozornení). Nájde konverzáciu a ukáže ju.
@@ -27,7 +29,7 @@ class ChatScreen extends ConsumerWidget {
       data: (id) => ConversationScreen(conversationId: id, title: name),
       loading: () => _Frame(
         title: name ?? 'Správy',
-        child: const Center(child: CircularProgressIndicator()),
+        child: const Center(child: CircularProgressIndicator.adaptive()),
       ),
       error: (e, _) => _Frame(
         title: name ?? 'Správy',
@@ -196,16 +198,16 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           if (mounted) showChatError(context, e);
         }
       case DeleteAction():
-        final ok = await confirmChatAction(
-          context,
-          title: 'Zmazať správu?',
-          body: 'Správa zmizne u všetkých v konverzácii.',
-          confirm: 'Zmazať',
-        );
-        if (!ok) return;
+        final room = _room;
+        room.hideLocally(message);
+        if (await showUndoSnack(context, 'Správa zmazaná')) {
+          room.restoreLocally(message);
+          return;
+        }
         try {
-          await _room.delete(message);
+          await room.delete(message);
         } on Object catch (e) {
+          room.restoreLocally(message);
           if (mounted) showChatError(context, e);
         }
     }
@@ -248,7 +250,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           Expanded(
             child: room.when(
               skipLoadingOnReload: true,
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () =>
+                  const Center(child: CircularProgressIndicator.adaptive()),
               error: (e, _) => ChatEmptyState(
                 icon: Icons.cloud_off_rounded,
                 title: chatErrorText(e),
@@ -334,7 +337,7 @@ class _MessageListState extends State<_MessageList> {
     if (messages.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Text(
             room.canSend
                 ? 'Zatiaľ žiadne správy. Napíš prvú.'
@@ -350,17 +353,22 @@ class _MessageListState extends State<_MessageList> {
     return ListView.builder(
       controller: _scroll,
       reverse: true,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
       itemCount: messages.length + (room.loadingOlder ? 1 : 0),
       itemBuilder: (_, i) {
         if (i == messages.length) {
           return const Padding(
-            padding: EdgeInsets.all(12),
+            padding: EdgeInsets.all(AppSpacing.md),
             child: Center(
               child: SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator.adaptive(strokeWidth: 2),
               ),
             ),
           );
@@ -379,7 +387,7 @@ class _MessageListState extends State<_MessageList> {
           children: [
             if (newDay)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 child: Text(
                   dayLabel(m.sentAt),
                   style: text.bodySmall!.copyWith(color: AppColors.muted),
@@ -389,7 +397,7 @@ class _MessageListState extends State<_MessageList> {
               SystemNote(m)
             else
               Padding(
-                padding: EdgeInsets.only(top: firstOfRun ? 6 : 0),
+                padding: EdgeInsets.only(top: firstOfRun ? AppSpacing.sm : 0),
                 child: MessageBubble(
                   message: m,
                   showSender: widget.isGroup && firstOfRun,
@@ -413,7 +421,12 @@ class _ClosedNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.lg,
+      AppSpacing.sm,
+      AppSpacing.lg,
+      AppSpacing.lg,
+    ),
     child: Text(
       switch (conversation?.kind) {
         ConversationKind.link =>

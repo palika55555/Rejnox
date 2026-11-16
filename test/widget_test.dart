@@ -27,6 +27,7 @@ import 'package:rejnox/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes.dart';
+import 'package:rejnox/features/training/application/rest_alerts.dart';
 
 const _pavol = AuthUser(
   id: 'u1',
@@ -147,6 +148,7 @@ Future<void> _pumpApp(
         ),
         connectivityProvider.overrideWithValue(const Stream<bool>.empty()),
         reminderSchedulerProvider.overrideWithValue(FakeReminderScheduler()),
+        restAlertsProvider.overrideWithValue(lastRestAlerts = FakeRestAlerts()),
         coachingApiProvider.overrideWithValue(coachingApi ?? FakeCoachingApi()),
         locationSourceProvider.overrideWithValue(FakeLocationSource()),
         mapTilesEnabledProvider.overrideWithValue(false),
@@ -179,6 +181,9 @@ Future<void> _openProfile(WidgetTester tester) async {
 
 Future<void> _pumpSignedIn(WidgetTester tester) =>
     _pumpApp(tester, tokens: _MemoryTokenStore('ok'));
+
+/// Odpočty pauzy z posledného spusteného testu.
+late FakeRestAlerts lastRestAlerts;
 
 void main() {
   group('WeeklyGoal', () {
@@ -361,10 +366,12 @@ void main() {
     expect(find.text('SPRÁVY'), findsOneWidget);
   });
 
-  testWidgets('spodná navigácia otvorí mapu', (tester) async {
+  testWidgets('menu Viac otvorí mapu', (tester) async {
     await _pumpSignedIn(tester);
 
-    await tester.tap(find.text('Mapa'));
+    await tester.tap(find.text('Viac'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mapa fitiek'));
     await tester.pumpAndSettle();
 
     expect(find.text('MAPA FITIEK'), findsOneWidget);
@@ -618,10 +625,13 @@ void main() {
     expect(find.text('Rozcvička'), findsWidgets);
     expect(find.text('PAUZA'), findsOneWidget);
     expect(find.text('Minule 8 × 25 kg'), findsOneWidget);
+    // Odpočet beží aj mimo appky (zamknutá obrazovka).
+    expect(lastRestAlerts.end, isNotNull);
 
     await tester.tap(find.byTooltip('Preskočiť pauzu'));
     await tester.pump();
     expect(find.text('PAUZA'), findsNothing);
+    expect(lastRestAlerts.end, isNull);
   });
 
   testWidgets('prebiehajúci tréning je vidieť na Dnes a dá sa ukončiť', (
@@ -666,6 +676,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('VYBER CVIK'), findsOneWidget);
 
+    await tester.dragUntilVisible(
+      find.byKey(const ValueKey('group-chest')),
+      find.byType(ListView).first,
+      const Offset(-120, 0),
+    );
     await tester.ensureVisible(find.byKey(const ValueKey('group-chest')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('group-chest')));
@@ -705,8 +720,8 @@ void main() {
       for (final label in ['Profil', 'Progres', 'Tep srdca', 'O aplikácii']) {
         expect(find.text(label), findsOneWidget);
       }
-      // Člen má mapu v lište, v menu ju nemá.
-      expect(find.text('Mapa fitiek'), findsNothing);
+      // Mapa je v menu, v lište sú namiesto nej Správy.
+      expect(find.text('Mapa fitiek'), findsOneWidget);
     });
 
     testWidgets('progres ukáže mesiac, týždne, rekordy a detail cviku', (
@@ -811,10 +826,20 @@ void main() {
       expect(find.text('Mapa'), findsNothing);
     });
 
-    testWidgets('člen má v menu Mapu, nie Klientov', (tester) async {
+    testWidgets('člen má v lište Správy a Komunitu, nie Klientov', (
+      tester,
+    ) async {
       await _pumpSignedIn(tester);
-      expect(find.text('Mapa'), findsOneWidget);
+      expect(find.text('Správy'), findsWidgets);
+      expect(find.text('Komunita'), findsOneWidget);
       expect(find.text('Klienti'), findsNothing);
+    });
+
+    testWidgets('spodná lišta otvorí správy', (tester) async {
+      await _pumpSignedIn(tester);
+      await tester.tap(find.text('Správy').last);
+      await tester.pumpAndSettle();
+      expect(find.text('SPRÁVY'), findsOneWidget);
     });
 
     testWidgets('pridanie klienta a pozvánka s kódom', (tester) async {

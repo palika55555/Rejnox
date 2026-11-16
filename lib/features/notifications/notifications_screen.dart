@@ -11,6 +11,8 @@ import '../auth/presentation/auth_controller.dart';
 import '../chat/presentation/chat_widgets.dart';
 import 'notification_models.dart';
 import 'notifications_controller.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/skeleton.dart';
 
 /// Zvonček s počtom neprečítaných upozornení, otvorí ich zoznam.
 class NotificationBell extends ConsumerWidget {
@@ -103,26 +105,26 @@ class NotificationsScreen extends ConsumerWidget {
                     ],
                   ),
                   Expanded(
-                    child: RefreshIndicator(
+                    child: RefreshIndicator.adaptive(
                       onRefresh: controller.refresh,
                       child: feed.isLoading && !feed.hasValue
-                          ? const Center(child: CircularProgressIndicator())
+                          ? const SkeletonList()
                           : list.isEmpty
                           ? ListView(
-                              padding: const EdgeInsets.all(32),
+                              padding: const EdgeInsets.all(AppSpacing.xxxl),
                               children: [
                                 const Icon(
                                   Icons.notifications_none_rounded,
                                   size: 40,
                                   color: AppColors.muted,
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: AppSpacing.md),
                                 Text(
                                   'Žiadne upozornenia',
                                   style: text.titleMedium,
                                   textAlign: TextAlign.center,
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: AppSpacing.sm),
                                 Text(
                                   'Ozveme sa, keď ti tréner pošle plán, '
                                   'potvrdí tréning alebo sa niečo zmení.',
@@ -134,10 +136,15 @@ class NotificationsScreen extends ConsumerWidget {
                               ],
                             )
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.lg,
+                                AppSpacing.sm,
+                                AppSpacing.lg,
+                                AppSpacing.xxxl,
+                              ),
                               itemCount: list.length,
                               separatorBuilder: (_, _) =>
-                                  const SizedBox(height: 10),
+                                  const SizedBox(height: AppSpacing.sm),
                               itemBuilder: (_, i) => Dismissible(
                                 key: ValueKey(list[i].id),
                                 direction: DismissDirection.endToStart,
@@ -146,7 +153,9 @@ class NotificationsScreen extends ConsumerWidget {
                                 background: const Align(
                                   alignment: Alignment.centerRight,
                                   child: Padding(
-                                    padding: EdgeInsets.only(right: 20),
+                                    padding: EdgeInsets.only(
+                                      right: AppSpacing.xl,
+                                    ),
                                     child: Icon(Icons.delete_outline_rounded),
                                   ),
                                 ),
@@ -180,7 +189,7 @@ class _Tile extends StatelessWidget {
     final n = notification;
     return TmCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -188,7 +197,7 @@ class _Tile extends StatelessWidget {
             _icon(n.kind),
             color: n.read ? AppColors.muted : AppColors.accent,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,7 +209,7 @@ class _Tile extends StatelessWidget {
                   ),
                 ),
                 if (n.body != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.xxs),
                   Text(
                     n.body!,
                     style: text.bodyMedium!.copyWith(color: AppColors.muted),
@@ -209,7 +218,7 @@ class _Tile extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Text(
             shortTime(n.createdAt),
             style: text.bodySmall!.copyWith(color: AppColors.muted),

@@ -6,6 +6,7 @@ import '../../../core/widgets/plate_chip.dart';
 import '../application/exercise_stats.dart';
 import '../data/exercise_catalog.dart';
 import '../domain/training_models.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Otvorí výber cviku. Vráti zvolený cvik alebo null.
 Future<Exercise?> showExercisePicker(
@@ -68,17 +69,25 @@ class _ExercisePickerSheetState extends ConsumerState<ExercisePickerSheet> {
         children: [
           Center(
             child: Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 4),
+              margin: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.xs,
+              ),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.border,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 10, 4),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.xs,
+            ),
             child: Row(
               children: [
                 Expanded(child: Text('VYBER CVIK', style: text.headlineMedium)),
@@ -97,7 +106,12 @@ class _ExercisePickerSheetState extends ConsumerState<ExercisePickerSheet> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.xs,
+              AppSpacing.xl,
+              AppSpacing.sm,
+            ),
             child: TextField(
               textInputAction: TextInputAction.search,
               onChanged: (v) => setState(() => _query = v),
@@ -111,7 +125,7 @@ class _ExercisePickerSheetState extends ConsumerState<ExercisePickerSheet> {
             height: 40,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
               children: [
                 _GroupChip(
                   label: 'Všetko',
@@ -129,7 +143,7 @@ class _ExercisePickerSheetState extends ConsumerState<ExercisePickerSheet> {
               ],
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           const Divider(),
           Expanded(
             child: items.isEmpty
@@ -141,7 +155,7 @@ class _ExercisePickerSheetState extends ConsumerState<ExercisePickerSheet> {
                   )
                 : ListView.separated(
                     controller: scroll,
-                    padding: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
                     itemCount: items.length,
                     separatorBuilder: (_, _) => const Divider(),
                     itemBuilder: (context, i) {
@@ -182,7 +196,7 @@ class _GroupChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
       child: Semantics(
         button: true,
         selected: selected,
@@ -197,13 +211,13 @@ class _GroupChip extends StatelessWidget {
             customBorder: const StadiumBorder(),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (plate != null) ...[
                     PlateDot(plate!, size: 8),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSpacing.sm),
                   ],
                   Text(
                     label,
@@ -249,17 +263,22 @@ class _ExerciseTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 8, 10),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+          ),
           child: Row(
             children: [
               PlateDot(exercise.group.plate, size: 10),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(exercise.name, style: text.bodyLarge),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xxs),
                     Text(
                       [
                         exercise.group.label,

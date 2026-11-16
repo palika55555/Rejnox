@@ -8,6 +8,7 @@ import '../../training/presentation/workout_log_widgets.dart';
 import '../application/coaching_providers.dart';
 import '../domain/coaching_models.dart';
 import 'coaching_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 String _kg(double w) => w == w.roundToDouble()
     ? '${w.toInt()} kg'
@@ -67,7 +68,7 @@ class _LogClientSetCardState extends ConsumerState<LogClientSetCard> {
               'Zapísať sériu klientovi',
               icon: Icons.add_circle_outline_rounded,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<String>(
               initialValue: _exerciseId,
               isExpanded: true,
@@ -80,7 +81,7 @@ class _LogClientSetCardState extends ConsumerState<LogClientSetCard> {
                 if (id != null) setState(() => _exerciseId = id);
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             NumberStepper(
               label: 'Opakovania',
               controller: _reps,
@@ -92,7 +93,7 @@ class _LogClientSetCardState extends ConsumerState<LogClientSetCard> {
                     : null;
               },
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             NumberStepper(
               label: 'Váha (kg)',
               controller: _weight,
@@ -105,7 +106,7 @@ class _LogClientSetCardState extends ConsumerState<LogClientSetCard> {
                     : null;
               },
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             PrimaryButton(
               label: _busy ? 'Ukladám…' : 'Zapísať',
               icon: Icons.check_rounded,
@@ -132,12 +133,12 @@ class ClientProgressCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SectionLabel('Progres', icon: Icons.trending_up_rounded),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           if (sets.isEmpty)
             Text('Zatiaľ žiadne zapísané série.', style: text.bodySmall),
           for (final s in sets.take(30))
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Row(
                 children: [
                   Expanded(

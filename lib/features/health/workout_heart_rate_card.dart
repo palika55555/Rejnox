@@ -11,6 +11,7 @@ import 'health_platform.dart';
 import 'heart_rate_service.dart';
 import 'heart_rate_stats.dart';
 import 'watch_link.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// „pred 40 s“, „pred 3 min“, „pred 2 h“.
 String agoLabel(DateTime at, DateTime now) {
@@ -178,16 +179,16 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
       const Icon(Icons.favorite_rounded, color: AppColors.accent, size: 30),
-      const SizedBox(width: 10),
+      const SizedBox(width: AppSpacing.sm),
       Semantics(
         liveRegion: true,
-        child: Text(
-          bpm == null ? '—' : '$bpm',
-          style: text.headlineLarge!.copyWith(fontSize: 48),
-        ),
+        child: Text(bpm == null ? '—' : '$bpm', style: text.displayMedium),
       ),
       Padding(
-        padding: const EdgeInsets.only(bottom: 10, left: 6),
+        padding: const EdgeInsets.only(
+          bottom: AppSpacing.sm,
+          left: AppSpacing.sm,
+        ),
         child: Text('BPM', style: text.bodySmall),
       ),
       const Spacer(),
@@ -218,7 +219,7 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
             if (kcal != null) '$kcal kcal',
           ].join('\n'),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         OutlinedButton.icon(
           onPressed: () => _command(
             last.paused ? _watch.resumeWorkout : _watch.pauseWorkout,
@@ -231,21 +232,21 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.text,
             side: const BorderSide(color: AppColors.border),
-            padding: const EdgeInsets.symmetric(vertical: 13),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         OutlinedButton(
           onPressed: () => _command(_watch.stopWorkout),
           style: OutlinedButton.styleFrom(
             foregroundColor: Plate.red.color,
             side: BorderSide(color: Plate.red.color.withValues(alpha: 0.6)),
-            padding: const EdgeInsets.symmetric(vertical: 13),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
           ),
           child: const Text('Ukončiť tréning na hodinkách'),
@@ -270,7 +271,7 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
           ),
         if (_healthMessage != null)
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
             child: Text(_healthMessage!, style: text.bodySmall),
           ),
         if (!_healthOn) ...[
@@ -284,25 +285,25 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
                       'oneskorené o sekundy až minúty.',
             style: text.bodySmall,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
         ],
         if (status != null && status.canInstall) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           PrimaryButton(
             label: 'Nainštalovať Rejnox na hodinky',
             icon: Icons.install_mobile_rounded,
             onPressed: _install,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
         ],
         if (watchReady) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           PrimaryButton(
             label: _starting ? 'Spúšťam…' : 'Spustiť tréning na hodinkách',
             icon: Icons.watch_outlined,
             onPressed: _starting ? null : _start,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
         ],
         if (!_healthOn)
           OutlinedButton.icon(
@@ -312,9 +313,9 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.text,
               side: const BorderSide(color: AppColors.border),
-              padding: const EdgeInsets.symmetric(vertical: 13),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
               ),
             ),
           ),
@@ -325,9 +326,8 @@ class _WorkoutHeartRateCardState extends ConsumerState<WorkoutHeartRateCard>
       title: 'Tep počas tréningu',
       trailing: TextButton(
         style: TextButton.styleFrom(
-          padding: EdgeInsets.zero,
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          minimumSize: const Size(44, 44),
         ),
         onPressed: () => context.push('/heart-rate'),
         child: const Text('Detail'),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../domain/chat_models.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Pole na písanie: odpoveď / úprava nad ním, fotka a odoslanie.
 class ChatComposer extends StatefulWidget {
@@ -102,11 +103,21 @@ class _ChatComposerState extends State<ChatComposer> {
       children: [
         if (banner != null)
           Container(
-            margin: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-            padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
+            margin: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xs,
+              AppSpacing.md,
+              0,
+            ),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.xs,
+              AppSpacing.sm,
+            ),
             decoration: BoxDecoration(
               color: AppColors.surfaceHi,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
               border: const Border(
                 left: BorderSide(color: AppColors.accent, width: 3),
               ),
@@ -114,7 +125,7 @@ class _ChatComposerState extends State<ChatComposer> {
             child: Row(
               children: [
                 Icon(banner.$3, size: 18, color: AppColors.accent),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,7 +155,12 @@ class _ChatComposerState extends State<ChatComposer> {
             ),
           ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(4, 6, 8, 10),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xs,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -168,7 +184,7 @@ class _ChatComposerState extends State<ChatComposer> {
                   onSubmitted: (_) => _send(),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.sm),
               IconButton.filled(
                 tooltip: editing == null ? 'Odoslať' : 'Uložiť úpravu',
                 onPressed: _canSend ? _send : null,

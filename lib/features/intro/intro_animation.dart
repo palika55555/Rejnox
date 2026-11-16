@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/rejnox_mark.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Pri spustení appky ukáže úvodnú animáciu nad obsahom.
 /// Pri vypnutých animáciách v systéme sa úvod vynechá.
@@ -122,19 +123,18 @@ class _IntroAnimationState extends State<IntroAnimation>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.sm),
                         Opacity(
                           opacity: word,
                           child: Text(
                             'REJNOX',
-                            style: text.headlineMedium!.copyWith(
+                            style: text.displaySmall!.copyWith(
                               fontWeight: FontWeight.w800,
                               letterSpacing: 7,
-                              fontSize: 34,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: AppSpacing.sm),
                         Opacity(
                           opacity: tagline,
                           child: Transform.translate(

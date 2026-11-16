@@ -6,12 +6,21 @@ import '../application/community_providers.dart';
 import '../domain/community_models.dart';
 import 'community_format.dart';
 import 'community_glass.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/undo_snack.dart';
 
 /// Ponuka „Zmazať“ pri vlastnom zázname (tlačidlo „⋯“).
 class _OwnerMenu extends StatelessWidget {
-  const _OwnerMenu({required this.what, required this.onDelete});
+  const _OwnerMenu({
+    required this.what,
+    required this.onDelete,
+    this.confirm = true,
+  });
 
   final String what;
+
+  /// false = zmaže hneď a ponúkne „Späť“ (onDelete to rieši sám).
+  final bool confirm;
   final Future<void> Function() onDelete;
 
   @override
@@ -20,7 +29,7 @@ class _OwnerMenu extends StatelessWidget {
       tooltip: 'Možnosti',
       icon: const Icon(Icons.more_horiz_rounded, color: AppColors.muted),
       onSelected: (_) async {
-        if (await confirmDelete(context, what)) await onDelete();
+        if (!confirm || await confirmDelete(context, what)) await onDelete();
       },
       itemBuilder: (_) => const [
         PopupMenuItem(value: 'delete', child: Text('Zmazať')),
@@ -43,7 +52,7 @@ class _Byline extends StatelessWidget {
     return Row(
       children: [
         GlassAvatar(name),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,6 +86,7 @@ class PostCard extends ConsumerStatefulWidget {
 class _PostCardState extends ConsumerState<PostCard> {
   late CommunityPost _post = widget.post;
   bool _busy = false;
+  bool _hidden = false;
 
   @override
   void didUpdateWidget(PostCard old) {
@@ -109,15 +119,25 @@ class _PostCardState extends ConsumerState<PostCard> {
   }
 
   Future<void> _delete() async {
+    final actions = ref.read(communityActionsProvider);
+    final id = _post.id;
+    setState(() => _hidden = true);
+    if (await showUndoSnack(context, 'Príspevok zmazaný')) {
+      if (mounted) setState(() => _hidden = false);
+      return;
+    }
     try {
-      await ref.read(communityActionsProvider).deletePost(_post.id);
+      await actions.deletePost(id);
     } on Object catch (e) {
-      if (mounted) showCommunityError(context, e, 'Zmazať sa nepodarilo.');
+      if (!mounted) return;
+      setState(() => _hidden = false);
+      showCommunityError(context, e, 'Zmazať sa nepodarilo.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_hidden) return const SizedBox.shrink();
     final post = _post;
     return FrostCard(
       child: Column(
@@ -127,12 +147,16 @@ class _PostCardState extends ConsumerState<PostCard> {
             name: post.authorName,
             subtitle: agoLabel(post.createdAt),
             menu: post.mine
-                ? _OwnerMenu(what: 'príspevok', onDelete: _delete)
+                ? _OwnerMenu(
+                    what: 'príspevok',
+                    confirm: false,
+                    onDelete: _delete,
+                  )
                 : null,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Text(post.body, style: Theme.of(context).textTheme.bodyLarge),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           Wrap(
             spacing: 8,
             children: [
@@ -210,14 +234,14 @@ class _BuddyCardState extends ConsumerState<BuddyCard>
                 : null,
           ),
           if (b.focus != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(b.focus!, style: Theme.of(context).textTheme.titleMedium),
           ],
           if (b.note != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(b.note!, style: Theme.of(context).textTheme.bodyMedium),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: 14,
             runSpacing: 6,
@@ -231,7 +255,7 @@ class _BuddyCardState extends ConsumerState<BuddyCard>
             ],
           ),
           if (!b.mine) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             GlassToggle(
               on: b.joined,
               icon: Icons.handshake_outlined,
@@ -274,7 +298,7 @@ class _EventCardState extends ConsumerState<EventCard>
           Row(
             children: [
               _DateBadge(e.startsAt),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,10 +322,10 @@ class _EventCardState extends ConsumerState<EventCard>
             ],
           ),
           if (e.description != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             Text(e.description!, style: text.bodyMedium),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: 14,
             runSpacing: 6,
@@ -311,7 +335,7 @@ class _EventCardState extends ConsumerState<EventCard>
               InfoTag(Icons.group_outlined, '${e.attendees} prihlásených'),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           GlassToggle(
             on: e.joined,
             icon: Icons.event_available_outlined,
@@ -339,9 +363,9 @@ class _DateBadge extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Container(
       width: 52,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -389,7 +413,7 @@ class _ChallengeCardState extends ConsumerState<ChallengeCard>
                 c.completed ? Icons.emoji_events_rounded : Icons.flag_rounded,
                 color: c.completed ? Plate.yellow.color : AppColors.accent,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(child: Text(c.title, style: text.titleMedium)),
               if (c.mine)
                 _OwnerMenu(
@@ -402,10 +426,10 @@ class _ChallengeCardState extends ConsumerState<ChallengeCard>
             ],
           ),
           if (c.description != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.sm),
             Text(c.description!, style: text.bodyMedium),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: 14,
             runSpacing: 6,
@@ -422,9 +446,9 @@ class _ChallengeCardState extends ConsumerState<ChallengeCard>
             ],
           ),
           if (c.joined) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             _ProgressBar(value: c.progress),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               c.completed
                   ? 'Splnené! ${c.myDays} z ${c.goalDays} dní'
@@ -432,7 +456,7 @@ class _ChallengeCardState extends ConsumerState<ChallengeCard>
               style: text.bodySmall,
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           GlassToggle(
             on: c.joined,
             icon: Icons.add_rounded,
@@ -463,7 +487,7 @@ class _ProgressBar extends StatelessWidget {
       child: Container(
         height: 10,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           color: Colors.white.withValues(alpha: 0.08),
         ),
         alignment: Alignment.centerLeft,
@@ -475,7 +499,7 @@ class _ProgressBar extends StatelessWidget {
             widthFactor: v,
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 gradient: const LinearGradient(
                   colors: [AppColors.accentDeep, AppColors.accent],
                 ),

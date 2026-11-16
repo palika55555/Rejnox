@@ -12,6 +12,7 @@ import '../application/chat_providers.dart';
 import '../domain/chat_models.dart';
 import 'chat_widgets.dart';
 import 'new_chat_screen.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Nastavenia konverzácie: stlmenie, blokovanie, pri skupine členovia,
 /// správcovia, pozývací kód, premenovanie, odchod a zrušenie.
@@ -78,7 +79,7 @@ class _ConversationInfoScreenState
                 letterSpacing: 2,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             const Text(
               'Kto má kód, pridá sa do skupiny. Kód sa ukáže len teraz; '
               'nový kód zruší starý.',
@@ -246,8 +247,9 @@ class _ConversationInfoScreenState
                     child: detail.when(
                       skipLoadingOnRefresh: true,
                       skipLoadingOnReload: true,
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                      loading: () => const Center(
+                        child: CircularProgressIndicator.adaptive(),
+                      ),
                       error: (e, _) => ChatEmptyState(
                         icon: Icons.cloud_off_rounded,
                         title: chatErrorText(e),
@@ -274,18 +276,23 @@ class _ConversationInfoScreenState
     final c = detail.conversation;
     final admin = c.isGroup && c.isAdmin;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.xxxl,
+      ),
       children: [
         Center(child: ChatAvatar(c.title, size: 72, group: c.isGroup)),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         Text(c.title, style: text.titleLarge, textAlign: TextAlign.center),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSpacing.xxs),
         Text(
           c.subtitle,
           style: text.bodySmall!.copyWith(color: AppColors.muted),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: AppSpacing.lg),
         AppList(
           children: [
             SwitchListTile(
@@ -320,9 +327,9 @@ class _ConversationInfoScreenState
           ],
         ),
         if (admin) ...[
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.lg),
           const SectionLabel('Pozývací kód'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           AppList(
             children: [
               AppRow(
@@ -345,9 +352,9 @@ class _ConversationInfoScreenState
           ),
         ],
         if (c.isGroup) ...[
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.lg),
           SectionLabel('Členovia · ${detail.members.length}'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           AppList(
             children: [
               if (admin)
@@ -377,7 +384,7 @@ class _ConversationInfoScreenState
                 ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.lg),
           AppList(
             children: [
               AppRow(

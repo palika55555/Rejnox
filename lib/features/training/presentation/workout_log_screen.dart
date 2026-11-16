@@ -15,6 +15,7 @@ import '../../booking/presentation/upcoming_trainings_section.dart';
 import '../../coaching/presentation/trainer_plans_section.dart';
 import '../../health/workout_heart_rate_card.dart';
 import '../application/exercise_stats.dart';
+import '../application/rest_alerts.dart';
 import '../application/workout_log_controller.dart';
 import '../application/workout_session.dart';
 import '../data/exercise_catalog.dart';
@@ -23,6 +24,7 @@ import 'exercise_picker_sheet.dart';
 import 'set_logger_widgets.dart';
 import 'workout_log_widgets.dart';
 import 'workout_session_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Zápis tréningu. Funguje aj bez internetu.
 class WorkoutLogScreen extends ConsumerStatefulWidget {
@@ -85,6 +87,14 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
     });
   }
 
+  /// Nastaví koniec pauzy a zosúladí systémový odpočet mimo appky.
+  void _setRest(DateTime? end, {bool notify = true}) {
+    setState(() => _restEnd = end);
+    if (!notify) return;
+    final alerts = ref.read(restAlertsProvider);
+    unawaited(end == null ? alerts.cancel() : alerts.start(end));
+  }
+
   @override
   void dispose() {
     _ticker?.cancel();
@@ -99,7 +109,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
     final end = _restEnd;
     if (end != null && !DateTime.now().isBefore(end)) {
       HapticFeedback.heavyImpact();
-      setState(() => _restEnd = null);
+      _setRest(null);
       return;
     }
     // Hodiny tréningu tikajú samy (LiveElapsed), tu len pauza.
@@ -140,6 +150,9 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
       final before = active
           .progressFrom(ref.read(workoutLogProvider).sets)
           .next;
+      final previousBest = ExerciseHistory.fromSets(
+        ref.read(workoutLogProvider).sets,
+      )[exerciseId]?.bestKg;
       await ref
           .read(workoutLogProvider.notifier)
           .addSet(
@@ -159,10 +172,18 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
           _exerciseId == exerciseId) {
         _applyTarget(next);
       }
-      setState(() {
-        _restTotal = _defaultRest;
-        _restEnd = DateTime.now().add(_defaultRest);
-      });
+      if (previousBest != null && weight > previousBest) {
+        HapticFeedback.heavyImpact();
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('Nový osobný rekord: ${formatKg(weight)} kg'),
+            ),
+          );
+      }
+      _restTotal = _defaultRest;
+      _setRest(DateTime.now().add(_defaultRest));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -204,15 +225,13 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
     HapticFeedback.lightImpact();
     final now = DateTime.now();
     final next = end.add(Duration(seconds: seconds));
-    setState(() {
-      if (!next.isAfter(now)) {
-        _restEnd = null;
-        return;
-      }
-      _restEnd = next;
-      final left = next.difference(now);
-      if (left > _restTotal) _restTotal = left;
-    });
+    if (!next.isAfter(now)) {
+      _setRest(null);
+      return;
+    }
+    final left = next.difference(now);
+    if (left > _restTotal) _restTotal = left;
+    _setRest(next);
   }
 
   /// Predvyplní opakovania a váhu podľa poslednej série cviku.
@@ -298,7 +317,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
         onDismissed: (_) => notifier.removePending(s.id),
         background: Container(
           alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
+          padding: const EdgeInsets.only(right: AppSpacing.xl),
           color: AppColors.error,
           child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
         ),
@@ -326,9 +345,9 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                 child: SingleChildScrollView(
                   controller: _scroll,
                   padding: EdgeInsets.fromLTRB(
-                    16,
-                    6,
-                    16,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
                     restLeft == null ? 96 : 172,
                   ),
                   child: SectionStack(
@@ -356,7 +375,9 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                       ),
                       if (log.loaded && log.sets.isEmpty)
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.lg,
+                          ),
                           child: Text(
                             'Zatiaľ žiadne série. Prvú zapíšeš hore, '
                             'aj bez internetu.',
@@ -415,9 +436,9 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                     remaining: restLeft.isNegative ? Duration.zero : restLeft,
                     total: _restTotal,
                     onAdjust: _adjustRest,
-                    onClose: () => setState(() => _restEnd = null),
+                    onClose: () => _setRest(null),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                 ],
                 if (active == null)
                   PrimaryButton(
@@ -437,7 +458,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                         : () async {
                             if (await confirmFinishWorkout(context, ref) &&
                                 mounted) {
-                              setState(() => _restEnd = null);
+                              _setRest(null);
                             }
                           },
                   ),
@@ -468,7 +489,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
               onTap: () => _pickExercise(history),
             ),
             if (progress != null && progress.total > 0) ...[
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 progress.next == null
                     ? 'Plán splnený · ${progress.done} z ${progress.total} sérií'
@@ -489,7 +510,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                   ),
                 ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -502,7 +523,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                     validator: _validateReps,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: MetricStepper(
                     label: 'Váha',
@@ -515,7 +536,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -533,7 +554,7 @@ class _WorkoutLogScreenState extends ConsumerState<WorkoutLogScreen> {
                   ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             ListenableBuilder(
               listenable: Listenable.merge([_reps, _weight]),
               builder: (context, _) => PrimaryButton(
@@ -560,16 +581,19 @@ class _ClockPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: AppColors.accentSoft,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.timer_outlined, size: 13, color: AppColors.accent),
-          const SizedBox(width: 5),
+          const SizedBox(width: AppSpacing.xs),
           LiveElapsed(
             since: since,
             style: Theme.of(context).textTheme.bodySmall!.copyWith(

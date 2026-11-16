@@ -8,6 +8,7 @@ import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/tm_card.dart';
 import 'health_platform.dart';
 import 'health_summary.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Sekcia Zdravie: prehľad z Apple Health / Health Connect, kam zapisujú
 /// Apple Watch aj iné hodinky (Garmin, Fitbit, Galaxy Watch…). Len čítanie,
@@ -73,10 +74,15 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: RefreshIndicator(
+          child: RefreshIndicator.adaptive(
             onRefresh: s == null ? () async {} : _load,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.xxl,
+              ),
               children: [
                 Row(
                   children: [
@@ -90,7 +96,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                     Text('ZDRAVIE', style: text.headlineMedium),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 if (!supported)
                   TmCard(
                     child: Text(
@@ -184,10 +190,10 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                     ],
                   ),
                   if (_message != null) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     Text(_message!, style: text.bodySmall),
                   ],
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   if (s == null)
                     PrimaryButton(
                       label: _loading
@@ -203,7 +209,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                       onPressed: () => context.push('/heart-rate'),
                     ),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Rejnox údaje zo zdravia len číta. Ostávajú v telefóne '
                   'a na server sa neposielajú.',
@@ -240,7 +246,7 @@ class _Metric extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return TmCard(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -248,7 +254,7 @@ class _Metric extends StatelessWidget {
           Row(
             children: [
               Icon(icon, size: 18, color: color),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.sm),
               Flexible(
                 child: Text(
                   label.toUpperCase(),

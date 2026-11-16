@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_colors.dart';
+
 /// Jedno meranie tepu.
 class HrSample {
   const HrSample(this.at, this.bpm);
@@ -42,11 +44,11 @@ HrStats? heartRateStats(List<HrSample> samples) {
 }
 
 enum HrZone {
-  max('Maximálna', '90–100 %', Color(0xFFFF4D6A), 0.9),
+  max('Maximálna', '90–100 %', AppColors.heart, 0.9),
   high('Vysoká', '80–90 %', Color(0xFFFF8A3D), 0.8),
-  aerobic('Aeróbna', '70–80 %', Color(0xFFFFC542), 0.7),
+  aerobic('Aeróbna', '70–80 %', AppColors.warn, 0.7),
   fatBurn('Spaľovanie tukov', '60–70 %', Color(0xFF2BD9B0), 0.6),
-  rest('Pokojová', '< 60 %', Color(0xFF4D8BFF), 0);
+  rest('Pokojová', '< 60 %', AppColors.calm, 0);
 
   const HrZone(this.label, this.range, this.color, this.fromFraction);
 

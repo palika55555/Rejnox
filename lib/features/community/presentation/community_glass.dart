@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Sklenený štýl komunity: farebné žiary v pozadí, matné sklo s rozmazaním,
 /// jemný svetlý okraj a pohyb pri objavení a ťuknutí.
@@ -33,8 +34,8 @@ class _GlowPainter extends CustomPainter {
 
   static const _blobs = [
     (Alignment(-1.1, -0.85), 0.55, AppColors.accent, 0.30),
-    (Alignment(1.15, -0.2), 0.45, Color(0xFF4D8BFF), 0.20),
-    (Alignment(-0.6, 0.95), 0.5, Color(0xFF2BD98B), 0.13),
+    (Alignment(1.15, -0.2), 0.45, AppColors.calm, 0.20),
+    (Alignment(-0.6, 0.95), 0.5, AppColors.good, 0.13),
   ];
 
   @override
@@ -62,7 +63,7 @@ class FrostCard extends StatelessWidget {
   const FrostCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(AppSpacing.lg),
     this.onTap,
     this.onLongPress,
     this.highlight = false,
@@ -161,10 +162,10 @@ class GlassAvatar extends StatelessWidget {
 
   static const _palette = [
     AppColors.accent,
-    Color(0xFF4D8BFF),
-    Color(0xFF2BD98B),
-    Color(0xFFFFC542),
-    Color(0xFFB57BFF),
+    AppColors.calm,
+    AppColors.good,
+    AppColors.warn,
+    AppColors.violet,
   ];
 
   String get _initials {
@@ -237,7 +238,10 @@ class GlassToggle extends StatelessWidget {
           customBorder: const StadiumBorder(),
           onTap: busy ? null : onPressed,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -254,7 +258,7 @@ class GlassToggle extends StatelessWidget {
                     color: color,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall!.copyWith(
@@ -284,7 +288,7 @@ class InfoTag extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 15, color: AppColors.muted),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppSpacing.xs),
         Flexible(
           child: Text(
             text,
@@ -318,7 +322,10 @@ class GlassEmpty extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context).textTheme;
     return FrostCard(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.xxxl,
+      ),
       child: Column(
         children: [
           Container(
@@ -333,15 +340,18 @@ class GlassEmpty extends StatelessWidget {
             ),
             child: Icon(icon, color: AppColors.accent, size: 28),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           Text(title, style: theme.titleMedium, textAlign: TextAlign.center),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             text,
             style: theme.bodyMedium!.copyWith(color: AppColors.ink2),
             textAlign: TextAlign.center,
           ),
-          if (action != null) ...[const SizedBox(height: 16), action!],
+          if (action != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            action!,
+          ],
         ],
       ),
     );

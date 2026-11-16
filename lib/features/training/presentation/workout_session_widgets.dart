@@ -9,6 +9,7 @@ import '../../../core/widgets/tm_card.dart';
 import '../application/exercise_stats.dart';
 import '../application/workout_log_controller.dart';
 import '../application/workout_session.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Čas od [since], prekresľuje sa sám každú sekundu.
 class LiveElapsed extends StatefulWidget {
@@ -95,7 +96,7 @@ class _FinishSheet extends ConsumerWidget {
 
     Widget tile(String label, Widget value) => Expanded(
       child: Container(
-        padding: const EdgeInsets.only(top: 9),
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.text, width: 2)),
         ),
@@ -103,11 +104,8 @@ class _FinishSheet extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SectionLabel(label),
-            const SizedBox(height: 6),
-            DefaultTextStyle.merge(
-              style: text.headlineLarge!.copyWith(fontSize: 28),
-              child: value,
-            ),
+            const SizedBox(height: AppSpacing.sm),
+            DefaultTextStyle.merge(style: text.headlineLarge, child: value),
           ],
         ),
       ),
@@ -115,31 +113,36 @@ class _FinishSheet extends ConsumerWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.xxl,
+          AppSpacing.xl,
+          AppSpacing.lg,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('UKONČIŤ TRÉNING?', style: text.headlineMedium),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(active.title, style: text.bodySmall),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
                 tile(
                   'Čas',
                   LiveElapsed(
                     since: active.startedAt,
-                    style: text.headlineLarge!.copyWith(fontSize: 28),
+                    style: text.headlineLarge,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 tile('Série', Text('${sets.length}')),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 tile('Objem', Text(formatKg(volume.roundToDouble()))),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               sets.isEmpty
                   ? 'Zatiaľ si nezapísal žiadnu sériu, tréning sa neuloží.'
@@ -147,14 +150,14 @@ class _FinishSheet extends ConsumerWidget {
                         'objem v kg',
               style: text.bodySmall,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             PrimaryButton(
               label: sets.isEmpty ? 'Zahodiť tréning' : 'Ukončiť a uložiť',
               icon: Icons.flag_outlined,
               tone: ButtonTone.ink,
               onPressed: () => Navigator.pop(context, true),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             PrimaryButton(
               label: 'Pokračovať v tréningu',
               tone: ButtonTone.ghost,
@@ -181,16 +184,16 @@ class ResumeWorkoutBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final style = text.bodyMedium!.copyWith(
-      fontWeight: FontWeight.w600,
-      fontSize: 14.5,
-    );
+    final style = text.bodyLarge!.copyWith(fontWeight: FontWeight.w600);
     return Material(
       color: AppColors.surface,
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
           decoration: const BoxDecoration(
             border: Border(top: BorderSide(color: AppColors.border)),
           ),
@@ -204,7 +207,7 @@ class ResumeWorkoutBar extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.sm),
               Flexible(
                 child: Text(
                   workout.title,

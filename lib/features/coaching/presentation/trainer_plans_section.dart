@@ -5,6 +5,7 @@ import '../../../core/widgets/tm_card.dart';
 import '../application/coaching_providers.dart';
 import '../domain/coaching_models.dart';
 import 'coaching_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Plány od trénera na karte Tréning (aj bez internetu z pamäte telefónu).
 class TrainerPlansSection extends ConsumerWidget {
@@ -27,7 +28,7 @@ class TrainerPlansSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final (i, p) in plans.plans.take(3).indexed) ...[
-            if (i > 0) const SizedBox(height: 10),
+            if (i > 0) const SizedBox(height: AppSpacing.sm),
             PlanCard(
               p,
               showTrainer: true,

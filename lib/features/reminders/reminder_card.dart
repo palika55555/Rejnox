@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/tm_card.dart';
 import 'reminder_service.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Nastavenie dennej pripomienky tréningu (v profile).
 class ReminderCard extends ConsumerWidget {
@@ -47,11 +48,11 @@ class ReminderCard extends ConsumerWidget {
                 color: AppColors.ink2,
                 size: 20,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text('Pripomienka tréningu', style: text.titleMedium),
               ),
-              Switch(
+              Switch.adaptive(
                 value: settings.enabled,
                 activeThumbColor: Colors.white,
                 activeTrackColor: AppColors.primary,
@@ -61,7 +62,7 @@ class ReminderCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           if (!supported)
             Text(
               'Pripomienky fungujú v mobilnej appke (iPhone a Android).',
@@ -69,7 +70,7 @@ class ReminderCard extends ConsumerWidget {
             )
           else
             InkWell(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               onTap: () async {
                 final picked = await showTimePicker(
                   context: context,
@@ -83,7 +84,7 @@ class ReminderCard extends ConsumerWidget {
                 }
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 child: Row(
                   children: [
                     Text('Každý deň o ', style: text.bodyMedium),
@@ -94,7 +95,7 @@ class ReminderCard extends ConsumerWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSpacing.sm),
                     const Icon(
                       Icons.edit_outlined,
                       size: 14,

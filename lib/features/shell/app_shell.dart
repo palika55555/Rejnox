@@ -13,6 +13,7 @@ import '../notifications/notifications_controller.dart';
 import '../training/application/workout_session.dart';
 import '../training/presentation/workout_session_widgets.dart';
 import 'more_sheet.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Rám appky: tmavé pozadie so žiarami, obsah a sklenená spodná lišta.
 /// Na webe drží šírku telefónu.
@@ -29,27 +30,34 @@ class AppShell extends ConsumerWidget {
   static const _chatBranch = 3;
   static const _profileBranch = 4;
 
+  static const _communityBranch = 6;
+
+  // Správy sú v lište: otvárajú sa najčastejšie a odznak je stále vidieť.
   static const _member = [
     (branch: 0, icon: Icons.home_outlined, label: 'Dnes'),
-    (branch: 1, icon: Icons.map_outlined, label: 'Mapa'),
     (branch: 2, icon: Icons.fitness_center, label: 'Tréning'),
-    (branch: 6, icon: Icons.forum_outlined, label: 'Komunita'),
+    (
+      branch: _chatBranch,
+      icon: Icons.chat_bubble_outline_rounded,
+      label: 'Správy',
+    ),
+    (branch: _communityBranch, icon: Icons.forum_outlined, label: 'Komunita'),
   ];
   static const _trainer = [
     (branch: 0, icon: Icons.home_outlined, label: 'Dnes'),
     (branch: 5, icon: Icons.groups_outlined, label: 'Klienti'),
     (branch: 2, icon: Icons.fitness_center, label: 'Tréning'),
-    (branch: 6, icon: Icons.forum_outlined, label: 'Komunita'),
+    (
+      branch: _chatBranch,
+      icon: Icons.chat_bubble_outline_rounded,
+      label: 'Správy',
+    ),
   ];
 
   void _goBranch(int branch) =>
       shell.goBranch(branch, initialLocation: branch == shell.currentIndex);
 
-  List<MoreItem> _moreItems(
-    BuildContext context,
-    AuthUser? user, {
-    int unreadMessages = 0,
-  }) => [
+  List<MoreItem> _moreItems(BuildContext context, AuthUser? user) => [
     (
       icon: Icons.person_outline_rounded,
       title: 'Profil',
@@ -75,26 +83,24 @@ class AppShell extends ConsumerWidget {
       subtitle: 'Váha, pás, brucho, obvody',
       onTap: () => context.push('/body'),
     ),
+    (
+      icon: Icons.map_outlined,
+      title: 'Mapa fitiek',
+      subtitle: 'Fitká v okolí, ceny a hodnotenia',
+      onTap: () => _goBranch(_mapBranch),
+    ),
     if (user?.role == UserRole.trainer)
       (
-        icon: Icons.map_outlined,
-        title: 'Mapa fitiek',
-        subtitle: null,
-        onTap: () => _goBranch(_mapBranch),
+        icon: Icons.forum_outlined,
+        title: 'Komunita',
+        subtitle: 'Príspevky, výzvy a rebríčky',
+        onTap: () => _goBranch(_communityBranch),
       ),
     (
       icon: Icons.favorite_outline_rounded,
       title: 'Tep srdca',
       subtitle: 'Z hodiniek a Zdravia',
       onTap: () => context.push('/heart-rate'),
-    ),
-    (
-      icon: Icons.chat_bubble_outline_rounded,
-      title: 'Správy',
-      subtitle: unreadMessages == 0
-          ? 'Chat s trénerom a klientmi'
-          : 'Neprečítané: $unreadMessages',
-      onTap: () => _goBranch(_chatBranch),
     ),
     (
       icon: Icons.info_outline_rounded,
@@ -110,7 +116,7 @@ class AppShell extends ConsumerWidget {
     final user = auth is SignedIn ? auth.user : null;
     final items = user?.role == UserRole.trainer ? _trainer : _member;
     final inBar = items.indexWhere((i) => i.branch == shell.currentIndex);
-    // Časť otvorená z menu (Profil, Správy…) zvýrazní tlačidlo „Viac“.
+    // Časť otvorená z menu (Profil, Mapa…) zvýrazní tlačidlo „Viac“.
     final current = inBar == -1 ? items.length : inBar;
     final activeWorkout = ref.watch(workoutSessionProvider).active;
     // Sledovaním sa po prihlásení spustí priebežné načítavanie upozornení.
@@ -136,27 +142,21 @@ class AppShell extends ConsumerWidget {
                 _NavBar(
                   items: [
                     for (final i in items)
-                      (icon: i.icon, label: i.label, badge: 0),
-                    (
-                      icon: Icons.menu_rounded,
-                      label: 'Viac',
-                      // Správy sú v menu „Viac“.
-                      badge: shell.currentIndex == _chatBranch
-                          ? 0
-                          : unreadMessages,
-                    ),
+                      (
+                        icon: i.icon,
+                        label: i.label,
+                        badge:
+                            i.branch == _chatBranch &&
+                                shell.currentIndex != _chatBranch
+                            ? unreadMessages
+                            : 0,
+                      ),
+                    (icon: Icons.menu_rounded, label: 'Viac', badge: 0),
                   ],
                   current: current,
                   onTap: (index) => index < items.length
                       ? _goBranch(items[index].branch)
-                      : showMoreSheet(
-                          context,
-                          _moreItems(
-                            context,
-                            user,
-                            unreadMessages: unreadMessages,
-                          ),
-                        ),
+                      : showMoreSheet(context, _moreItems(context, user)),
                 ),
               ],
             ),
@@ -184,19 +184,29 @@ class _NavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
       child: Glass(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
         border: false,
-        color: const Color(0xF01A1E23),
+        color: AppColors.navGlass,
         child: DecoratedBox(
           decoration: const BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(24)),
+            borderRadius: BorderRadius.all(Radius.circular(AppRadius.xxl)),
           ),
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xs,
+                0,
+                AppSpacing.xs,
+                AppSpacing.sm,
+              ),
               child: Row(
                 children: [
                   for (var i = 0; i < items.length; i++)
@@ -258,12 +268,17 @@ class _NavItem extends StatelessWidget {
             color: active ? AppColors.accent : Colors.transparent,
 
             borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(3),
+              bottom: Radius.circular(AppRadius.xs),
             ),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
+          padding: const EdgeInsets.fromLTRB(
+            0,
+            AppSpacing.sm,
+            0,
+            AppSpacing.xs,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -274,7 +289,7 @@ class _NavItem extends StatelessWidget {
                 label: Text(badge > 99 ? '99+' : '$badge'),
                 child: Icon(icon, size: 23, color: color),
               ),
-              const SizedBox(height: 3),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 label,
                 maxLines: 1,
@@ -316,12 +331,19 @@ class PlaceholderScreen extends StatelessWidget {
           ScreenHeader(title),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.xxxl,
+              ),
               child: SectionStack(
                 children: [
                   // Prázdny stav ako v návrhu: ikona v jamke a krátky text.
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.xl,
+                    ),
                     child: Column(
                       children: [
                         Container(
@@ -334,13 +356,13 @@ class PlaceholderScreen extends StatelessWidget {
                           ),
                           child: Icon(icon, color: AppColors.ink2, size: 28),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.md),
                         Text(
                           'Zatiaľ tu nič nie je',
                           style: text.titleMedium,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Na tejto časti práve pracujeme.',
                           style: text.bodyMedium!.copyWith(

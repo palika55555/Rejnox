@@ -11,6 +11,7 @@ import '../domain/coaching_models.dart';
 import 'add_plan_sheet.dart';
 import 'client_progress.dart';
 import 'coaching_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Detail klienta pre trénera: pozvánka, plány a progres.
 class ClientDetailScreen extends ConsumerWidget {
@@ -24,7 +25,8 @@ class ClientDetailScreen extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: detail.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () =>
+            const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -88,7 +90,7 @@ class _Body extends ConsumerWidget {
               '„Mám kód od trénera“.',
               style: text.bodyMedium,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             SelectableText(
               code.code,
               style: text.headlineLarge!.copyWith(
@@ -96,7 +98,7 @@ class _Body extends ConsumerWidget {
                 color: AppColors.accent,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Platí do ${formatDay(code.expiresAt)}. '
               'Kód sa zobrazí len teraz.',
@@ -187,10 +189,15 @@ class _Body extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () => ref.refresh(clientDetailProvider(client.id).future),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          AppSpacing.xxl,
+        ),
         children: [
           Row(
             children: [
@@ -218,10 +225,15 @@ class _Body extends ConsumerWidget {
           ),
           if (client.note != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                0,
+              ),
               child: Text(client.note!, style: text.bodyMedium),
             ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           _AccountCard(
             client: client,
             onInvite: () => _invite(context, ref),
@@ -229,7 +241,7 @@ class _Body extends ConsumerWidget {
             onDelete: () => _delete(context, ref),
           ),
           if (client.isActive) ...[
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
                 const Expanded(
@@ -251,11 +263,11 @@ class _Body extends ConsumerWidget {
               Text('Zatiaľ žiadny plán.', style: text.bodySmall),
             for (final p in detail.plans) ...[
               PlanCard(p, onDelete: () => _deletePlan(context, ref, p)),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             LogClientSetCard(clientId: client.id),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             ClientProgressCard(detail.sets),
           ],
         ],
@@ -297,7 +309,7 @@ class _AccountCard extends StatelessWidget {
         children: [
           Text(message, style: text.bodyMedium),
           if (client.canInvite) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             PrimaryButton(
               label: client.status == LinkStatus.invited
                   ? 'Vytvoriť nový kód'
@@ -306,7 +318,7 @@ class _AccountCard extends StatelessWidget {
               onPressed: onInvite,
             ),
           ],
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Wrap(
             alignment: WrapAlignment.end,
             children: [

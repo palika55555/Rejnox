@@ -12,6 +12,7 @@ import '../application/booking_providers.dart';
 import '../domain/booking_models.dart';
 import 'booking_plan_sheet.dart';
 import 'calendar_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Spoločný rám spodných panelov: nadpis, obsah, odsadenie nad klávesnicou.
 class SheetFrame extends StatelessWidget {
@@ -37,7 +38,7 @@ class SheetFrame extends StatelessWidget {
             title.toUpperCase(),
             style: Theme.of(context).textTheme.headlineMedium,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           ...children,
         ],
       ),
@@ -127,7 +128,7 @@ class _NewSlotSheetState extends ConsumerState<NewSlotSheet> {
           'Klienti uvidia termín vo tvojom kalendári a miesto si rezervujú sami.',
           style: text.bodySmall,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         TextField(
           controller: _title,
           maxLength: 80,
@@ -136,14 +137,14 @@ class _NewSlotSheetState extends ConsumerState<NewSlotSheet> {
             counterText: '',
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         TimeSlotPicker(
           start: _start,
           minutes: _minutes,
           onStart: (t) => setState(() => _start = t),
           onMinutes: (m) => setState(() => _minutes = m),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
             Expanded(child: Text('Počet miest', style: text.bodyLarge)),
@@ -173,7 +174,7 @@ class _NewSlotSheetState extends ConsumerState<NewSlotSheet> {
             counterText: '',
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         PrimaryButton(
           label: _busy ? 'Ukladám…' : 'Vypísať',
           icon: Icons.event_available_rounded,
@@ -279,7 +280,7 @@ class _TrainerBookingSheetState extends ConsumerState<TrainerBookingSheet> {
       title: slot == null ? 'Zapísať tréning' : 'Pridať do termínu',
       children: [
         if (clients.isLoading && !clients.hasValue)
-          const Center(child: CircularProgressIndicator())
+          const Center(child: CircularProgressIndicator.adaptive())
         else if (active.isEmpty)
           Text(
             'Najprv si pridaj klienta v časti Klienti.',
@@ -299,7 +300,7 @@ class _TrainerBookingSheetState extends ConsumerState<TrainerBookingSheet> {
               _planId = null;
             }),
           ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         if (slot == null) ...[
           TimeSlotPicker(
             start: _start,
@@ -308,12 +309,12 @@ class _TrainerBookingSheetState extends ConsumerState<TrainerBookingSheet> {
             onStart: (t) => setState(() => _start = t),
             onMinutes: (m) => setState(() => _minutes = m),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Odcvičený tréning zapíšeš aj spätne (najviac 90 dní).',
             style: text.bodySmall,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _title,
             maxLength: 80,
@@ -330,7 +331,7 @@ class _TrainerBookingSheetState extends ConsumerState<TrainerBookingSheet> {
             style: text.bodyLarge,
           ),
         if (plans.isNotEmpty) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           DropdownButtonFormField<String?>(
             initialValue: _planId,
             isExpanded: true,
@@ -343,7 +344,7 @@ class _TrainerBookingSheetState extends ConsumerState<TrainerBookingSheet> {
             onChanged: (id) => setState(() => _planId = id),
           ),
         ],
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         TextField(
           controller: _note,
           maxLength: 500,
@@ -353,7 +354,7 @@ class _TrainerBookingSheetState extends ConsumerState<TrainerBookingSheet> {
             counterText: '',
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         PrimaryButton(
           label: _busy ? 'Ukladám…' : 'Zapísať do kalendára',
           icon: Icons.check_rounded,
@@ -389,13 +390,13 @@ class TrainerBookingDetailSheet extends ConsumerWidget {
           b.title ?? (b.slotId == null ? 'Osobný tréning' : 'Miesto v termíne'),
       children: [
         Text(b.clientName, style: text.titleMedium),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           '${weekdayShort(b.startsAt)} ${b.startsAt.day}. ${b.startsAt.month}. · '
           '${timeRange(b.startsAt, b.endsAt)}',
           style: text.bodyLarge,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: 6,
           runSpacing: 6,
@@ -408,17 +409,17 @@ class TrainerBookingDetailSheet extends ConsumerWidget {
           ],
         ),
         if (b.note != null) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           Text('„${b.note}“', style: text.bodyMedium),
         ],
-        const SizedBox(height: 18),
+        const SizedBox(height: AppSpacing.lg),
         if (b.isPending) ...[
           PrimaryButton(
             label: 'Potvrdiť',
             icon: Icons.check_rounded,
             onPressed: () => act(() => actions.confirm(b.id)),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
         ],
         if (b.status != BookingStatus.cancelled) ...[
           OutlinedButton.icon(
@@ -433,7 +434,7 @@ class TrainerBookingDetailSheet extends ConsumerWidget {
                   : 'Zmeniť plán',
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
         ],
         OutlinedButton.icon(
           onPressed: () {
@@ -443,7 +444,7 @@ class TrainerBookingDetailSheet extends ConsumerWidget {
           icon: const Icon(Icons.trending_up_rounded),
           label: const Text('Klient: plány, zápis sérií a progres'),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         TextButton(
           style: TextButton.styleFrom(foregroundColor: AppColors.error),
           onPressed: () async {
@@ -480,16 +481,16 @@ class SlotDetailSheet extends ConsumerWidget {
           '${timeRange(slot.startsAt, slot.endsAt)}',
           style: text.bodyLarge,
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           'Obsadené ${slot.taken} z ${slot.capacity}',
           style: text.bodySmall,
         ),
         if (slot.note != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(slot.note!, style: text.bodyMedium),
         ],
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         if (slot.bookings.isEmpty)
           Text('Zatiaľ sa nikto neprihlásil.', style: text.bodySmall),
         for (final b in slot.bookings)
@@ -514,7 +515,7 @@ class SlotDetailSheet extends ConsumerWidget {
               showCalendarSheet<void>(context, TrainerBookingDetailSheet(b));
             },
           ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         if (!slot.isFull)
           PrimaryButton(
             label: 'Pridať klienta',

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../domain/gym.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Kým fitko nemá fotky: tmavá „sála“ so žiarou a činkou.
 class GymPhotoPlaceholder extends StatelessWidget {
@@ -47,7 +48,7 @@ class DetailActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(18);
+    final radius = BorderRadius.circular(AppRadius.lg);
     return Semantics(
       button: true,
       label: label,
@@ -78,14 +79,14 @@ class DetailActionTile extends StatelessWidget {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
               child: Column(
                 children: [
                   Icon(
                     icon,
                     color: primary ? AppColors.onAccent : AppColors.text,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     label,
                     style: Theme.of(context).textTheme.bodySmall!.copyWith(
@@ -121,17 +122,20 @@ class DetailInfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = Theme.of(context).textTheme.bodyMedium!;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20, color: AppColors.muted),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(text, style: style.copyWith(color: color)),
           ),
           if (trailing case final trailing?) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Text(trailing, style: style.copyWith(color: AppColors.accent)),
           ],
         ],
@@ -162,12 +166,12 @@ class GymRatingCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final rating = this.rating;
     return TmCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Hodnotenie', style: text.titleMedium),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           if (rating == null || rating.count == 0)
             Text(
               'Toto fitko zatiaľ nikto nehodnotil.',
@@ -178,14 +182,11 @@ class GymRatingCard extends StatelessWidget {
               children: [
                 Column(
                   children: [
-                    Text(
-                      rating.averageLabel,
-                      style: text.headlineLarge!.copyWith(fontSize: 44),
-                    ),
+                    Text(rating.averageLabel, style: text.displayMedium),
                     Text(rating.countLabel, style: text.bodySmall),
                   ],
                 ),
-                const SizedBox(width: 20),
+                const SizedBox(width: AppSpacing.xl),
                 Expanded(
                   child: Column(
                     children: [
@@ -196,9 +197,9 @@ class GymRatingCard extends StatelessWidget {
                 ),
               ],
             ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
@@ -209,7 +210,12 @@ class GymRatingCard extends StatelessWidget {
               ),
               for (var star = 1; star <= 5; star++)
                 IconButton(
-                  visualDensity: VisualDensity.compact,
+                  // Plná 48 px plocha: hviezdičky sa ťukajú aj v pohybe.
+                  constraints: const BoxConstraints.tightFor(
+                    width: 44,
+                    height: 48,
+                  ),
+                  padding: EdgeInsets.zero,
                   tooltip: '$star z 5',
                   // Ťuknutie na už zvolenú hviezdičku hodnotenie zruší.
                   onPressed: () => onRate(star == myStars ? null : star),
@@ -236,17 +242,17 @@ class _StarBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
     child: Row(
       children: [
         SizedBox(
           width: 12,
           child: Text('$star', style: Theme.of(context).textTheme.bodySmall),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
             child: LinearProgressIndicator(
               value: share,
               minHeight: 7,

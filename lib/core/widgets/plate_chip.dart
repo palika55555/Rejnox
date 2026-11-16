@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// Štítok vo farbe kotúča (napr. "Drep 4×6").
 class PlateChip extends StatelessWidget {
@@ -15,16 +16,22 @@ class PlateChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = plate?.color ?? AppColors.muted;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (plate != null) ...[PlateDot(plate!), const SizedBox(width: 6)],
+          if (plate != null) ...[
+            PlateDot(plate!),
+            const SizedBox(width: AppSpacing.sm),
+          ],
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall!.copyWith(

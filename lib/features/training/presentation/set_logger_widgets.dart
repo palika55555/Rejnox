@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../application/exercise_stats.dart';
 import '../domain/training_models.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Vybraný cvik; ťuknutím sa otvorí výber cviku.
 class ExerciseSelector extends StatelessWidget {
@@ -23,7 +26,7 @@ class ExerciseSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final best = history?.bestKg;
-    final radius = BorderRadius.circular(14);
+    final radius = BorderRadius.circular(AppRadius.lg);
     return Semantics(
       button: true,
       label: 'Zmeniť cvik',
@@ -37,11 +40,16 @@ class ExerciseSelector extends StatelessWidget {
           borderRadius: radius,
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+            ),
             child: Row(
               children: [
                 PlateDot(exercise.group.plate, size: 12),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +60,7 @@ class ExerciseSelector extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: text.titleMedium,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSpacing.xxs),
                       Text(
                         [
                           exercise.group.label,
@@ -92,7 +100,7 @@ class SetKindPicker extends StatelessWidget {
       children: [
         for (final kind in SetKind.values)
           Padding(
-            padding: const EdgeInsets.only(left: 6),
+            padding: const EdgeInsets.only(left: AppSpacing.sm),
             child: Tooltip(
               message: kind.label,
               child: Semantics(
@@ -112,7 +120,7 @@ class SetKindPicker extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: kind == selected ? AppColors.text : AppColors.well,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                       border: Border.all(
                         color: kind == selected
                             ? AppColors.text
@@ -169,10 +177,15 @@ class MetricStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 10),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: AppColors.well,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
         children: [
@@ -182,7 +195,7 @@ class MetricStepper extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: text.labelSmall,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               _StepButton(
@@ -197,7 +210,7 @@ class MetricStepper extends StatelessWidget {
                   keyboardType: TextInputType.numberWithOptions(
                     decimal: decimal,
                   ),
-                  style: text.headlineLarge!.copyWith(fontSize: 32),
+                  style: text.headlineLarge,
                   decoration: const InputDecoration(
                     filled: false,
                     border: InputBorder.none,
@@ -205,7 +218,9 @@ class MetricStepper extends StatelessWidget {
                     focusedBorder: InputBorder.none,
                     errorBorder: InputBorder.none,
                     focusedErrorBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 4),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: AppSpacing.xs,
+                    ),
                     isDense: true,
                     errorMaxLines: 2,
                   ),
@@ -226,7 +241,8 @@ class MetricStepper extends StatelessWidget {
   }
 }
 
-class _StepButton extends StatelessWidget {
+/// Tlačidlo ± s dotykovou plochou 48 px. Podržaním mení hodnotu opakovane.
+class _StepButton extends StatefulWidget {
   const _StepButton({
     required this.icon,
     required this.label,
@@ -238,21 +254,51 @@ class _StepButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_StepButton> createState() => _StepButtonState();
+}
+
+class _StepButtonState extends State<_StepButton> {
+  static const _repeatEvery = Duration(milliseconds: 110);
+  Timer? _repeat;
+
+  void _startRepeat() {
+    widget.onTap();
+    _repeat?.cancel();
+    _repeat = Timer.periodic(_repeatEvery, (_) => widget.onTap());
+  }
+
+  void _stopRepeat() {
+    _repeat?.cancel();
+    _repeat = null;
+  }
+
+  @override
+  void dispose() {
+    _stopRepeat();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: label,
-      child: Material(
-        color: AppColors.surface,
-        shape: const CircleBorder(
-          side: BorderSide(color: AppColors.border, width: 1.5),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          customBorder: const CircleBorder(),
-          child: SizedBox.square(
-            dimension: 40,
-            child: Icon(icon, size: 20, color: AppColors.text),
+      label: widget.label,
+      child: GestureDetector(
+        onLongPressStart: (_) => _startRepeat(),
+        onLongPressEnd: (_) => _stopRepeat(),
+        onLongPressCancel: _stopRepeat,
+        child: Material(
+          color: AppColors.surface,
+          shape: const CircleBorder(
+            side: BorderSide(color: AppColors.border, width: 1.5),
+          ),
+          child: InkWell(
+            onTap: widget.onTap,
+            customBorder: const CircleBorder(),
+            child: SizedBox.square(
+              dimension: 48,
+              child: Icon(widget.icon, size: 24, color: AppColors.text),
+            ),
           ),
         ),
       ),
@@ -260,7 +306,6 @@ class _StepButton extends StatelessWidget {
   }
 }
 
-/// Malý čip rýchlej voľby (Minule, +2,5 kg…).
 class QuickChip extends StatelessWidget {
   const QuickChip({super.key, required this.label, required this.onTap});
 
@@ -279,7 +324,10 @@ class QuickChip extends StatelessWidget {
           onTap();
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           child: Text(
             label,
             style: Theme.of(context).textTheme.bodySmall!.copyWith(
@@ -327,10 +375,15 @@ class RestTimerBar extends StatelessWidget {
       liveRegion: true,
       label: 'Pauza ${formatClock(remaining)}',
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           gradient: AppColors.heroGradient,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           boxShadow: const [
             BoxShadow(
               color: Color(0x2E12151A),
@@ -350,7 +403,7 @@ class RestTimerBar extends StatelessWidget {
                 backgroundColor: AppColors.heroLine,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -361,10 +414,7 @@ class RestTimerBar extends StatelessWidget {
                 ),
                 Text(
                   formatClock(remaining),
-                  style: text.headlineLarge!.copyWith(
-                    fontSize: 24,
-                    color: AppColors.onHero,
-                  ),
+                  style: text.headlineMedium!.copyWith(color: AppColors.onHero),
                 ),
               ],
             ),

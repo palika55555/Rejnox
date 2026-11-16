@@ -20,6 +20,7 @@ import '../../nutrition/presentation/meal_plan_home_card.dart';
 import 'widgets/session_heroes.dart';
 import 'widgets/stat_cards.dart';
 import 'widgets/workout_cards.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Obrazovka Dnes: jeden stĺpec, jedna tmavá hero plocha s dnešným
 /// tréningom a pod ňou tiché sekcie s vlasovými linkami.
@@ -45,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
               error: (error, _) => _ErrorView(
                 onRetry: () => ref.invalidate(homeOverviewProvider),
               ),
-              data: (data) => RefreshIndicator(
+              data: (data) => RefreshIndicator.adaptive(
                 onRefresh: () async {
                   try {
                     await Future.wait([
@@ -68,7 +69,12 @@ class HomeScreen extends ConsumerWidget {
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    AppSpacing.xxxl,
+                  ),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 720),
@@ -82,7 +88,9 @@ class HomeScreen extends ConsumerWidget {
                             user,
                           ).indexed)
                             Padding(
-                              padding: EdgeInsets.only(top: i == 0 ? 0 : 22),
+                              padding: EdgeInsets.only(
+                                top: i == 0 ? 0 : AppSpacing.xxl,
+                              ),
                               child: w,
                             ),
                         ],
@@ -176,7 +184,12 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: SizedBox(
         height: 44,
         child: Row(
@@ -190,7 +203,7 @@ class _TopBar extends StatelessWidget {
                   child: Row(
                     children: [
                       const RejnoxMark(width: 34),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: AppSpacing.sm),
                       Text('REJNOX', style: text.headlineLarge),
                     ],
                   ),
@@ -199,7 +212,7 @@ class _TopBar extends StatelessWidget {
             ),
             const NotificationBell(),
             const _ChatButton(),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSpacing.xs),
             _ProfilePill(
               name: name,
               role: isTrainer ? 'Tréner' : 'Klient',
@@ -247,7 +260,7 @@ class _ProfilePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final radius = BorderRadius.circular(19);
+    final radius = BorderRadius.circular(AppRadius.xl);
     return Material(
       color: AppColors.surface,
       shape: RoundedRectangleBorder(
@@ -258,7 +271,12 @@ class _ProfilePill extends StatelessWidget {
         borderRadius: radius,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 11, 4),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xs,
+            AppSpacing.xs,
+            AppSpacing.md,
+            AppSpacing.xs,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -278,7 +296,7 @@ class _ProfilePill extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 7),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 role,
                 style: text.bodyMedium!.copyWith(fontWeight: FontWeight.w600),
@@ -331,7 +349,7 @@ class _Hello extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionLabel(date),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           name.isEmpty ? 'Ahoj' : 'Ahoj, $name',
           style: text.titleMedium!.copyWith(
@@ -385,7 +403,7 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -393,7 +411,7 @@ class _ErrorView extends StatelessWidget {
               'Nepodarilo sa načítať údaje.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             PrimaryButton(
               label: 'Skúsiť znova',
               compact: true,

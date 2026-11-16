@@ -12,6 +12,7 @@ import '../data/progress_repository.dart';
 import '../domain/progress_models.dart';
 import 'progress_charts.dart';
 import 'progress_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Progres: posledný mesiac, objem po týždňoch, rekordy cvikov a partie.
 class ProgressScreen extends ConsumerWidget {
@@ -40,7 +41,7 @@ class ProgressScreen extends ConsumerWidget {
                       error: (_, _) => _ErrorView(
                         onRetry: () => ref.invalidate(progressProvider),
                       ),
-                      data: (data) => RefreshIndicator(
+                      data: (data) => RefreshIndicator.adaptive(
                         onRefresh: () => ref.refresh(progressProvider.future),
                         child: _ProgressBody(data),
                       ),
@@ -72,7 +73,12 @@ class _ProgressBody extends StatelessWidget {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.xxxl,
+      ),
       children: [
         SectionStack(
           children: [
@@ -84,7 +90,7 @@ class _ProgressBody extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     WeeklyVolumeChart(data.weeks),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     Text(
                       'Priemerne ${perWeek.toStringAsFixed(1).replaceAll('.', ',')} '
                       'tréningu týždenne · aktívnych $activeWeeks z '
@@ -127,11 +133,11 @@ class _ProgressBody extends StatelessWidget {
                       label: 'Tréningov',
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: StatTile(value: '${data.totalSets}', label: 'Sérií'),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: StatTile(
                       value: formatVolume(data.totalVolumeKg),
@@ -156,7 +162,12 @@ class _EmptyView extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(28, 60, 28, 28),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xxxl,
+        AppSpacing.huge,
+        AppSpacing.xxxl,
+        AppSpacing.xxxl,
+      ),
       children: [
         Center(
           child: Container(
@@ -174,18 +185,25 @@ class _EmptyView extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'Zatiaľ bez progresu',
           style: text.titleMedium,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           'Zapíš prvé série v Tréningu a tu uvidíš rekordy, objem a vývoj '
           'každého cviku.',
           style: text.bodyMedium!.copyWith(color: AppColors.ink2),
           textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        PrimaryButton(
+          label: 'Začať tréning',
+          icon: Icons.play_arrow_rounded,
+          tone: ButtonTone.accent,
+          onPressed: () => context.go('/workout'),
         ),
       ],
     );
@@ -201,7 +219,7 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -209,7 +227,7 @@ class _ErrorView extends StatelessWidget {
               'Nepodarilo sa načítať progres.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             PrimaryButton(
               label: 'Skúsiť znova',
               compact: true,

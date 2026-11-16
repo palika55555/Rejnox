@@ -16,6 +16,7 @@ import 'package:rejnox/features/progress/domain/progress_models.dart';
 import 'package:rejnox/features/reminders/reminder_service.dart';
 import 'package:rejnox/features/training/data/set_storage.dart';
 import 'package:rejnox/features/training/domain/training_models.dart';
+import 'package:rejnox/features/training/application/rest_alerts.dart';
 
 class MemorySetStore implements LocalSetStore {
   final data = <String, List<LoggedSet>>{};
@@ -549,5 +550,20 @@ class FakeGymPhotoPicker implements GymPhotoPicker {
   Future<List<int>?> pick(PhotoSource source) async {
     if (fail) throw const PhotoPickFailed();
     return next;
+  }
+}
+
+/// Zaznamená odpočty pauzy namiesto systémových upozornení.
+class FakeRestAlerts implements RestAlerts {
+  DateTime? end;
+  int cancels = 0;
+
+  @override
+  Future<void> start(DateTime end) async => this.end = end;
+
+  @override
+  Future<void> cancel() async {
+    end = null;
+    cancels++;
   }
 }

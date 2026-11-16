@@ -10,6 +10,7 @@ import '../../../core/widgets/tm_card.dart';
 import '../domain/auth_models.dart';
 import 'auth_background.dart';
 import 'auth_controller.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Prihlásenie alebo registrácia (podľa [register]).
 class AuthScreen extends ConsumerStatefulWidget {
@@ -73,7 +74,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, viewport) => SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
@@ -101,7 +102,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               TmCard(
-                                padding: const EdgeInsets.all(18),
+                                padding: const EdgeInsets.all(AppSpacing.lg),
                                 child: Column(
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
@@ -110,14 +111,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                       alignment: Alignment.centerLeft,
                                       child: RejnoxMark(width: 42),
                                     ),
-                                    const SizedBox(height: 14),
+                                    const SizedBox(height: AppSpacing.lg),
                                     Text(
                                       register
                                           ? 'VYTVOR SI ÚČET'
                                           : 'VITAJ SPÄŤ',
                                       style: text.headlineMedium,
                                     ),
-                                    const SizedBox(height: 18),
+                                    const SizedBox(height: AppSpacing.lg),
                                     if (register) ...[
                                       TextFormField(
                                         controller: _name,
@@ -138,7 +139,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                               : null;
                                         },
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: AppSpacing.md),
                                     ],
                                     TextFormField(
                                       controller: _email,
@@ -158,7 +159,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                           ? null
                                           : 'Zadaj platný e-mail.',
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: AppSpacing.md),
                                     TextFormField(
                                       controller: _password,
                                       obscureText: true,
@@ -186,11 +187,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                       },
                                     ),
                                     if (register) ...[
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: AppSpacing.lg),
                                       const SectionLabel(
                                         'Ako budeš appku používať?',
                                       ),
-                                      const SizedBox(height: 8),
+                                      const SizedBox(height: AppSpacing.sm),
                                       _RolePicker(
                                         selected: _role,
                                         onChanged: (role) =>
@@ -198,7 +199,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                       ),
                                     ],
                                     if (_error != null) ...[
-                                      const SizedBox(height: 14),
+                                      const SizedBox(height: AppSpacing.lg),
                                       Text(
                                         _error!,
                                         style: text.bodyMedium!.copyWith(
@@ -207,7 +208,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                         ),
                                       ),
                                     ],
-                                    const SizedBox(height: 18),
+                                    const SizedBox(height: AppSpacing.lg),
                                     PrimaryButton(
                                       label: _busy
                                           ? 'Chvíľu strpenia…'
@@ -219,7 +220,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: AppSpacing.lg),
                               TextButton(
                                 onPressed: _busy
                                     ? null
@@ -269,22 +270,22 @@ class _RolePicker extends StatelessWidget {
     return Row(
       children: [
         for (final option in _options) ...[
-          if (option != _options.first) const SizedBox(width: 10),
+          if (option != _options.first) const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Semantics(
               button: true,
               selected: option.role == selected,
               child: InkWell(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 onTap: () => onChanged(option.role),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   decoration: BoxDecoration(
                     color: option.role == selected
                         ? AppColors.accent.withValues(alpha: 0.12)
                         : AppColors.bg.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(
                       color: option.role == selected
                           ? AppColors.accent
@@ -300,7 +301,7 @@ class _RolePicker extends StatelessWidget {
                             ? AppColors.accent
                             : AppColors.muted,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         option.label,
                         style: text.bodyMedium!.copyWith(

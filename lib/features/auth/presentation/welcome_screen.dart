@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/rejnox_mark.dart';
 import 'auth_background.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Úvod pre odhlásených: fotka v koralovom svetle a znak, ktorý sa nakreslí,
 /// rozžiari a prebehne ním lesk. Animácia prebehne raz (~2,6 s); pri
@@ -68,7 +69,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             body: SafeArea(
               child: LayoutBuilder(
                 builder: (context, viewport) => SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xxl,
+                    AppSpacing.md,
+                    AppSpacing.xxl,
+                    AppSpacing.xxl,
+                  ),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
@@ -85,7 +91,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             const Spacer(flex: 5),
                             _Brand(seg: _seg),
                             const Spacer(flex: 4),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: AppSpacing.xxl),
                             _Actions(progress: _seg(2.0, 2.6, Curves.easeOut)),
                           ],
                         ),
@@ -181,25 +187,24 @@ class _Brand extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.lg),
           Opacity(
             opacity: word,
             child: Text(
               'REJNOX',
-              style: text.headlineLarge!.copyWith(
-                fontSize: 40,
+              style: text.displaySmall!.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: 22 - 12 * word,
                 height: 1,
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           Container(
             width: 56 * line,
             height: 2,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(1),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
               gradient: LinearGradient(
                 colors: [
                   AppColors.primary.withValues(alpha: 0),
@@ -215,7 +220,7 @@ class _Brand extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: AppSpacing.xxl),
           Opacity(
             opacity: tagline,
             child: Transform.translate(
@@ -225,7 +230,6 @@ class _Brand extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: text.bodyMedium!.copyWith(
                   color: AppColors.text,
-                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 5,
                   height: 1.9,
@@ -326,7 +330,7 @@ class _Actions extends StatelessWidget {
             icon: Icons.arrow_forward_rounded,
             onPressed: () => context.go('/register'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
               backgroundColor: AppColors.bg.withValues(alpha: 0.55),

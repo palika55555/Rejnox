@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// Koralové hlavné akcie a pokojné antracitové vedľajšie tlačidlá.
 enum ButtonTone { accent, ink, ghost, ghostOnHero, onHero }
@@ -64,14 +65,16 @@ class PrimaryButton extends StatelessWidget {
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: compact ? 40 : 50),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: compact ? 15 : 20),
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? AppSpacing.lg : AppSpacing.xl,
+                ),
                 child: Row(
                   mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
                       Icon(icon, color: fg, size: compact ? 16 : 20),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                     ],
                     Flexible(
                       child: Text(

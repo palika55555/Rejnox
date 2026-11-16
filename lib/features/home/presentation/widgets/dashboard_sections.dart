@@ -16,6 +16,7 @@ import '../../../training/domain/training_models.dart';
 import '../../application/body_weight.dart';
 import '../../domain/home_overview.dart';
 import 'stat_cards.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 bool _sameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
@@ -97,13 +98,13 @@ class WeekSection extends ConsumerWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             const Divider(),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 PlateRing(done: goal.done, total: goal.total, size: 52),
-                const SizedBox(width: 14),
+                const SizedBox(width: AppSpacing.lg),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,7 +113,7 @@ class WeekSection extends ConsumerWidget {
                         '${goal.done} z ${goal.total} tréningov',
                         style: text.bodyLarge,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSpacing.xxs),
                       Text(
                         streakDays == 0
                             ? 'Každý tréning sa počíta'
@@ -126,7 +127,6 @@ class WeekSection extends ConsumerWidget {
                 Text(
                   '${goal.percent}%',
                   style: text.headlineLarge!.copyWith(
-                    fontSize: 28,
                     color: goal.reached ? AppColors.good : AppColors.accent,
                   ),
                 ),
@@ -175,7 +175,7 @@ class _Day extends StatelessWidget {
               color: isToday ? AppColors.accent : AppColors.muted,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSpacing.sm),
           Container(
             width: 36,
             height: 36,
@@ -297,7 +297,7 @@ class _Initial extends StatelessWidget {
 class DashboardActions extends ConsumerWidget {
   const DashboardActions({super.key});
 
-  static const _heartRed = Color(0xFFFF5268);
+  static const _heartRed = AppColors.heart;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -360,7 +360,7 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(20);
+    final radius = BorderRadius.circular(AppRadius.xl);
     return Semantics(
       button: true,
       child: Material(
@@ -379,17 +379,17 @@ class _QuickAction extends StatelessWidget {
             borderRadius: radius,
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                         child: icon,
                       ),
@@ -397,9 +397,9 @@ class _QuickAction extends StatelessWidget {
                       Icon(Icons.arrow_outward_rounded, color: color, size: 18),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: AppSpacing.lg),
                   Text(label, style: Theme.of(context).textTheme.bodyLarge),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(detail, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -500,7 +500,7 @@ class UpcomingSection extends StatelessWidget {
       child: Row(
         children: [
           const _ColorIcon(Icons.auto_awesome_outlined, AppColors.accent),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,7 +509,7 @@ class UpcomingSection extends StatelessWidget {
                   'Pripravujeme',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Jedálniček a tréningový asistent',
                   style: Theme.of(context).textTheme.bodySmall,
@@ -530,10 +530,10 @@ class _ColorIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(10),
+    padding: const EdgeInsets.all(AppSpacing.sm),
     decoration: BoxDecoration(
       color: color.withValues(alpha: 0.17),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       border: Border.all(color: color.withValues(alpha: 0.25)),
     ),
     child: Icon(icon, color: color, size: 22),
@@ -559,7 +559,7 @@ class BodySection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         weight,
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         AppList(
           children: [
             AppRow(
@@ -651,7 +651,7 @@ class BodySection extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Váha · ${_when(last.date)}', style: text.bodySmall),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     Text.rich(
                       TextSpan(
                         text: formatKg(last.kg),
@@ -665,7 +665,7 @@ class BodySection extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      style: text.headlineLarge!.copyWith(fontSize: 36),
+                      style: text.displaySmall,
                     ),
                   ],
                 ),
@@ -686,7 +686,7 @@ class BodySection extends ConsumerWidget {
                       ),
                     ),
                   if (change != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     AppPill(
                       '${change > 0
                           ? '+'
@@ -762,7 +762,7 @@ class _WeightSheetState extends State<_WeightSheet> {
               'DNEŠNÉ VÁŽENIE',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             TextFormField(
               controller: _kg,
               autofocus: true,
@@ -783,7 +783,7 @@ class _WeightSheetState extends State<_WeightSheet> {
               },
               onFieldSubmitted: (_) => _save(),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             PrimaryButton(label: 'Uložiť', onPressed: _save),
           ],
         ),

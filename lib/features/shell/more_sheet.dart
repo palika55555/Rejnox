@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/tm_card.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Jedna položka v menu „Viac“.
 typedef MoreItem = ({
@@ -32,7 +33,12 @@ class _MoreSheet extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -42,13 +48,13 @@ class _MoreSheet extends StatelessWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   color: AppColors.border,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.lg),
             Text('VIAC', style: text.headlineMedium),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             AppList(
               children: [
                 for (final item in items)

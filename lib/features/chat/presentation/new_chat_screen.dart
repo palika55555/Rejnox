@@ -11,6 +11,8 @@ import '../application/chat_actions.dart';
 import '../application/chat_providers.dart';
 import '../domain/chat_models.dart';
 import 'chat_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/skeleton.dart';
 
 enum NewChatMode {
   /// Ťuk na človeka otvorí súkromnú konverzáciu.
@@ -124,7 +126,12 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                         context.canPop() ? context.pop() : context.go('/chat'),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.xs,
+                      AppSpacing.lg,
+                      AppSpacing.sm,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -138,7 +145,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                               hintText: 'napr. Ranný beh',
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSpacing.xs),
                         ],
                         TextField(
                           onChanged: (v) => setState(() => _query = v),
@@ -153,8 +160,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                   ),
                   Expanded(
                     child: contacts.when(
-                      loading: () =>
-                          const Center(child: CircularProgressIndicator()),
+                      loading: () => const SkeletonList(),
                       error: (e, _) => ChatEmptyState(
                         icon: Icons.cloud_off_rounded,
                         title: chatErrorText(e),
@@ -185,11 +191,18 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                           );
                         }
                         return ListView(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg,
+                            AppSpacing.xs,
+                            AppSpacing.lg,
+                            AppSpacing.lg,
+                          ),
                           children: [
                             if (widget.mode == NewChatMode.group)
                               Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
                                 child: Text(
                                   'Vyber ľudí (môžeš aj neskôr, alebo pošli '
                                   'pozývací kód).',
@@ -229,7 +242,12 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen> {
                   ),
                   if (_picking)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.xs,
+                        AppSpacing.lg,
+                        AppSpacing.lg,
+                      ),
                       child: PrimaryButton(
                         label: widget.mode == NewChatMode.group
                             ? _selected.isEmpty

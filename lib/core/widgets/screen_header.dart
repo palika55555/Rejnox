@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// Hlavička obrazovky: veľký zúžený nadpis verzálkami a akcie vpravo.
 /// S [onBack] je to podstránka s menším nadpisom a šípkou späť.
@@ -23,7 +24,12 @@ class ScreenHeader extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final sub = subtitle;
     return Padding(
-      padding: EdgeInsets.fromLTRB(onBack == null ? 16 : 8, 12, 16, 8),
+      padding: EdgeInsets.fromLTRB(
+        onBack == null ? AppSpacing.lg : AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 44),
         child: Row(
@@ -48,7 +54,7 @@ class ScreenHeader extends StatelessWidget {
                         : text.headlineMedium,
                   ),
                   if (sub != null) ...[
-                    const SizedBox(height: 3),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       sub,
                       maxLines: 1,
@@ -62,7 +68,10 @@ class ScreenHeader extends StatelessWidget {
                 ],
               ),
             ),
-            for (final w in trailing) ...[const SizedBox(width: 6), w],
+            for (final w in trailing) ...[
+              const SizedBox(width: AppSpacing.sm),
+              w,
+            ],
           ],
         ),
       ),

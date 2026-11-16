@@ -10,6 +10,7 @@ import '../domain/gym.dart';
 import 'flat_map_view.dart';
 import 'globe_projection.dart';
 import 'map_style.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Ovládanie zemegule zvonka (napr. „preleť na moju polohu“).
 class GlobeController {
@@ -404,7 +405,7 @@ class _GlobePainter extends CustomPainter {
       height: painter.height + 8,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(box, const Radius.circular(10)),
+      RRect.fromRectAndRadius(box, const Radius.circular(AppRadius.sm)),
       Paint()..color = AppColors.sheet.withValues(alpha: 0.92),
     );
     painter.paint(canvas, box.topLeft + const Offset(8, 4));

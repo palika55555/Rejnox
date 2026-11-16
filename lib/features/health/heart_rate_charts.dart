@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import 'heart_rate_stats.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Veľký kruh s tepom (koralový akcent značky).
 class HeartRing extends StatelessWidget {
@@ -28,20 +29,17 @@ class HeartRing extends StatelessWidget {
                 color: AppColors.accent,
                 size: 26,
               ),
-              Text(
-                bpm == null ? '—' : '$bpm',
-                style: text.headlineLarge!.copyWith(fontSize: 58),
-              ),
+              Text(bpm == null ? '—' : '$bpm', style: text.displayLarge),
               Text('BPM', style: text.bodySmall),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceHi,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
                   caption,

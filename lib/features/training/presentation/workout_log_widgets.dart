@@ -6,6 +6,7 @@ import '../../../core/widgets/tm_card.dart';
 import '../application/workout_log_controller.dart';
 import '../data/exercise_catalog.dart';
 import '../domain/training_models.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Stav odosielania: všetko uložené / odosielam / offline s počtom čakajúcich.
 class SyncStatusPill extends StatelessWidget {
@@ -50,15 +51,15 @@ class OfflineBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: AppColors.warnSoft,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
         children: [
           const Icon(Icons.wifi_off_rounded, color: AppColors.warn, size: 20),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               'Si offline. Série ($pending) sú bezpečne uložené v telefóne '
@@ -107,11 +108,16 @@ class LoggedSetRow extends StatelessWidget {
       ),
     };
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 10, onDelete == null ? 16 : 4, 10),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        onDelete == null ? AppSpacing.lg : AppSpacing.xs,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
           PlateDot(exercise?.group.plate ?? Plate.blue, size: 10),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,12 +132,12 @@ class LoggedSetRow extends StatelessWidget {
                       ),
                     ),
                     if (set.kind != SetKind.working) ...[
-                      const SizedBox(width: 6),
+                      const SizedBox(width: AppSpacing.sm),
                       AppPill(set.kind.label, tone: PillTone.accent),
                     ],
                   ],
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   [time, ?exercise?.group.label].join(' · '),
                   style: text.bodySmall,
@@ -145,11 +151,11 @@ class LoggedSetRow extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Text(
                 '${set.reps} × ${set.weightLabel}',
-                style: text.headlineLarge!.copyWith(fontSize: 22),
+                style: text.titleLarge,
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.sm),
           Tooltip(
             message: tooltip,
             child: Icon(icon, size: 18, color: color, semanticLabel: tooltip),
@@ -205,7 +211,7 @@ class NumberStepper extends StatelessWidget {
     return Column(
       children: [
         SectionLabel(label),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -214,13 +220,13 @@ class NumberStepper extends StatelessWidget {
               label: '$label menej',
               onTap: () => _change(-step),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: TextFormField(
                 controller: controller,
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-                style: text.headlineLarge!.copyWith(fontSize: 44),
+                style: text.displayMedium,
                 decoration: const InputDecoration(
                   filled: false,
                   border: InputBorder.none,
@@ -228,13 +234,13 @@ class NumberStepper extends StatelessWidget {
                   focusedBorder: InputBorder.none,
                   errorBorder: InputBorder.none,
                   focusedErrorBorder: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 6),
+                  contentPadding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   isDense: true,
                 ),
                 validator: validator,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             _RoundButton(
               icon: Icons.add_rounded,
               label: '$label viac',

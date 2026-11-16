@@ -13,6 +13,7 @@ import '../data/gym_repository.dart';
 import '../domain/gym.dart';
 import 'flat_map_view.dart';
 import 'map_style.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Zameranie, z ktorého sa dá vyberať (k nemu zostanú aj staré štítky fitka).
 const gymTagChoices = [
@@ -49,7 +50,8 @@ class GymFormScreen extends ConsumerWidget {
       body = ref
           .watch(gymByIdProvider(id))
           .when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () =>
+                const Center(child: CircularProgressIndicator.adaptive()),
             error: (_, _) => const Center(child: Text('Fitko sme nenašli.')),
             data: (gym) => gym == null || !gym.mine
                 ? const Center(child: Text('Toto fitko upraviť nemôžeš.'))
@@ -194,7 +196,12 @@ class _GymFormState extends ConsumerState<_GymForm> {
     return Form(
       key: _form,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.xs,
+          AppSpacing.lg,
+          AppSpacing.xxxl,
+        ),
         children: [
           TextFormField(
             controller: _name,
@@ -217,7 +224,7 @@ class _GymFormState extends ConsumerState<_GymForm> {
               labelText: 'Ulica a číslo (nepovinné)',
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Row(
             children: [
               Expanded(child: Text('Poloha na mape', style: text.titleMedium)),
@@ -236,9 +243,9 @@ class _GymFormState extends ConsumerState<_GymForm> {
               color: _locationMissing ? AppColors.error : AppColors.muted,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             child: SizedBox(
               height: 240,
               child: FlutterMap(
@@ -285,7 +292,7 @@ class _GymFormState extends ConsumerState<_GymForm> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           TextFormField(
             controller: _hours,
             maxLength: 120,
@@ -303,9 +310,9 @@ class _GymFormState extends ConsumerState<_GymForm> {
               hintText: 'https://…',
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text('Zameranie', style: text.titleMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -319,7 +326,7 @@ class _GymFormState extends ConsumerState<_GymForm> {
                 ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           FilledButton(
             onPressed: _saving ? null : _save,
             child: Text(
@@ -330,7 +337,7 @@ class _GymFormState extends ConsumerState<_GymForm> {
                   : 'Uložiť zmeny',
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Fotky a cenník pridáš v detaile fitka.',
             textAlign: TextAlign.center,

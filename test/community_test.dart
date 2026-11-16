@@ -102,6 +102,8 @@ Future<void> _openSection(WidgetTester tester, String label) async {
     find.byType(ListView).first,
     const Offset(-150, 0),
   );
+  await tester.ensureVisible(find.text(label));
+  await tester.pumpAndSettle();
   await tester.tap(find.text(label));
   await tester.pumpAndSettle();
 }

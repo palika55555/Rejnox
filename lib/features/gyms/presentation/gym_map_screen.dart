@@ -16,6 +16,7 @@ import 'globe_texture.dart';
 import 'globe_view.dart';
 import 'gym_map_widgets.dart';
 import 'map_style.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Fitká po celom svete: zemeguľa, mapa okolia alebo zoznam.
 /// Podľa polohy používateľa ukáže najbližšie fitká.
@@ -196,15 +197,15 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpacing.lg),
         const SectionLabel('Mestá s fitkami'),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         SizedBox(
           height: 72,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: gymCities(gyms).length,
-            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
             itemBuilder: (context, index) {
               final city = gymCities(gyms)[index];
               return CityCard(
@@ -242,13 +243,13 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
             child: Column(
               children: [
                 locateButton,
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.sm),
                 MapRoundButton(
                   icon: Icons.add_rounded,
                   tooltip: 'Priblížiť',
                   onPressed: () => _zoomMap(1),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSpacing.sm),
                 MapRoundButton(
                   icon: Icons.remove_rounded,
                   tooltip: 'Oddialiť',
@@ -303,16 +304,21 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   MapModeSwitch(selected: _mode, onChanged: _setMode),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: [
                       Expanded(child: GymSearchField(controller: _search)),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       MapRoundButton(
                         icon: Icons.add_location_alt_outlined,
                         tooltip: 'Pridať fitko',
@@ -320,19 +326,19 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppSpacing.sm),
                   if (loadFailed) ...[
                     GymsErrorBanner(
                       onRetry: () => ref.invalidate(gymsProvider),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.sm),
                   ],
                   if (issue != null) ...[
                     LocationBanner(
                       issue: issue,
                       onAction: () => _onLocationAction(issue),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.sm),
                   ],
                   Expanded(
                     child: IndexedStack(
@@ -348,9 +354,10 @@ class _GymMapScreenState extends ConsumerState<GymMapScreen> {
                         style: TextButton.styleFrom(
                           foregroundColor: AppColors.ink2,
                           textStyle: text.bodySmall,
-                          minimumSize: const Size(0, 36),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          minimumSize: const Size(0, 44),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                          ),
                         ),
                         onPressed: () => context.push('/about'),
                         child: const Text(MapStyle.attribution),
@@ -374,7 +381,7 @@ class _ListFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(18);
+    final radius = BorderRadius.circular(AppRadius.lg);
     return DecoratedBox(
       position: DecorationPosition.foreground,
       decoration: BoxDecoration(
@@ -397,7 +404,7 @@ class _MapFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(18);
+    final radius = BorderRadius.circular(AppRadius.lg);
     return DecoratedBox(
       position: DecorationPosition.foreground,
       decoration: BoxDecoration(
@@ -423,17 +430,22 @@ class _CountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 8, 14, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: AppColors.sheet.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const GymThumb(size: 34, highlighted: true),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.sm),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

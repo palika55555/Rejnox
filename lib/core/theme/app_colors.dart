@@ -42,6 +42,25 @@ abstract final class AppColors {
   static const flame = primary;
   static const error = Color(0xFFFF6B7F);
 
+  /// Hviezdičky hodnotení.
+  static const rating = Color(0xFFF0BE2E);
+
+  /// Tep a srdcové metriky.
+  static const heart = Color(0xFFFF4D6A);
+
+  /// Doplnková farba avatarov a dekorácií.
+  static const violet = Color(0xFFB57BFF);
+
+  /// Pokoj a regenerácia (pokojová zóna tepu).
+  static const calm = Color(0xFF4D8BFF);
+
+  /// Polopriehľadná spodná lišta nad obsahom.
+  static const navGlass = Color(0xF01A1E23);
+
+  /// Stmavenie fotiek pod textom a jemné tiene.
+  static const scrim = Color(0x66000000);
+  static const shadow = Color(0x24000000);
+
   static const actionGradient = LinearGradient(colors: [primary, primary]);
   static const buttonSurface = Color(0xFF2B2323);
   static const buttonBorder = Color(0xFF664039);

@@ -11,6 +11,7 @@ import '../domain/booking_models.dart';
 import '../domain/my_training.dart';
 import 'calendar_widgets.dart';
 import 'trainer_calendar_sheets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Karta Tréning: moje rezervované tréningy u trénera na 30 dní dopredu,
 /// s časom a rozpisom, čo sa bude trénovať.
@@ -34,7 +35,7 @@ class UpcomingTrainingsSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final (i, t) in trainings.take(_shown).indexed) ...[
-            if (i > 0) const SizedBox(height: 10),
+            if (i > 0) const SizedBox(height: AppSpacing.sm),
             _TrainingTile(t, onStart: onStart),
           ],
           if (trainings.length > _shown)
@@ -95,7 +96,7 @@ class _AllTrainingsSheet extends StatelessWidget {
     children: [
       for (final t in trainings) ...[
         _TrainingTile(t, onStart: onStart),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
       ],
     ],
   );
@@ -123,10 +124,10 @@ class MyTrainingSheet extends StatelessWidget {
           style: text.titleMedium,
         ),
         if (t.trainerName.isNotEmpty) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text('Tréner: ${t.trainerName}', style: text.bodyMedium),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: 6,
           runSpacing: 6,
@@ -136,14 +137,14 @@ class MyTrainingSheet extends StatelessWidget {
           ],
         ),
         if (t.slotNote case final slotNote?) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Text(slotNote, style: text.bodyMedium),
         ],
         if (t.note case final note?) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           Text('„$note“', style: text.bodyMedium),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         if (plan != null)
           PlanCard(
             plan,
@@ -160,7 +161,7 @@ class MyTrainingSheet extends StatelessWidget {
             'Keď ho pripojí, dostaneš upozornenie.',
             style: text.bodySmall,
           ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         OutlinedButton.icon(
           onPressed: () {
             Navigator.pop(context);

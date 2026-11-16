@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// Čistá antracitová karta. Priehľadné prekrytia môžu používať blur.
 /// Nepriesvitné karty nepotrebujú rozmazávanie obsahu pod nimi.
@@ -10,7 +11,7 @@ class Glass extends StatelessWidget {
   const Glass({
     super.key,
     required this.child,
-    this.borderRadius = const BorderRadius.all(Radius.circular(18)),
+    this.borderRadius = const BorderRadius.all(Radius.circular(AppRadius.lg)),
     this.blur = 12,
     this.color = AppColors.surface,
     this.border = true,

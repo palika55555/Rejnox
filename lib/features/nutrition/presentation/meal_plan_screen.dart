@@ -9,6 +9,8 @@ import '../../../core/widgets/tm_card.dart';
 import '../../coaching/presentation/coaching_widgets.dart';
 import '../application/meal_plans_controller.dart';
 import '../domain/meal_plan.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Jedálniček od trénera: dni v týždni, jedlá a odškrtávanie zjedeného.
 class MealPlanScreen extends ConsumerStatefulWidget {
@@ -65,7 +67,7 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
                         '$error',
                         onRetry: () => ref.invalidate(mealPlansProvider),
                       ),
-                      _ => const Center(child: CircularProgressIndicator()),
+                      _ => const SkeletonList(count: 3),
                     },
                   ),
                 ],
@@ -85,34 +87,39 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
     final eaten = plan.eaten(_day, date);
     final canCheck = canCheckOn(date, _today) && !offline;
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       onRefresh: () => ref.refresh(mealPlansProvider.future),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 28),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.xxxl,
+        ),
         children: [
           Text(plan.title, style: text.headlineMedium),
           if (plan.note != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.sm),
             Text(plan.note!, style: text.bodyMedium),
           ],
           if (offline) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             const AppPill('uložené v telefóne – bez internetu'),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _DayPicker(
             selected: _day,
             today: weekdayIndex(_today),
             onSelect: (d) => setState(() => _day = d),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           _DaySummary(
             eaten: eaten,
             planned: planned,
             targetKcal: plan.targets.kcal,
             targetProtein: plan.targets.proteinG,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           if (items.isEmpty)
             TmCard(
               child: Text(
@@ -132,7 +139,7 @@ class _MealPlanScreenState extends ConsumerState<MealPlanScreen> {
               ],
             ),
           if (!canCheck && items.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               offline
                   ? 'Odškrtnúť sa dá, keď budeš online.'
@@ -166,20 +173,22 @@ class _DayPicker extends StatelessWidget {
         for (var d = 0; d < 7; d++)
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
               child: Semantics(
                 selected: d == selected,
                 button: true,
                 label: dayNames[d],
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                   onTap: () => onSelect(d),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.sm,
+                    ),
                     decoration: BoxDecoration(
                       color: d == selected ? AppColors.accent : AppColors.well,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                       border: d == today && d != selected
                           ? Border.all(color: AppColors.accent)
                           : null,
@@ -229,16 +238,16 @@ class _DaySummary extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text('${eaten.kcal}', style: text.headlineMedium),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.sm),
               Padding(
-                padding: const EdgeInsets.only(bottom: 3),
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                 child: Text('/ $goal kcal', style: text.bodyMedium),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 8,
@@ -246,7 +255,7 @@ class _DaySummary extends StatelessWidget {
               color: AppColors.accent,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               _Macro(
@@ -327,23 +336,29 @@ class _Empty extends StatelessWidget {
   const _Empty();
 
   @override
-  Widget build(BuildContext context) => const _Message(
+  Widget build(BuildContext context) => _Message(
     'Zatiaľ ti tréner neposlal jedálniček. Keď ho pošle, príde ti '
     'upozornenie a nájdeš ho tu.',
+    action: TextButton.icon(
+      onPressed: () => context.go('/chat'),
+      icon: const Icon(Icons.chat_bubble_outline_rounded),
+      label: const Text('Napísať trénerovi'),
+    ),
   );
 }
 
 class _Message extends StatelessWidget {
-  const _Message(this.message, {this.onRetry});
+  const _Message(this.message, {this.onRetry, this.action});
 
   final String message;
   final VoidCallback? onRetry;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -352,15 +367,19 @@ class _Message extends StatelessWidget {
               size: 44,
               color: AppColors.muted,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             if (onRetry != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               TextButton(onPressed: onRetry, child: const Text('Skúsiť znova')),
+            ],
+            if (action case final action?) ...[
+              const SizedBox(height: AppSpacing.md),
+              action,
             ],
           ],
         ),

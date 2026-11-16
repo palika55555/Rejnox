@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import 'glass.dart';
+import '../theme/app_spacing.dart';
 
 /// Základná karta appky: sklenená plocha s vlasovou linkou.
 class TmCard extends StatelessWidget {
   const TmCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(AppSpacing.lg),
     this.onTap,
     this.color = AppColors.surface,
   });
@@ -20,7 +21,7 @@ class TmCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(18);
+    final radius = BorderRadius.circular(AppRadius.lg);
     final content = Padding(padding: padding, child: child);
     return Glass(
       color: color,
@@ -49,7 +50,7 @@ class SectionLabel extends StatelessWidget {
       children: [
         if (icon != null) ...[
           Icon(icon, size: 14, color: color ?? AppColors.muted),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSpacing.sm),
         ],
         Flexible(
           child: Text(
@@ -88,7 +89,7 @@ class AppSection extends StatelessWidget {
             ?trailing,
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         child,
       ],
     );
@@ -152,10 +153,16 @@ class AppRow extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 60),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
           child: Row(
             children: [
-              if (leading != null) ...[leading!, const SizedBox(width: 12)],
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: AppSpacing.md),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,19 +170,19 @@ class AppRow extends StatelessWidget {
                   children: [
                     Text(title, style: text.bodyLarge),
                     if (sub != null) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSpacing.xxs),
                       Text(
                         sub,
-                        style: text.bodyMedium!.copyWith(
-                          color: AppColors.ink2,
-                          fontSize: 13.5,
-                        ),
+                        style: text.bodyMedium!.copyWith(color: AppColors.ink2),
                       ),
                     ],
                   ],
                 ),
               ),
-              if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+              if (trailing != null) ...[
+                const SizedBox(width: AppSpacing.md),
+                trailing!,
+              ],
             ],
           ),
         ),
@@ -209,23 +216,25 @@ class AppPill extends StatelessWidget {
       PillTone.accent => (AppColors.accentSoft, AppColors.accent),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
             Icon(icon, size: 13, color: fg),
-            const SizedBox(width: 5),
+            const SizedBox(width: AppSpacing.xs),
           ],
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall!.copyWith(
               color: fg,
-              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),

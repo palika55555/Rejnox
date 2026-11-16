@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/api/api_client.dart';
+import '../../../core/widgets/adaptive_dialog.dart';
 
 const _weekdays = ['po', 'ut', 'st', 'št', 'pi', 'so', 'ne'];
 
@@ -47,22 +48,11 @@ void showCommunityError(BuildContext context, Object error, String fallback) {
 
 /// Potvrdenie pred zmazaním. Vráti true, keď používateľ súhlasí.
 Future<bool> confirmDelete(BuildContext context, String what) async {
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('Zmazať $what?'),
-      content: const Text('Toto sa nedá vrátiť späť.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Zrušiť'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Zmazať'),
-        ),
-      ],
-    ),
+  final ok = await showAppConfirm(
+    context,
+    title: 'Zmazať $what?',
+    message: 'Toto sa nedá vrátiť späť.',
+    confirmLabel: 'Zmazať',
   );
-  return ok ?? false;
+  return ok;
 }

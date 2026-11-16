@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../application/user_location.dart';
 import '../domain/gym.dart';
+import '../../../core/theme/app_spacing.dart';
 
 enum MapMode {
   globe('Svet', Icons.public_rounded),
@@ -30,10 +31,10 @@ class MapModeSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(AppSpacing.xs),
       decoration: BoxDecoration(
         color: AppColors.well,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
@@ -51,11 +52,11 @@ class MapModeSwitch extends StatelessWidget {
                     height: 38,
                     decoration: BoxDecoration(
                       color: mode == selected ? AppColors.surface : null,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                       boxShadow: mode == selected
                           ? const [
                               BoxShadow(
-                                color: Color(0x24000000),
+                                color: AppColors.shadow,
                                 blurRadius: 3,
                                 offset: Offset(0, 1),
                               ),
@@ -72,7 +73,7 @@ class MapModeSwitch extends StatelessWidget {
                               ? AppColors.text
                               : AppColors.ink2,
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: AppSpacing.sm),
                         Text(
                           mode.label,
                           style: text.bodyMedium!.copyWith(
@@ -102,7 +103,7 @@ class GymSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(14);
+    final radius = BorderRadius.circular(AppRadius.lg);
     OutlineInputBorder border(Color color) => OutlineInputBorder(
       borderRadius: radius,
       borderSide: BorderSide(color: color, width: 1.5),
@@ -125,7 +126,7 @@ class GymSearchField extends StatelessWidget {
           filled: true,
           fillColor: AppColors.surface,
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
           enabledBorder: border(AppColors.border),
           focusedBorder: border(AppColors.text),
         ),
@@ -169,7 +170,7 @@ class DistanceLabel extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       const Icon(Icons.near_me_outlined, size: 13, color: AppColors.muted),
-      const SizedBox(width: 4),
+      const SizedBox(width: AppSpacing.xs),
       Text(distance, style: Theme.of(context).textTheme.bodySmall),
     ],
   );
@@ -198,18 +199,18 @@ class GymCard extends StatelessWidget {
     final distance = this.distance;
     return TmCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
           const GymThumb(size: 64, highlighted: true),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (caption case final caption?) ...[
                   SectionLabel(caption),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: AppSpacing.xs),
                 ],
                 Text(
                   gym.name,
@@ -217,14 +218,14 @@ class GymCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   gym.fullAddress,
                   style: text.bodySmall,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
                     if (gym.rating case final rating?
@@ -232,14 +233,14 @@ class GymCard extends StatelessWidget {
                       const Icon(
                         Icons.star_rounded,
                         size: 14,
-                        color: Color(0xFFF0BE2E),
+                        color: AppColors.rating,
                       ),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
                         '${rating.averageLabel} (${rating.count})',
                         style: text.bodySmall,
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: AppSpacing.sm),
                     ],
                     if (distance != null) DistanceLabel(distance),
                   ],
@@ -275,11 +276,16 @@ class GymListTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.sm,
+        ),
         child: Row(
           children: [
             const GymThumb(size: 42),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,13 +296,13 @@ class GymListTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.xxs),
                   Text(gym.city, style: text.bodySmall),
                 ],
               ),
             ),
             if (distance != null) DistanceLabel(distance),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSpacing.xs),
             const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
           ],
         ),
@@ -325,7 +331,7 @@ class CityCard extends StatelessWidget {
       width: 120,
       child: TmCard(
         onTap: onTap,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
@@ -362,7 +368,7 @@ class GymsErrorBanner extends StatelessWidget {
     child: Row(
       children: [
         const Icon(Icons.cloud_off_rounded, size: 20, color: AppColors.warn),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text(
             'Fitká sa nepodarilo načítať. Skontroluj pripojenie.',
@@ -413,7 +419,7 @@ class LocationBanner extends StatelessWidget {
             size: 20,
             color: AppColors.warn,
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
           ),
@@ -443,7 +449,7 @@ class MapRoundButton extends StatelessWidget {
   Widget build(BuildContext context) => Material(
     color: AppColors.sheet.withValues(alpha: 0.9),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       side: const BorderSide(color: AppColors.border),
     ),
     child: IconButton(
@@ -453,7 +459,7 @@ class MapRoundButton extends StatelessWidget {
           ? const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator.adaptive(strokeWidth: 2),
             )
           : Icon(icon, color: AppColors.text),
     ),
@@ -468,10 +474,15 @@ class NoticeBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.lg,
+      AppSpacing.sm,
+      AppSpacing.sm,
+      AppSpacing.sm,
+    ),
     decoration: BoxDecoration(
       color: AppColors.warnSoft,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
     ),
     child: child,
   );

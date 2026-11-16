@@ -5,6 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/plate_chip.dart';
 import '../../../core/widgets/tm_card.dart';
 import '../domain/coaching_models.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/adaptive_dialog.dart';
 
 String formatDay(DateTime d) => '${d.day}. ${d.month}. ${d.year}';
 
@@ -64,7 +66,12 @@ class PlanCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(16, 14, onDelete == null ? 16 : 6, 12),
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              onDelete == null ? AppSpacing.lg : AppSpacing.sm,
+              AppSpacing.md,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -74,7 +81,7 @@ class PlanCard extends StatelessWidget {
                     children: [
                       if (subtitle.isNotEmpty) ...[
                         SectionLabel(subtitle),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: AppSpacing.sm),
                       ],
                       Text(
                         plan.title.toUpperCase(),
@@ -87,7 +94,6 @@ class PlanCard extends StatelessWidget {
                 if (onDelete != null)
                   IconButton(
                     tooltip: 'Zmazať plán',
-                    visualDensity: VisualDensity.compact,
                     onPressed: onDelete,
                     icon: const Icon(
                       Icons.delete_outline_rounded,
@@ -100,14 +106,17 @@ class PlanCard extends StatelessWidget {
           ),
           for (final item in plan.items)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: AppColors.border)),
               ),
               child: Row(
                 children: [
                   PlateDot(item.group.plate, size: 9),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
                       item.name,
@@ -115,17 +124,19 @@ class PlanCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    item.scheme,
-                    style: text.headlineLarge!.copyWith(fontSize: 22),
-                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(item.scheme, style: text.titleLarge),
                 ],
               ),
             ),
           if (onStart != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
               child: OutlinedButton.icon(
                 onPressed: onStart,
                 icon: const Icon(Icons.play_arrow_rounded),
@@ -144,25 +155,11 @@ Future<bool> confirmAction(
   required String title,
   required String message,
   required String confirmLabel,
-}) async {
-  final result = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: AppColors.sheet,
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Zrušiť'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(confirmLabel),
-        ),
-      ],
-    ),
+}) {
+  return showAppConfirm(
+    context,
+    title: title,
+    message: message,
+    confirmLabel: confirmLabel,
   );
-  return result ?? false;
 }

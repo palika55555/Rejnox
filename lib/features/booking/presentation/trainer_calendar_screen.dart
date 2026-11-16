@@ -13,6 +13,8 @@ import '../domain/calendar_period.dart';
 import 'calendar_widgets.dart';
 import 'month_grid.dart';
 import 'trainer_calendar_sheets.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Kalendár trénera: vypísané termíny, tréningy klientov a žiadosti.
 class TrainerCalendarScreen extends ConsumerStatefulWidget {
@@ -49,11 +51,16 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
-              child: RefreshIndicator(
+              child: RefreshIndicator.adaptive(
                 onRefresh: () =>
                     ref.refresh(trainerCalendarProvider(_monday).future),
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.xxxl,
+                  ),
                   children: [
                     Row(
                       children: [
@@ -69,7 +76,7 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: AppSpacing.sm),
                     Row(
                       children: [
                         Expanded(
@@ -83,7 +90,7 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: PrimaryButton(
                             label: 'Zapísať tréning',
@@ -98,12 +105,12 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSpacing.lg),
                     if (data != null && data.pendingCount > 0) ...[
                       _PendingCard(
                         data.bookings.where((b) => b.isPending).toList(),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSpacing.lg),
                     ],
                     MonthGrid(
                       start: _monday,
@@ -115,20 +122,15 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
                       onPeriod: _period,
                       marks: data == null ? const {} : _marks(data, _monday),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.md),
                     CalendarViewToggle(
                       view: _view,
                       onChanged: (v) => setState(() => _view = v),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSpacing.lg),
                     ...calendar.when(
                       skipLoadingOnReload: true,
-                      loading: () => const [
-                        Padding(
-                          padding: EdgeInsets.all(32),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      ],
+                      loading: () => const [SkeletonList(count: 3)],
                       error: (e, _) => [
                         TmCard(
                           child: Column(
@@ -220,7 +222,7 @@ class _TrainerCalendarScreenState extends ConsumerState<TrainerCalendarScreen> {
       ];
     }
     return [
-      for (final i in items) ...[i.$2, const SizedBox(height: 10)],
+      for (final i in items) ...[i.$2, const SizedBox(height: AppSpacing.sm)],
     ];
   }
 }
@@ -252,7 +254,7 @@ class _PendingCard extends StatelessWidget {
             icon: Icons.notifications_active_outlined,
             color: AppColors.warn,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           for (final b in pending)
             AppRow(
               title: b.clientName,

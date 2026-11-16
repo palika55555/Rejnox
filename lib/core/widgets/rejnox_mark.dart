@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// Pôvodné proporcie futuristického znaku.
 const rejnoxMarkSize = Size(492, 305);
@@ -166,7 +167,7 @@ class _RejnoxLoaderState extends State<RejnoxLoader>
           opacity: _pulse.drive(Tween(begin: 0.45, end: 1.0)),
           child: const RejnoxMark(width: 64),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Text('Načítavam…', style: Theme.of(context).textTheme.bodySmall),
       ],
     ),

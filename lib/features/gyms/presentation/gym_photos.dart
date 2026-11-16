@@ -7,6 +7,7 @@ import '../application/gym_photo_picker.dart';
 import '../data/gym_repository.dart';
 import '../domain/gym.dart';
 import 'gym_detail_widgets.dart';
+import '../../../core/theme/app_spacing.dart';
 
 /// Fotka na zobrazenie: odkaz zvonku alebo nahratá cez appku.
 class ShownPhoto {
@@ -130,13 +131,13 @@ class _GymPhotoStripState extends ConsumerState<GymPhotoStrip> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Fotky', style: text.titleMedium),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm),
         SizedBox(
           height: 92,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: photos.length + 1,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _AddPhotoTile(busy: _uploading, onTap: _add);
@@ -148,7 +149,7 @@ class _GymPhotoStripState extends ConsumerState<GymPhotoStrip> {
                 child: GestureDetector(
                   onTap: () => _open(photo),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                     child: SizedBox(width: 120, child: GymPhotoImage(photo)),
                   ),
                 ),
@@ -169,7 +170,7 @@ class _AddPhotoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(16);
+    final radius = BorderRadius.circular(AppRadius.lg);
     return Material(
       color: AppColors.sheet.withValues(alpha: 0.8),
       shape: RoundedRectangleBorder(
@@ -187,11 +188,11 @@ class _AddPhotoTile extends StatelessWidget {
               if (busy)
                 const SizedBox.square(
                   dimension: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                  child: CircularProgressIndicator.adaptive(strokeWidth: 2.5),
                 )
               else
                 const Icon(Icons.add_a_photo_outlined, color: AppColors.accent),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 busy ? 'Nahrávam…' : 'Pridať fotku',
                 style: Theme.of(context).textTheme.bodySmall,

@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/tm_card.dart';
 import 'heart_rate_charts.dart';
 import 'heart_rate_stats.dart';
+import '../../core/theme/app_spacing.dart';
 
 String hhmm(DateTime t) =>
     '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -35,10 +36,10 @@ class Segments<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(AppSpacing.xs),
       decoration: BoxDecoration(
         color: AppColors.sheet.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
@@ -53,11 +54,13 @@ class Segments<T> extends StatelessWidget {
                   onTap: () => onChanged(v),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.sm,
+                    ),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       gradient: v == selected ? AppColors.actionGradient : null,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Text(
                       label(v),
@@ -101,14 +104,14 @@ class StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return TmCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSpacing.sm),
               Flexible(
                 child: Text(
                   label,
@@ -119,7 +122,7 @@ class StatTile extends StatelessWidget {
             ],
           ),
           if (hint != null) Text(hint!, style: text.bodySmall),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
@@ -169,7 +172,7 @@ class OverviewChartCard extends StatelessWidget {
                   Text('BPM', style: text.bodySmall),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               if (samples.length < 2)
                 SizedBox(
                   height: 120,
@@ -182,7 +185,7 @@ class OverviewChartCard extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Row(
           children: [
             Expanded(
@@ -193,7 +196,7 @@ class OverviewChartCard extends StatelessWidget {
                 value: v(stats?.min),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: StatTile(
                 icon: Icons.monitor_heart_outlined,
@@ -202,7 +205,7 @@ class OverviewChartCard extends StatelessWidget {
                 value: v(stats?.avg),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: StatTile(
                 icon: Icons.arrow_upward_rounded,
@@ -240,12 +243,12 @@ class ZonesCard extends StatelessWidget {
             'Z max. tepu ${maxHr.round()} BPM (odhad pre dospelého).',
             style: text.bodySmall,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           Center(child: ZoneDonut(zones: zones)),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.lg),
           for (final z in HrZone.values)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 5),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
               child: Row(
                 children: [
                   Container(
@@ -256,7 +259,7 @@ class ZonesCard extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       '${z.label} (${z.range})',
@@ -298,11 +301,11 @@ class RecentMeasurements extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Posledné merania', style: text.titleMedium),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.sm),
           if (recent.isEmpty) Text('Žiadne merania.', style: text.bodySmall),
           for (final s in recent)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 7),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Row(
                 children: [
                   Container(
@@ -318,7 +321,7 @@ class RecentMeasurements extends StatelessWidget {
                       color: Plate.red.color,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,12 +333,12 @@ class RecentMeasurements extends StatelessWidget {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceHi,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Text(
@@ -369,7 +372,7 @@ class InsightCard extends StatelessWidget {
       child: Row(
         children: [
           const Icon(Icons.auto_awesome_rounded, color: AppColors.accent),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               'Najvyšší tep: ${peak.bpm.round()} BPM o ${hhmm(peak.at)}, '
