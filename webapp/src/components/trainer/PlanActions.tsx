@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { copyMealPlan, deleteMealPlan, sendMealPlan } from "@/app/trener/actions";
@@ -46,12 +47,13 @@ export function PlanActions({ clientId, planId, isSent, canSend, otherClients }:
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <a
+      <Link
         href={`/trener/klienti/${clientId}/jedalnicek/${planId}`}
+        transitionTypes={["nav-forward"]}
         className="rounded-full border border-line px-3.5 py-1.5 text-sm font-semibold transition-colors hover:border-accent"
       >
         Upraviť
-      </a>
+      </Link>
       {canSend && (
         <button
           type="button"

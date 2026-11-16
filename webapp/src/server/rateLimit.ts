@@ -44,6 +44,11 @@ export const limits = {
   communityCreate: { name: "community-create", max: 20, windowSeconds: 60 * 60 },
   // Lajky, komentáre, prihlásenia a odhlásenia.
   communityWrite: { name: "community-write", max: 120, windowSeconds: 60 },
+  // AI pomocník trénera: každé volanie stojí peniaze za model.
+  aiMealPlan: { name: "ai-meal-plan", max: 15, windowSeconds: 60 * 60 },
+  aiMealPlanDay: { name: "ai-meal-plan-day", max: 40, windowSeconds: 24 * 60 * 60 },
+  // Hromadná správa klientom (jedna akcia = správa každému vybranému).
+  bulkMessage: { name: "bulk-message", max: 10, windowSeconds: 60 * 60 },
 } satisfies Record<string, Limit>;
 
 /** Počítadlo pokusov v databáze (spoločné pre všetky inštancie Workera). */

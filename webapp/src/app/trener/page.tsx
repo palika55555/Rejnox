@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { AddClientForm } from "@/components/trainer/AddClientForm";
 import { adherenceTone, relativeDay } from "@/components/trainer/format";
-import { load, requireTrainer } from "@/lib/trainer";
+import { trainerData } from "@/lib/trainer";
 import { trainerOverview, type ClientOverview } from "@/server/trainerOverview";
 
 export default async function TrainerHomePage() {
-  const me = await requireTrainer();
-  const { today, clients } = await load((db) => trainerOverview(db, me.id));
+  const { today, clients } = await trainerData((db, me) => trainerOverview(db, me.id));
   const active = clients.filter((c) => c.status !== "ended");
   const linked = active.filter((c) => c.status === "linked");
   const withPlan = active.filter((c) => c.latestPlan?.sentAt);
@@ -88,6 +87,7 @@ function ClientCard({ client: c, today }: { client: ClientOverview; today: strin
   return (
     <Link
       href={`/trener/klienti/${c.id}`}
+      transitionTypes={["nav-forward"]}
       className={`group flex h-full flex-col rounded-3xl border border-line bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-accent/60 hover:shadow-xl hover:shadow-black/30 ${
         c.status === "ended" ? "opacity-55" : ""
       }`}

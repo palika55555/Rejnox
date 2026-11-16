@@ -1,0 +1,106 @@
+/* Trénerská zóna: prechody medzi stránkami a kostry načítania. */
+
+:root {
+  --duration-exit: 140ms;
+  --duration-enter: 220ms;
+  --duration-move: 360ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hlavička ostáva na mieste, animuje sa len obsah stránky. */
+.trainer-header {
+  view-transition-name: trainer-header;
+}
+
+/* Bežný prechod: obsah rýchlo zmizne a nový jemne vyjde zdola. */
+::view-transition-old(.page) {
+  animation: var(--duration-exit) ease-in both vt-fade reverse;
+}
+::view-transition-new(.page) {
+  animation:
+    var(--duration-enter) ease-out var(--duration-exit) both vt-fade,
+    var(--duration-move) var(--ease-out-expo) both vt-rise;
+}
+
+/* Hlbšie do appky (klient, jedálniček): posun doľava. Späť: doprava. */
+::view-transition-old(.nav-forward) {
+  --slide: -40px;
+  animation:
+    var(--duration-exit) ease-in both vt-fade reverse,
+    var(--duration-move) var(--ease-out-expo) both vt-slide reverse;
+}
+::view-transition-new(.nav-forward) {
+  --slide: 40px;
+  animation:
+    var(--duration-enter) ease-out var(--duration-exit) both vt-fade,
+    var(--duration-move) var(--ease-out-expo) both vt-slide;
+}
+::view-transition-old(.nav-back) {
+  --slide: 40px;
+  animation:
+    var(--duration-exit) ease-in both vt-fade reverse,
+    var(--duration-move) var(--ease-out-expo) both vt-slide reverse;
+}
+::view-transition-new(.nav-back) {
+  --slide: -40px;
+  animation:
+    var(--duration-enter) ease-out var(--duration-exit) both vt-fade,
+    var(--duration-move) var(--ease-out-expo) both vt-slide;
+}
+
+@keyframes vt-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes vt-rise {
+  from {
+    transform: translateY(12px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes vt-slide {
+  from {
+    translate: var(--slide) 0;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+/* Kostra: jemný lesk zľava doprava (len transform/opacity cez gradient pozadia). */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 0%,
+    var(--color-surface-hi) 45%,
+    var(--color-surface) 90%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shine 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* Kto nechce pohyb, dostane okamžitú zmenu. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .skeleton {
+    animation: none;
+  }
+}

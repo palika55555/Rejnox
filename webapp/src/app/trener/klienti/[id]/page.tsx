@@ -3,37 +3,38 @@ import { dateTime } from "@/components/trainer/format";
 import { InviteButton } from "@/components/trainer/InviteButton";
 import { PlanActions } from "@/components/trainer/PlanActions";
 import { ProgressCharts } from "@/components/trainer/ProgressCharts";
-import { load, requireTrainer } from "@/lib/trainer";
+import { trainerData } from "@/lib/trainer";
+import { localDay } from "@/lib/zone";
 import { clientProgress } from "@/server/clientProgress";
 import { listForClient } from "@/server/mealPlans";
 import * as trainer from "@/server/trainer";
-import { trainerOverview } from "@/server/trainerOverview";
+import { HttpError } from "@/server/errors";
 import { requireUuid } from "@/server/validate";
 
 type Client = { id: string; name: string; note: string | null; status: string; hasAccount: boolean };
 
 export default async function ClientPage({ params, searchParams }: PageProps<"/trener/klienti/[id]">) {
-  const me = await requireTrainer();
   const { id } = await params;
   const { tab } = await searchParams;
   const showProgress = tab === "progres";
 
-  const { client, plans, progress, overview } = await load(async (db) => {
+  const { client, plans, progress, roster } = await trainerData(async (db, me) => {
     const clientId = requireUuid(id);
     // Jedno spojenie s databázou = transakcie len za sebou, nie súbežne.
-    const client = (await trainer.clientDetail(db, me.id, clientId)) as unknown as Client;
+    const roster = (await trainer.listClients(db, me.id)) as unknown as Client[];
+    const client = roster.find((c) => c.id === clientId);
+    if (!client) throw new HttpError(404, "not_found", "Klient sa nenašiel.");
     const plans = await listForClient(db, me.id, clientId);
     const progress = await clientProgress(db, me.id, clientId);
-    const overview = await trainerOverview(db, me.id);
-    return { client, plans, progress, overview };
+    return { client, plans, progress, roster };
   });
   const isLinked = client.status === "linked";
   const isEnded = client.status === "ended";
-  const others = overview.clients.filter((c) => c.id !== client.id && c.status !== "ended").map(({ id, name }) => ({ id, name }));
+  const others = roster.filter((c) => c.id !== client.id && c.status !== "ended").map(({ id, name }) => ({ id, name }));
 
   return (
     <>
-      <Link href="/trener" className="text-sm text-muted transition-colors hover:text-ink">
+      <Link href="/trener" transitionTypes={["nav-back"]} className="text-sm text-muted transition-colors hover:text-ink">
         ← Všetci klienti
       </Link>
 
@@ -66,7 +67,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/t
 
       <div className="mt-6">
         {showProgress ? (
-          <ProgressCharts training={progress.training} nutrition={progress.nutrition} today={overview.today} />
+          <ProgressCharts training={progress.training} nutrition={progress.nutrition} today={localDay(new Date())} />
         ) : (
           <section>
             <div className="flex flex-wrap items-center justify-between gap-3">

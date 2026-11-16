@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveMealPlan } from "@/app/trener/actions";
+import type { MealPlanInput } from "@/server/mealPlans";
+import { AiAssistant } from "./AiAssistant";
 
 const DAYS = ["Po", "Ut", "St", "Št", "Pi", "So", "Ne"];
 const MEALS = ["Raňajky", "Desiata", "Obed", "Olovrant", "Večera", "Pred tréningom", "Po tréningu"];
@@ -91,6 +93,15 @@ export function MealPlanEditor({ clientId, clientName, canSend, plan }: Props) {
       if (!plan.id) router.replace(`/trener/klienti/${clientId}/jedalnicek/${result.planId}`);
     });
 
+  const applyDraft = (draft: MealPlanInput) => {
+    setTitle(draft.title);
+    setNote(draft.note ?? "");
+    setTargets(draft.targets);
+    setRows(draft.items.map((i) => ({ ...i, id: null, amount: i.amount ?? "", key: newKey() })));
+    setDay(0);
+    setMessage({ text: "Návrh je hotový. Skontroluj ho a ulož.", isError: false });
+  };
+
   const input = "rounded-xl border border-line bg-night px-3 py-2 text-sm text-ink outline-none focus:border-accent";
   const targetField = (key: keyof EditorPlan["targets"], label: string) => (
     <label className="flex flex-col gap-1 text-xs font-semibold text-muted">
@@ -108,6 +119,7 @@ export function MealPlanEditor({ clientId, clientName, canSend, plan }: Props) {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
       <div className="min-w-0 space-y-6">
+        <AiAssistant clientId={clientId} targets={targets} hasItems={rows.length > 0} onDraft={applyDraft} />
         <section className="grid gap-3 rounded-3xl border border-line bg-surface p-5 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-xs font-semibold text-muted sm:col-span-2">
             Názov

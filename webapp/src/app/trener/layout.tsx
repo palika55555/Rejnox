@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { logout } from "@/app/(auth)/actions";
 import { RejnoxMark } from "@/components/landing/RejnoxMark";
+import { TrainerNav } from "@/components/trainer/TrainerNav";
 import { requireTrainer } from "@/lib/trainer";
+import "./trainer.css";
 
 export const metadata: Metadata = { title: "Trénerská zóna – Rejnox" };
 
@@ -17,21 +19,17 @@ export default async function TrainerLayout({ children }: LayoutProps<"/trener">
 
   return (
     <div className="min-h-screen bg-night">
-      <header className="sticky top-0 z-30 border-b border-line/70 bg-night/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
+      <header className="trainer-header sticky top-0 z-30 border-b border-line/70 bg-night/85 backdrop-blur-xl">
+        <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:flex-nowrap sm:px-6 sm:py-0">
           <Link href="/trener" className="flex items-center gap-3" aria-label="Trénerská zóna, klienti">
             <RejnoxMark className="w-8" title="" />
             <span className="hidden font-display text-sm font-bold tracking-[0.32em] sm:inline">REJNOX</span>
             <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-semibold text-accent">Tréner</span>
           </Link>
-          <nav className="flex items-center gap-1 text-sm font-semibold">
-            <Link href="/trener" className="rounded-full px-3 py-1.5 text-muted transition-colors hover:text-ink">
-              Klienti
-            </Link>
-          </nav>
+          <TrainerNav className="order-last -mx-1 w-full sm:order-none sm:mx-0 sm:w-auto" />
           <div className="ml-auto flex items-center gap-3">
             <span
-              className="grid size-9 place-items-center rounded-full bg-surface-hi text-xs font-bold"
+              className="hidden size-9 place-items-center rounded-full bg-surface-hi text-xs font-bold sm:grid"
               title={me.displayName}
               aria-hidden
             >

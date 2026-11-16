@@ -5,9 +5,13 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/session";
 import { withDb } from "@/server/db";
 import { HttpError } from "@/server/errors";
+import * as bulk from "@/server/bulkMessages";
+import * as chat from "@/server/chat";
+import { generateMealPlan } from "@/server/mealPlanAi";
 import * as mealPlans from "@/server/mealPlans";
+import { dbRateLimiter, limits } from "@/server/rateLimit";
 import * as trainer from "@/server/trainer";
-import { optionalText, requireText, requireUuid, type Body } from "@/server/validate";
+import { optionalText, requireInt, requireText, requireUuid, type Body } from "@/server/validate";
 
 export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; message: string };
 
@@ -95,6 +99,59 @@ export async function deleteMealPlan(clientId: string, planId: string): Promise<
   });
   if (result.ok) refresh();
   return result;
+}
+
+// ---------------------------------------------------------------- hromadné správy
+
+/** Pošle tú istú správu (s {meno}) vybraným klientom do ich chatu. */
+export async function sendBulkMessage(
+  clientIds: string[],
+  template: string,
+): Promise<ActionResult<bulk.BulkResult>> {
+  return attempt(async (me) => {
+    const ids = bulk.parseRecipients(clientIds);
+    // Kontrola textu ešte pred odoslaním komukoľvek (dĺžka po doplnení mena).
+    chat.parseMessage({ body: bulk.personalize(String(template ?? ""), "Maximilián") });
+    return withDb(async (db) => {
+      if (!(await dbRateLimiter(db).tryAcquire(limits.bulkMessage, me))) {
+        throw new HttpError(429, "too_many_requests", "Hromadných správ bolo za hodinu priveľa. Skús to neskôr.");
+      }
+      return bulk.sendBulk(db, me, ids, String(template).trim());
+    });
+  });
+}
+
+// ---------------------------------------------------------------- AI pomocník
+
+export type AiDraftInput = {
+  brief: string;
+  mealsPerDay: number;
+  targets: { kcal: number | null; proteinG: number | null; carbsG: number | null; fatG: number | null };
+};
+
+/** Návrh jedálnička od AI pre klienta. Nič neukladá, tréner ho upraví v editore. */
+export async function draftMealPlanWithAi(
+  clientId: string,
+  input: AiDraftInput,
+): Promise<ActionResult<{ plan: mealPlans.MealPlanInput }>> {
+  return attempt(async (me) => {
+    const id = requireUuid(clientId);
+    const body = asBody(input);
+    const brief = optionalText(body, "brief", 1500) ?? "";
+    const mealsPerDay = requireInt(body.mealsPerDay, "mealsPerDay", 2, 7);
+    // Ciele prejdú rovnakou kontrolou ako pri ukladaní jedálnička.
+    const { targets } = mealPlans.parseMealPlan({ title: "x", targets: body.targets });
+
+    const client = await withDb(async (db) => {
+      const limiter = dbRateLimiter(db);
+      if (!(await limiter.tryAcquire(limits.aiMealPlan, me)) || !(await limiter.tryAcquire(limits.aiMealPlanDay, me))) {
+        throw new HttpError(429, "too_many_requests", "AI pomocníka si dnes použil už veľakrát. Skús to neskôr.");
+      }
+      return (await trainer.clientDetail(db, me, id)) as unknown as { name: string; note: string | null };
+    });
+    const plan = await generateMealPlan({ clientName: client.name, clientNote: client.note, brief, mealsPerDay, targets });
+    return { plan };
+  });
 }
 
 export async function copyMealPlan(
