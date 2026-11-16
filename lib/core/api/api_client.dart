@@ -1,16 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-/// Adresa API (Next.js vo webapp/, cesty pod /api). Lokálne `npm run dev`.
-/// Pre ostrú appku sa zadá pri builde, napr.
-/// `--dart-define=API_URL=https://rejnox.sk/api`.
-const apiBaseUrl = String.fromEnvironment(
-  'API_URL',
-  defaultValue: 'http://localhost:3000/api',
-);
+/// Produkčné API (Next.js vo webapp/ na Cloudflare nad Supabase).
+const productionApiUrl = 'https://rejnox.sk/api';
+
+/// Lokálny vývoj: `npm run dev` vo webapp/.
+const _localApiUrl = 'http://localhost:3000/api';
+
+const _apiUrlOverride = String.fromEnvironment('API_URL');
+
+/// Adresa API (cesty pod /api). Dá sa zadať pri builde cez
+/// `--dart-define=API_URL=...`. Bez nej ide release build vždy na produkciu,
+/// localhost používa len debug/profile build pri vývoji.
+const apiBaseUrl = _apiUrlOverride != ''
+    ? _apiUrlOverride
+    : (kReleaseMode ? productionApiUrl : _localApiUrl);
 
 /// Chyba zo servera alebo zo spojenia, so správou pre používateľa.
 class ApiError implements Exception {

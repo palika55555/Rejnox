@@ -28,7 +28,8 @@ enum _Period {
 }
 
 /// Srdcový tep: prehľad, zóny a trendy z Apple Health, tep naživo
-/// z Apple Watch počas tréningu. Na webe ukazuje ukážkové údaje.
+/// z Apple Watch počas tréningu. Kde zdravie nie je dostupné (web, PC),
+/// ukáže prázdny stav namiesto vymyslených údajov.
 class HeartRateScreen extends ConsumerStatefulWidget {
   const HeartRateScreen({super.key});
 
@@ -51,15 +52,13 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
   StreamSubscription<WatchHeartRate>? _watchSub;
 
   HeartRateSource get _source => ref.read(heartRateSourceProvider);
-  bool get _demo => !_source.supported;
+  bool get _unsupported => !_source.supported;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (_demo) {
-      _history = demoHistory(DateTime.now(), _period.window);
-    } else {
+    if (!_unsupported) {
       _watchSub = ref.read(watchLinkProvider).heartRate.listen((m) {
         if (mounted) setState(() => _live = m.state == 'ended' ? null : m);
       });
@@ -97,11 +96,7 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
   }
 
   Future<void> _refresh() async {
-    if (_demo) {
-      setState(() => _history = demoHistory(DateTime.now(), _period.window));
-      return;
-    }
-    if (!_connected) return;
+    if (_unsupported || !_connected) return;
     try {
       final h = await _source.history(_period.window);
       if (!mounted) return;
@@ -167,13 +162,14 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                 ),
                 Text('Tvoj tep dnes', style: text.headlineLarge),
                 Text('Zdravie · Výkon · Rovnováha', style: text.bodySmall),
-                if (_demo) ...[
+                if (_unsupported) ...[
                   const SizedBox(height: 10),
                   TmCard(
                     padding: const EdgeInsets.all(12),
                     child: Text(
-                      'Ukážkové údaje. Skutočný tep z Apple Health / Health '
-                      'Connect (a Apple Watch / Wear OS) uvidíš v mobilnej appke.',
+                      'Tu zatiaľ nie sú žiadne merania. Tep z Apple Health / '
+                      'Health Connect (a Apple Watch / Wear OS) uvidíš '
+                      'v mobilnej appke.',
                       style: text.bodySmall,
                     ),
                   ),
@@ -184,11 +180,9 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
                 ),
                 const SizedBox(height: 12),
                 // Rejnox na hodinkách: Apple Watch (iPhone), Wear OS (Android).
-                if (_demo || ref.read(watchLinkProvider).supported)
-                  Center(
-                    child: _WatchChip(demo: _demo, live: liveBpm != null),
-                  ),
-                if (!_demo && !_connected) ...[
+                if (!_unsupported && ref.read(watchLinkProvider).supported)
+                  Center(child: _WatchChip(live: liveBpm != null)),
+                if (!_unsupported && !_connected) ...[
                   const SizedBox(height: 16),
                   PrimaryButton(
                     label: _loading ? 'Pripájam…' : 'Pripojiť $healthStoreName',
@@ -300,9 +294,8 @@ class _HeartRateScreenState extends ConsumerState<HeartRateScreen>
 }
 
 class _WatchChip extends ConsumerWidget {
-  const _WatchChip({required this.demo, required this.live});
+  const _WatchChip({required this.live});
 
-  final bool demo;
   final bool live;
 
   @override
@@ -310,9 +303,7 @@ class _WatchChip extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final status = ref.watch(watchStatusProvider).value;
     final name = ref.watch(watchLinkProvider).name;
-    final (ok, label) = demo
-        ? (true, 'Apple Watch (ukážka)')
-        : live
+    final (ok, label) = live
         ? (true, '$name · naživo')
         : status == null || !status.paired
         ? (false, 'Hodinky nie sú spárované')
@@ -320,7 +311,7 @@ class _WatchChip extends ConsumerWidget {
         ? (false, 'Nainštaluj Rejnox na hodinky')
         : (true, 'Pripojené $name');
     final color = ok ? Plate.green.color : AppColors.muted;
-    final canInstall = !demo && status != null && status.canInstall;
+    final canInstall = status != null && status.canInstall;
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(

@@ -108,22 +108,3 @@ List<HrSample> dailyAverages(List<HrSample> samples) {
       HrSample(d, byDay[d]!.reduce((a, b) => a + b) / byDay[d]!.length),
   ];
 }
-
-/// Ukážková história pre web (náhľad dizajnu), nie skutočné údaje.
-HeartRateHistory demoHistory(DateTime now, Duration window) {
-  final rnd = Random(7);
-  final samples = <HrSample>[];
-  final start = now.subtract(window);
-  final step = window.inHours <= 24
-      ? const Duration(minutes: 10)
-      : const Duration(minutes: 60);
-  for (var t = start; t.isBefore(now); t = t.add(step)) {
-    final h = t.hour + t.minute / 60;
-    var bpm = 62 + 10 * sin((h - 6) / 24 * 2 * pi) + rnd.nextDouble() * 8;
-    if (h > 6.5 && h < 9) bpm -= 4;
-    if (h > 17 && h < 18.2) bpm = 105 + rnd.nextDouble() * 35; // tréning
-    if (h < 6) bpm = 54 + rnd.nextDouble() * 6; // spánok
-    samples.add(HrSample(t, bpm));
-  }
-  return HeartRateHistory(samples: samples, hrvMs: 62, restingBpm: 58);
-}

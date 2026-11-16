@@ -2,26 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/screen_header.dart';
 import '../../../core/widgets/tm_card.dart';
-import '../domain/community_demo_data.dart';
-import 'community_widgets.dart';
 
 enum CommunitySection {
-  feed('Príspevky'),
-  buddies('Parťáci'),
-  events('Udalosti'),
-  challenges('Výzvy'),
-  groups('Skupiny'),
-  leaderboard('Rebríčky');
+  feed(
+    'Príspevky',
+    Icons.dynamic_feed_outlined,
+    'Zatiaľ tu nie sú žiadne príspevky.',
+  ),
+  buddies(
+    'Parťáci',
+    Icons.group_add_outlined,
+    'Zatiaľ nikto nehľadá parťáka na tréning.',
+  ),
+  events('Udalosti', Icons.event_outlined, 'Zatiaľ nie sú žiadne udalosti.'),
+  challenges('Výzvy', Icons.flag_outlined, 'Zatiaľ nie sú žiadne výzvy.'),
+  groups('Skupiny', Icons.groups_outlined, 'Zatiaľ nie sú žiadne skupiny.'),
+  leaderboard(
+    'Rebríčky',
+    Icons.leaderboard_outlined,
+    'Zatiaľ nie sú žiadne rebríčky.',
+  );
 
-  const CommunitySection(this.label);
+  const CommunitySection(this.label, this.icon, this.emptyText);
   final String label;
+  final IconData icon;
+  final String emptyText;
 }
 
 /// Komunita: príspevky, parťáci, udalosti, výzvy, skupiny a rebríčky.
-/// Zatiaľ na ukážkových údajoch – akcie bez backendu ohlásia „čoskoro“.
+/// Server pre ne zatiaľ nemá údaje, preto každá sekcia ukazuje poctivý
+/// prázdny stav namiesto vymyslených príspevkov a mien.
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
 
@@ -31,12 +43,6 @@ class CommunityScreen extends StatefulWidget {
 
 class _CommunityScreenState extends State<CommunityScreen> {
   CommunitySection _section = CommunitySection.feed;
-
-  void _soon(String feature) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('$feature pribudne čoskoro.')));
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +61,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ),
               IconButton(
                 tooltip: 'Upozornenia',
-                onPressed: () => _soon('Upozornenia'),
+                onPressed: () => context.push('/notifications'),
                 icon: const Icon(Icons.notifications_none_rounded),
               ),
             ],
@@ -66,102 +72,46 @@ class _CommunityScreenState extends State<CommunityScreen> {
           ),
           const SizedBox(height: 6),
           Expanded(
-            child: IndexedStack(
-              index: _section.index,
-              children: [
-                _page([
-                  _Composer(onTap: _newPost),
-                  for (final p in demoPosts) PostCard(p, onSoon: _soon),
-                ]),
-                _page([
-                  _lead(
-                    'Nájdi niekoho na spoločný tréning, beh '
-                    'alebo inú aktivitu.',
-                  ),
-                  const CommunitySearch(hint: 'Hľadať podľa mesta alebo mena'),
-                  for (final b in demoBuddies)
-                    BuddyCard(b, onContact: () => _soon('Oslovenie parťáka')),
-                ]),
-                _page([
-                  AppSection(
-                    title: 'Nadchádzajúce udalosti',
-                    child: Column(
-                      children: [
-                        for (final (i, e) in demoEvents.indexed) ...[
-                          if (i > 0) const SizedBox(height: 12),
-                          EventCard(
-                            e,
-                            onJoin: () => _soon('Prihlasovanie na udalosti'),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ]),
-                _page([
-                  _lead('Prekonávaj svoje limity spolu s ostatnými.'),
-                  for (final c in demoChallenges)
-                    ChallengeCard(c, onOpen: () => _soon('Detail výzvy')),
-                ]),
-                _page([
-                  const CommunitySearch(hint: 'Hľadať skupinu'),
-                  AppList(
-                    children: [
-                      for (final g in demoGroups)
-                        GroupRow(g, onTap: () => _soon('Detail skupiny')),
-                    ],
-                  ),
-                  PrimaryButton(
-                    label: 'Vytvoriť skupinu',
-                    icon: Icons.add_rounded,
-                    tone: ButtonTone.ghost,
-                    onPressed: () => _soon('Vytváranie skupín'),
-                  ),
-                ]),
-                _page([
-                  AppSection(
-                    title: 'Najaktívnejší tento týždeň',
-                    child: Podium(demoLeaderboard.take(3).toList()),
-                  ),
-                  AppList(
-                    children: [
-                      for (final (i, e) in demoLeaderboard.indexed.skip(3))
-                        LeaderboardRow(rank: i + 1, entry: e),
-                    ],
-                  ),
-                  Text(
-                    'Ukážkové údaje. Reálne rebríčky budú počítať len '
-                    'overené tréningy.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ]),
-              ],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
+              child: _EmptySection(_section),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _page(List<Widget> children) => SingleChildScrollView(
-    padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
-    child: SectionStack(gap: 12, children: children),
-  );
+/// Prázdny stav sekcie, kým pre ňu nie sú údaje na serveri.
+class _EmptySection extends StatelessWidget {
+  const _EmptySection(this.section);
 
-  Widget _lead(String text) => Text(
-    text,
-    style: Theme.of(
-      context,
-    ).textTheme.bodyMedium!.copyWith(color: AppColors.ink2),
-  );
+  final CommunitySection section;
 
-  Future<void> _newPost() async {
-    final posted = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => const _NewPostSheet(),
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return TmCard(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      child: Column(
+        children: [
+          Icon(section.icon, color: AppColors.muted, size: 32),
+          const SizedBox(height: 12),
+          Text(
+            'Zatiaľ nič…',
+            style: text.titleMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            section.emptyText,
+            style: text.bodyMedium!.copyWith(color: AppColors.ink2),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
-    if (posted ?? false) _soon('Ukladanie príspevkov');
   }
 }
 
@@ -212,131 +162,6 @@ class _SectionChips extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-/// „Podeľ sa o svoj progres…“ – otvorí nový príspevok.
-class _Composer extends StatelessWidget {
-  const _Composer({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(26);
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: const BorderSide(color: AppColors.border, width: 1.5),
-      ),
-      child: InkWell(
-        borderRadius: radius,
-        onTap: onTap,
-        child: SizedBox(
-          height: 52,
-          child: Row(
-            children: [
-              const SizedBox(width: 16),
-              const Icon(Icons.edit_outlined, color: AppColors.accent),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Podeľ sa o svoj progres…',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    color: AppColors.muted,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Spodný panel na napísanie príspevku. Vráti true, ak sa zdieľal.
-class _NewPostSheet extends StatefulWidget {
-  const _NewPostSheet();
-
-  @override
-  State<_NewPostSheet> createState() => _NewPostSheetState();
-}
-
-class _NewPostSheetState extends State<_NewPostSheet> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        18,
-        10,
-        MediaQuery.viewInsetsOf(context).bottom + 22,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'NOVÝ PRÍSPEVOK',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              IconButton(
-                tooltip: 'Zavrieť',
-                onPressed: () => Navigator.pop(context, false),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextField(
-                  controller: _controller,
-                  autofocus: true,
-                  minLines: 4,
-                  maxLines: 7,
-                  maxLength: 1000,
-                  decoration: const InputDecoration(
-                    hintText: 'Čo máš na mysli?',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ValueListenableBuilder(
-                  valueListenable: _controller,
-                  builder: (context, value, _) => PrimaryButton(
-                    label: 'Zdieľať príspevok',
-                    onPressed: value.text.trim().isEmpty
-                        ? null
-                        : () => Navigator.pop(context, true),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

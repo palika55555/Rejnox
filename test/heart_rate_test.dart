@@ -548,9 +548,15 @@ void main() {
     expect(find.textContaining('Žiadosť nebola dokončená'), findsOneWidget);
   });
 
-  _iosTest('mimo iPhonu ukáže ukážkové údaje a zóny', (tester) async {
+  _iosTest('mimo mobilu ukáže prázdny stav bez vymyslených údajov', (
+    tester,
+  ) async {
     await _pump(tester, _FakeSource(supported: false));
-    expect(find.textContaining('Ukážkové údaje'), findsOneWidget);
+    expect(
+      find.textContaining('Tu zatiaľ nie sú žiadne merania'),
+      findsOneWidget,
+    );
+    expect(find.text('Zatiaľ bez merania'), findsOneWidget);
     expect(find.text('Pripojiť Apple Health'), findsNothing);
 
     await tester.tap(find.text('Zóny'));
