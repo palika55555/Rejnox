@@ -21,6 +21,9 @@ export type ChatThread = {
   lastMessage: { body: string; sentAt: string; mine: boolean } | null;
 };
 
+/** Text pre staršie verzie appky, ktoré nepoznajú zmazané správy a fotky. */
+const LEGACY_BODY = `coalesce(m.body, CASE WHEN m.deleted_at IS NOT NULL THEN 'Správa bola odstránená.' ELSE '📷 Fotka' END)`;
+
 /** `sentAt` je ISO čas s mikrosekundami (presný kurzor pre ?after=). */
 export type ChatMessage = { id: string; body: string; sentAt: string; mine: boolean };
 
@@ -55,8 +58,8 @@ export function threads(db: Db, userId: string): Promise<ChatThread[]> {
               t.status = 'linked' AS "canSend",
               coalesce((SELECT count(*)::int FROM messages m
                         WHERE m.conversation_id = c.id AND m.sender_id <> $1::uuid
-                          AND m.sent_at > cm.last_read_at), 0) AS unread,
-              (SELECT json_build_object('body', m.body, 'sentAt', m.sent_at, 'mine', m.sender_id = $1::uuid)
+                          AND m.sent_at > cm.last_read_at AND m.deleted_at IS NULL), 0) AS unread,
+              (SELECT json_build_object('body', coalesce(m.body, CASE WHEN m.deleted_at IS NOT NULL THEN 'Správa bola odstránená.' ELSE '📷 Fotka' END), 'sentAt', m.sent_at, 'mine', m.sender_id = $1::uuid)
                FROM messages m WHERE m.conversation_id = c.id
                ORDER BY m.sent_at DESC LIMIT 1) AS "lastMessage"
        FROM trainer_clients t
@@ -73,13 +76,17 @@ export function threads(db: Db, userId: string): Promise<ChatThread[]> {
   );
 }
 
-/** Počet neprečítaných správ zo všetkých konverzácií. Beží v transakcii volajúceho. */
+/**
+ * Počet neprečítaných správ zo všetkých konverzácií (bez stlmených, zmazaných
+ * a systémových). Beží v transakcii volajúceho.
+ */
 export async function unreadTotal(tx: Tx, userId: string): Promise<number> {
   const [row] = await tx.query<{ n: number }>(
     `SELECT count(*)::int AS n
      FROM conversation_members cm
      JOIN messages m ON m.conversation_id = cm.conversation_id
-     WHERE cm.user_id = $1::uuid AND m.sender_id <> $1::uuid AND m.sent_at > cm.last_read_at`,
+     WHERE cm.user_id = $1::uuid AND NOT cm.muted AND m.sender_id <> $1::uuid AND m.sent_at > cm.last_read_at
+       AND m.deleted_at IS NULL AND m.kind <> 'system'`,
     [userId],
   );
   return row.n;
@@ -123,8 +130,8 @@ export function messages(
     const conv = await conversationOf(tx, linkId, false);
     if (!conv) return [];
     const rows = await tx.query<ChatMessage>(
-      `SELECT id::text, body, to_json(sent_at) #>> '{}' AS "sentAt", sender_id = $2::uuid AS mine
-       FROM messages
+      `SELECT id::text, ${LEGACY_BODY} AS body, to_json(sent_at) #>> '{}' AS "sentAt", sender_id = $2::uuid AS mine
+       FROM messages m
        WHERE conversation_id = $1::uuid
          AND ($3::timestamptz IS NULL OR sent_at > $3::timestamptz)
          AND ($4::timestamptz IS NULL OR sent_at < $4::timestamptz)

@@ -1,6 +1,7 @@
 import * as auth from "./auth";
 import * as calendar from "./calendar";
 import * as chat from "./chat";
+import { conversationRoutes } from "./conversationRoutes";
 import * as notifications from "./notifications";
 import type { AuthUser } from "./auth";
 import type { Db } from "./db";
@@ -31,7 +32,7 @@ import {
 
 type Method = "GET" | "POST" | "PUT" | "DELETE";
 
-type Ctx = {
+export type Ctx = {
   request: Request;
   params: Record<string, string>;
   db: Db;
@@ -41,7 +42,7 @@ type Ctx = {
   user(): Promise<AuthUser>;
 };
 
-type Route = { method: Method; pattern: string; handler: (ctx: Ctx) => Promise<Response> };
+export type Route = { method: Method; pattern: string; handler: (ctx: Ctx) => Promise<Response> };
 
 const trainersOnly = () => new HttpError(403, "trainers_only", "Táto časť je len pre trénerov.");
 
@@ -377,6 +378,9 @@ const routes: Route[] = [
       return noContent();
     },
   },
+
+  // Nový chat (skupiny, súkromné správy...): pozri conversationRoutes.ts.
+  ...conversationRoutes,
 
   // ----------------------------------------------------------- upozornenia
   { method: "GET", pattern: "/notifications", handler: async (ctx) => json(200, await notifications.feed(ctx.db, (await ctx.user()).id)) },

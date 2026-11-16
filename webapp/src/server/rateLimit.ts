@@ -28,6 +28,18 @@ export const limits = {
   calendarWrite: { name: "calendar-write", max: 30, windowSeconds: 60 },
   // Chat: bežné písanie áno, zaplavenie druhej strany nie.
   chatSend: { name: "chat-send", max: 30, windowSeconds: 60 },
+  // Úpravy, reakcie, členovia skupín, stlmenie a blokovanie.
+  chatWrite: { name: "chat-write", max: 120, windowSeconds: 60 },
+  chatImage: { name: "chat-image", max: 40, windowSeconds: 60 * 60 },
+  // Fotky sú v databáze: aj denný strop, nech jeden účet nezaplní úložisko.
+  chatImageDay: { name: "chat-image-day", max: 150, windowSeconds: 24 * 60 * 60 },
+  // „Píše…“ a „prečítané“ zapisujú pri každom volaní.
+  chatPresence: { name: "chat-presence", max: 120, windowSeconds: 60 },
+  chatImageRead: { name: "chat-image-read", max: 300, windowSeconds: 60 },
+  chatGroupCreate: { name: "chat-group-create", max: 20, windowSeconds: 60 * 60 },
+  // Hádanie kódov skupín: rovnako ako pozvánky trénera, na účet aj na IP.
+  groupJoin: { name: "group-join", max: 10, windowSeconds: 60 * 60 },
+  groupJoinIp: { name: "group-join-ip", max: 30, windowSeconds: 60 * 60 },
 } satisfies Record<string, Limit>;
 
 /** Počítadlo pokusov v databáze (spoločné pre všetky inštancie Workera). */

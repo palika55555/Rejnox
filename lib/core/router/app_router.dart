@@ -10,6 +10,8 @@ import '../../features/booking/presentation/client_calendar_screen.dart';
 import '../../features/booking/presentation/trainer_calendar_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/chat/presentation/chats_screen.dart';
+import '../../features/chat/presentation/conversation_info_screen.dart';
+import '../../features/chat/presentation/new_chat_screen.dart';
 import '../../features/coaching/presentation/client_detail_screen.dart';
 import '../../features/coaching/presentation/clients_screen.dart';
 import '../../features/community/presentation/community_screen.dart';
@@ -84,6 +86,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ChatScreen(
           linkId: state.pathParameters['id']!,
           name: state.extra is String ? state.extra! as String : null,
+        ),
+      ),
+      GoRoute(
+        path: '/conversation/:id',
+        builder: (context, state) => ConversationScreen(
+          conversationId: state.pathParameters['id']!,
+          title: state.extra is String ? state.extra! as String : null,
+        ),
+      ),
+      GoRoute(
+        path: '/conversation/:id/info',
+        builder: (context, state) =>
+            ConversationInfoScreen(conversationId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/chat-new',
+        builder: (context, state) => NewChatScreen(
+          mode: state.uri.queryParameters['group'] == '1'
+              ? NewChatMode.group
+              : NewChatMode.direct,
         ),
       ),
       GoRoute(

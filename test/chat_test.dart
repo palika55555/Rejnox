@@ -4,11 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rejnox/core/api/api_client.dart';
 import 'package:rejnox/features/auth/domain/auth_models.dart';
 import 'package:rejnox/features/auth/presentation/auth_controller.dart';
+import 'package:rejnox/features/chat/application/chat_actions.dart';
 import 'package:rejnox/features/chat/application/chat_providers.dart';
 import 'package:rejnox/features/chat/data/chat_api.dart';
 import 'package:rejnox/features/chat/domain/chat_models.dart';
 import 'package:rejnox/features/chat/presentation/chat_screen.dart';
 import 'package:rejnox/features/chat/presentation/chat_widgets.dart';
+import 'package:rejnox/features/chat/presentation/chats_screen.dart';
 import 'package:rejnox/features/notifications/notification_models.dart';
 import 'package:rejnox/features/notifications/notifications_api.dart';
 import 'package:rejnox/features/notifications/notifications_controller.dart';
@@ -27,57 +29,129 @@ class _SignedIn extends AuthController {
   );
 }
 
-ChatMessage _msg(String id, String body, {bool mine = false, int minute = 0}) {
-  final at = DateTime.utc(2026, 11, 15, 10, minute);
-  return ChatMessage(
-    id: id,
-    body: body,
-    sentAt: at.toLocal(),
-    rawSentAt: at.toIso8601String(),
-    mine: mine,
-  );
-}
+String _iso(int minute, [int second = 0]) =>
+    DateTime.utc(2026, 11, 15, 10, minute, second).toIso8601String();
 
+ChatMessage _msg(
+  String id,
+  String body, {
+  bool mine = false,
+  int minute = 0,
+  String sender = 'Tomáš',
+  MessageKind kind = MessageKind.text,
+  List<Reaction> reactions = const [],
+  bool edited = false,
+  int updatedMinute = -1,
+}) => ChatMessage.fromJson({
+  'id': id,
+  'kind': kind.name,
+  'body': body,
+  'sentAt': _iso(minute),
+  'updatedAt': _iso(updatedMinute < 0 ? minute : updatedMinute),
+  'mine': mine,
+  'senderId': mine ? 'u1' : 'u-$sender',
+  'senderName': mine ? 'Anna' : sender,
+  'edited': edited,
+  'reactions': [
+    for (final r in reactions)
+      {'emoji': r.emoji, 'count': r.count, 'mine': r.mine},
+  ],
+});
+
+Conversation _conv(
+  String id,
+  String title, {
+  bool group = false,
+  int unread = 0,
+}) => Conversation.fromJson({
+  'id': id,
+  'kind': group ? 'group' : 'link',
+  'title': title,
+  'otherRole': 'trainer',
+  'canSend': true,
+  'muted': false,
+  'unread': unread,
+  'memberCount': group ? 3 : 2,
+  'myRole': 'member',
+});
+
+/// Server v pamäti: správy podľa konverzácie, ?since= vráti zmenené.
 class FakeChatApi implements ChatApi {
-  final messagesByLink = <String, List<ChatMessage>>{};
+  final messagesByConv = <String, List<ChatMessage>>{};
+  final conversationsList = <Conversation>[];
   final sent = <String>[];
-  final afterCursors = <String?>[];
+  final sinceCursors = <String?>[];
+  final replies = <String?>[];
+  final reactions = <String?>[];
+  Map<String, DateTime> readBy = const {};
   Object? sendError;
 
   @override
-  Future<List<ChatThread>> threads(String token) async => [
-    const ChatThread(
-      linkId: 'l1',
-      name: 'Tréner Tomáš',
-      withTrainer: true,
-      canSend: true,
-      unread: 0,
-    ),
-  ];
+  Future<List<Conversation>> conversations(String token) async =>
+      conversationsList;
 
   @override
-  Future<List<ChatMessage>> messages(
+  Future<MessagePage> messages(
     String token,
-    String linkId, {
-    String? after,
+    String conversationId, {
+    String? before,
+    String? since,
   }) async {
-    afterCursors.add(after);
-    final all = messagesByLink[linkId] ?? const [];
-    if (after == null) return all;
-    return [
-      for (final m in all)
-        if (m.rawSentAt!.compareTo(after) > 0) m,
-    ];
+    sinceCursors.add(since);
+    final all = messagesByConv[conversationId] ?? const [];
+    return MessagePage(
+      canSend: true,
+      readBy: readBy,
+      messages: since == null
+          ? all
+          : [
+              for (final m in all)
+                if (DateTime.parse(
+                  m.rawUpdatedAt!,
+                ).isAfter(DateTime.parse(since)))
+                  m,
+            ],
+    );
   }
 
   @override
-  Future<ChatMessage> send(String token, String linkId, String body) async {
+  Future<ChatMessage> send(
+    String token,
+    String conversationId,
+    String body, {
+    String? replyTo,
+  }) async {
     if (sendError != null) throw sendError!;
     sent.add(body);
+    replies.add(replyTo);
     final m = _msg('s${sent.length}', body, mine: true, minute: 30);
-    messagesByLink[linkId] = [...?messagesByLink[linkId], m];
+    messagesByConv[conversationId] = [...?messagesByConv[conversationId], m];
     return m;
   }
+
+  @override
+  Future<ChatMessage> react(
+    String token,
+    String messageId,
+    String? emoji,
+  ) async {
+    reactions.add(emoji);
+    return _msg(
+      messageId,
+      'Zajtra nohy',
+      minute: 2,
+      reactions: [
+        if (emoji != null) Reaction(emoji: emoji, count: 1, mine: true),
+      ],
+    );
+  }
+
+  @override
+  Future<void> typing(String token, String conversationId) async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError(invocation.memberName.toString());
 }
 
 class FakeNotificationsApi implements NotificationsApi {
@@ -126,40 +200,112 @@ AppNotification _note(String id, {bool read = false}) => AppNotification(
 
 void main() {
   group('pomocné', () {
-    test('čas správy: dnes hodiny, inak dátum', () {
+    test('čas správy a nadpis dňa', () {
       final now = DateTime(2026, 11, 15, 18);
       expect(shortTime(DateTime(2026, 11, 15, 9, 5), now: now), '9:05');
       expect(shortTime(DateTime(2026, 11, 14, 9, 5), now: now), '14. 11.');
+      expect(dayLabel(DateTime(2026, 11, 15, 1), now: now), 'Dnes');
+      expect(dayLabel(DateTime(2026, 11, 14, 23), now: now), 'Včera');
+      expect(dayLabel(DateTime(2025, 3, 2), now: now), '2. 3. 2025');
     });
 
     test('konverzácia zo servera', () {
-      final t = ChatThread.fromJson({
-        'linkId': 'l1',
-        'name': 'Klient Peter',
-        'otherRole': 'client',
-        'canSend': false,
+      final c = Conversation.fromJson({
+        'id': 'c1',
+        'kind': 'group',
+        'title': 'Ranný beh',
+        'canSend': true,
+        'muted': true,
         'unread': 3,
+        'memberCount': 5,
+        'myRole': 'admin',
         'lastMessage': {
-          'body': 'Ahoj',
+          'kind': 'image',
+          'body': null,
           'sentAt': '2026-11-15T10:00:00.123456+00:00',
-          'mine': true,
+          'mine': false,
+          'senderName': 'Jana',
+          'deleted': false,
         },
       });
-      expect(t.withTrainer, isFalse);
-      expect(t.canSend, isFalse);
-      expect(t.unread, 3);
-      expect(t.lastMessage!.body, 'Ahoj');
-      expect(t.lastMessage!.mine, isTrue);
+      expect(c.isGroup, isTrue);
+      expect(c.isAdmin, isTrue);
+      expect(c.muted, isTrue);
+      expect(c.subtitle, 'Skupina · 5 členov');
+      expect(c.lastMessage!.preview, '📷 Fotka');
+    });
+
+    test('stránka správ: odpoveď, reakcie, kto píše a kto čítal', () {
+      final page = MessagePage.fromJson({
+        'canSend': false,
+        'typing': ['Jana'],
+        'readBy': [
+          {'userId': 'u2', 'lastReadAt': _iso(5)},
+        ],
+        'messages': [
+          {
+            'id': 'm1',
+            'kind': 'text',
+            'body': 'Áno',
+            'sentAt': _iso(1),
+            'updatedAt': _iso(1),
+            'mine': true,
+            'replyTo': {
+              'id': 'm0',
+              'kind': 'text',
+              'body': null,
+              'senderName': 'Jana',
+              'deleted': true,
+            },
+            'reactions': [
+              {'emoji': '🔥', 'count': 2, 'mine': false},
+            ],
+          },
+        ],
+      });
+      expect(page.canSend, isFalse);
+      expect(page.typing, ['Jana']);
+      expect(page.readBy.keys, ['u2']);
+      final m = page.messages.single;
+      expect(m.replyTo!.preview, 'Správa bola odstránená');
+      expect(m.reactions.single.count, 2);
+    });
+
+    test('spojenie správ: zmenená nahradí pôvodnú, poradie podľa času', () {
+      final merged = mergeMessages(
+        [_msg('a', 'prvá', minute: 1), _msg('b', 'druhá', minute: 2)],
+        [
+          _msg('b', 'druhá (upravená)', minute: 2, edited: true),
+          _msg('c', 'tretia', minute: 3),
+        ],
+      );
+      expect(merged.map((m) => m.body), ['prvá', 'druhá (upravená)', 'tretia']);
+      expect(merged[1].edited, isTrue);
+    });
+
+    test('„Videné“ je pri mojej poslednej správe, ktorú prečítali všetci', () {
+      final room = ChatRoom(
+        canSend: true,
+        messages: [
+          _msg('a', 'moja 1', mine: true, minute: 1),
+          _msg('b', 'moja 2', mine: true, minute: 6),
+        ],
+        readBy: {'u2': DateTime.parse(_iso(5))},
+      );
+      // Druhú ešte nikto nečítal → nič „Videné“ (posledná moja je nová).
+      expect(room.lastSeenMine, isNull);
+      final read = room.copyWith(readBy: {'u2': DateTime.parse(_iso(7))});
+      expect(read.lastSeenMine?.id, 'b');
     });
   });
 
-  group('chat', () {
+  group('konverzácia', () {
     late FakeChatApi api;
     late ProviderContainer container;
 
     setUp(() {
       api = FakeChatApi()
-        ..messagesByLink['l1'] = [
+        ..messagesByConv['c1'] = [
           _msg('m1', 'Ahoj', minute: 1),
           _msg('m2', 'Zajtra nohy', minute: 2),
         ];
@@ -175,63 +321,154 @@ void main() {
     test(
       'odoslaná správa je v zozname raz, aj po priebežnom načítaní',
       () async {
-        final sub = container.listen(chatProvider('l1'), (_, _) {});
+        final sub = container.listen(chatRoomProvider('c1'), (_, _) {});
         addTearDown(sub.close);
-        await container.read(chatProvider('l1').future);
+        await container.read(chatRoomProvider('c1').future);
+        final room = container.read(chatRoomProvider('c1').notifier);
 
-        await container.read(chatProvider('l1').notifier).send('  Super  ');
-        await container.read(chatProvider('l1').notifier).refresh();
+        await room.send('  Super  ', replyTo: api.messagesByConv['c1']!.first);
+        await room.refresh();
 
         final bodies = [
-          for (final m in container.read(chatProvider('l1')).value!) m.body,
+          for (final m
+              in container.read(chatRoomProvider('c1')).value!.messages)
+            m.body,
         ];
         expect(bodies, ['Ahoj', 'Zajtra nohy', 'Super']);
         expect(api.sent, ['Super']);
-        // Priebežné načítanie sa pýta len na novšie ako posledná správa.
-        expect(api.afterCursors.last, isNotNull);
+        expect(api.replies, ['m1']);
+        // Priebežné načítanie sa pýta na zmeny od poslednej (s rezervou).
+        expect(api.sinceCursors.last, isNotNull);
       },
     );
 
-    test('pri chybe sa neodoslaná správa zo zoznamu odoberie', () async {
-      final sub = container.listen(chatProvider('l1'), (_, _) {});
+    test('úprava na serveri sa prejaví pri priebežnom načítaní', () async {
+      final sub = container.listen(chatRoomProvider('c1'), (_, _) {});
       addTearDown(sub.close);
-      await container.read(chatProvider('l1').future);
-      api.sendError = const ApiError(
-        409,
-        'chat_closed',
-        'Spolupráca skončila, písať už nejde.',
-      );
+      await container.read(chatRoomProvider('c1').future);
 
-      await expectLater(
-        container.read(chatProvider('l1').notifier).send('Haló'),
-        throwsA(isA<ApiError>()),
-      );
-      expect(container.read(chatProvider('l1')).value, hasLength(2));
+      api.messagesByConv['c1'] = [
+        _msg('m1', 'Ahoj', minute: 1),
+        _msg('m2', 'Zajtra ruky', minute: 2, edited: true, updatedMinute: 9),
+      ];
+      await container.read(chatRoomProvider('c1').notifier).refresh();
+
+      final m2 = container
+          .read(chatRoomProvider('c1'))
+          .value!
+          .messages
+          .firstWhere((m) => m.id == 'm2');
+      expect(m2.body, 'Zajtra ruky');
+      expect(m2.edited, isTrue);
     });
 
-    testWidgets('obrazovka ukáže správy a pošle novú', (tester) async {
+    test('pri chybe sa neodoslaná správa zo zoznamu odoberie', () async {
+      final sub = container.listen(chatRoomProvider('c1'), (_, _) {});
+      addTearDown(sub.close);
+      await container.read(chatRoomProvider('c1').future);
+      api.sendError = const ApiError(403, 'chat_forbidden', 'Nedá sa písať.');
+
+      await expectLater(
+        container.read(chatRoomProvider('c1').notifier).send('Haló'),
+        throwsA(isA<ApiError>()),
+      );
+      expect(
+        container.read(chatRoomProvider('c1')).value!.messages,
+        hasLength(2),
+      );
+    });
+
+    test('reakcia: ťuk pridá, rovnaký ťuk odoberie', () async {
+      final sub = container.listen(chatRoomProvider('c1'), (_, _) {});
+      addTearDown(sub.close);
+      await container.read(chatRoomProvider('c1').future);
+      final room = container.read(chatRoomProvider('c1').notifier);
+
+      ChatMessage m2() => container
+          .read(chatRoomProvider('c1'))
+          .value!
+          .messages
+          .firstWhere((m) => m.id == 'm2');
+      await room.toggleReaction(m2(), '🔥');
+      expect(m2().reactions.single.emoji, '🔥');
+      await room.toggleReaction(m2(), '🔥');
+      expect(api.reactions, ['🔥', null]);
+      expect(m2().reactions, isEmpty);
+    });
+
+    test('ID prihláseného pre odchod zo skupiny', () {
+      expect(container.read(chatActionsProvider).myId, 'u1');
+    });
+  });
+
+  group('obrazovky', () {
+    late FakeChatApi api;
+
+    Widget app(Widget home) => ProviderScope(
+      overrides: [
+        authControllerProvider.overrideWith(_SignedIn.new),
+        chatApiProvider.overrideWithValue(api),
+        notificationsApiProvider.overrideWithValue(FakeNotificationsApi()),
+        phoneAlertsProvider.overrideWithValue(FakePhoneAlerts()),
+      ],
+      child: MaterialApp(home: Scaffold(body: home)),
+    );
+
+    setUp(() {
+      api = FakeChatApi()
+        ..conversationsList.addAll([
+          _conv('c1', 'Tréner Tomáš'),
+          _conv('g1', 'Ranný beh', group: true, unread: 4),
+        ])
+        ..messagesByConv['g1'] = [
+          ChatMessage.fromJson({
+            'id': 's1',
+            'kind': 'system',
+            'body': 'Tomáš pridal(a) Annu.',
+            'sentAt': _iso(0),
+            'updatedAt': _iso(0),
+            'mine': false,
+          }),
+          _msg('m1', 'Ahoj všetci', minute: 1, sender: 'Tomáš'),
+          _msg('m2', 'Idem aj ja', minute: 2, sender: 'Jana'),
+        ];
+    });
+
+    testWidgets('zoznam ukáže skupinu s neprečítanými', (tester) async {
+      await tester.pumpWidget(app(const ChatsScreen()));
+      await tester.pumpAndSettle();
+      expect(find.text('Ranný beh'), findsOneWidget);
+      expect(find.text('Skupina · 3 členovia'), findsOneWidget);
+      expect(find.text('4'), findsOneWidget);
+      expect(find.text('Tréner Tomáš'), findsOneWidget);
+    });
+
+    testWidgets('skupina: mená, systémová správa, odpoveď a odoslanie', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            authControllerProvider.overrideWith(_SignedIn.new),
-            chatApiProvider.overrideWithValue(api),
-          ],
-          child: const MaterialApp(
-            home: ChatScreen(linkId: 'l1', name: 'Tréner Tomáš'),
-          ),
-        ),
+        app(const ConversationScreen(conversationId: 'g1', title: 'Ranný beh')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('TRÉNER TOMÁŠ'), findsOneWidget);
-      expect(find.text('Zajtra nohy'), findsOneWidget);
+      expect(find.text('Tomáš pridal(a) Annu.'), findsOneWidget);
+      expect(find.text('Jana'), findsOneWidget);
+      expect(find.text('Idem aj ja'), findsOneWidget);
 
-      await tester.enterText(find.byType(TextField), 'Môžem o 18:00?');
+      // Podržanie → Odpovedať → nad poľom je, komu odpovedám.
+      await tester.longPress(find.text('Idem aj ja'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Odpovedať'));
+      await tester.pumpAndSettle();
+      expect(find.text('Odpoveď pre Jana'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Super, vidíme sa');
       await tester.pump();
       await tester.tap(find.byTooltip('Odoslať'));
       await tester.pumpAndSettle();
 
-      expect(api.sent, ['Môžem o 18:00?']);
-      expect(find.text('Môžem o 18:00?'), findsOneWidget);
+      expect(api.sent, ['Super, vidíme sa']);
+      expect(api.replies, ['m2']);
+      expect(find.text('Odpoveď pre Jana'), findsNothing);
       // Zrušiť priebežné načítanie spolu s obrazovkou.
       await tester.pumpWidget(const SizedBox());
     });
