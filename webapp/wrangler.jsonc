@@ -10,8 +10,8 @@
   // Pri nasadení sa nesmú zmazať.
   "keep_vars": true,
   "observability": { "enabled": true },
-  // Cloudflare Workers AI (AI pomocník trénera): bez API kľúča, platí sa denná bezplatná kvóta.
-  "ai": { "binding": "AI" },
+  // AI pomocník je zámerne VYPNUTÝ (aby sa nič nezaplatilo omylom). Zapne sa pridaním väzby
+  // "ai": { "binding": "AI" } (Cloudflare Workers AI) alebo kľúča platného API; vždy len pre predplatiteľov.
   // Blízko databázy (Supabase eu-west-1).
   "placement": { "region": "aws:eu-west-1" }
 }

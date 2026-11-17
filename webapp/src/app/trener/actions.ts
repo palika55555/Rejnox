@@ -10,6 +10,7 @@ import * as chat from "@/server/chat";
 import { generateMealPlan } from "@/server/mealPlanAi";
 import * as mealPlans from "@/server/mealPlans";
 import { dbRateLimiter, limits } from "@/server/rateLimit";
+import { requireSubscription } from "@/server/subscription";
 import * as trainer from "@/server/trainer";
 import { optionalText, requireInt, requireText, requireUuid, type Body } from "@/server/validate";
 
@@ -143,6 +144,8 @@ export async function draftMealPlanWithAi(
     const { targets } = mealPlans.parseMealPlan({ title: "x", targets: body.targets });
 
     const client = await withDb(async (db) => {
+      // AI stojí peniaze: najprv predplatné, až potom limity a samotné volanie modelu.
+      await requireSubscription(db, me);
       const limiter = dbRateLimiter(db);
       if (!(await limiter.tryAcquire(limits.aiMealPlan, me)) || !(await limiter.tryAcquire(limits.aiMealPlanDay, me))) {
         throw new HttpError(429, "too_many_requests", "AI pomocníka si dnes použil už veľakrát. Skús to neskôr.");
