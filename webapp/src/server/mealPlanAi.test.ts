@@ -63,7 +63,7 @@ describe("AI pomocník – odpoveď na jedálniček", () => {
     expect(plan.title).toBe("Jedálniček – Jana");
     expect(plan.note).toBeNull();
     expect(plan.items).toHaveLength(1);
-    expect(plan.items[0]).toMatchObject({ kcal: 5000, proteinG: 0, meal: "Jedlo" });
+    expect(plan.items[0]).toMatchObject({ kcal: 5000, proteinG: 0, meal: "Obed" });
   });
 
   it("dlhé texty skráti tak, aby prešli kontrolou jedálnička", () => {
@@ -74,6 +74,25 @@ describe("AI pomocník – odpoveď na jedálniček", () => {
     expect(plan.title).toHaveLength(120);
     expect(plan.items[0].name).toHaveLength(120);
     expect(plan.items[0].amount).toHaveLength(60);
+  });
+});
+
+describe("AI pomocník – názvy jedál", () => {
+  it("české a nesprávne názvy prevedie na tie, ktoré pozná editor", () => {
+    const day = (meal: string) => item({ meal });
+    const plan = toPlanInput(
+      { title: "T", note: "", targets: {}, items: [day("Raňajky"), day("Svačina"), day("Obed"), day("Večer")] },
+      req,
+    );
+    expect(plan.items.map((i) => i.meal)).toEqual(["Raňajky", "Desiata", "Obed", "Večera"]);
+  });
+
+  it("neznámy názov doplní podľa poradia v dni", () => {
+    const plan = toPlanInput(
+      { title: "T", note: "", targets: {}, items: [item({ meal: "xyz" }), item({ meal: "abc" }), item({ meal: "" })] },
+      req,
+    );
+    expect(plan.items.map((i) => i.meal)).toEqual(["Raňajky", "Obed", "Večera"]);
   });
 });
 

@@ -12,6 +12,9 @@ export const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 /** Len to, čo z väzby Workers AI používame (kvôli jednoduchému testovaniu). */
 export type AiBinding = { run(model: string, input: Record<string, unknown>): Promise<unknown> };
 
+/** Názvy jedál, ktoré pozná editor jedálnička (MealPlanEditor.tsx); model smie použiť len tie. */
+export const MEALS = ["Raňajky", "Desiata", "Obed", "Olovrant", "Večera", "Pred tréningom", "Po tréningu"] as const;
+
 /** Čo tréner zadá pomocníkovi. */
 export type AiRequest = {
   clientName: string;
@@ -52,7 +55,7 @@ export const RESPONSE_SCHEMA = {
         required: ["day", "meal", "name", "amount", "kcal", "proteinG", "carbsG", "fatG"],
         properties: {
           day: { type: "integer", description: "0 = pondelok … 6 = nedeľa" },
-          meal: { type: "string", description: "Raňajky, Desiata, Obed, Olovrant, Večera, Pred tréningom alebo Po tréningu" },
+          meal: { type: "string", enum: MEALS, description: "Presne jeden z povolených názvov jedla." },
           name: { type: "string" },
           amount: { type: "string", description: "Množstvo, napr. „150 g kuracích pŕs, 80 g ryže“" },
           kcal: { type: "integer" },
@@ -69,7 +72,9 @@ const SYSTEM = `Si výživový asistent fitness trénera v slovenskej appke Rejn
 Navrhuješ týždenný jedálniček pre klienta trénera. Tréner ho pred odoslaním skontroluje a upraví.
 
 Pravidlá:
-- Píš po slovensky, jedlá bežne dostupné na Slovensku, jednoduchá príprava.
+- Píš správnou spisovnou slovenčinou (nie česky): napr. kuracie prsia, ryža, jogurt, desiata, olovrant, večera.
+- Názvy jedál (meal) smú byť iba: Raňajky, Desiata, Obed, Olovrant, Večera, Pred tréningom, Po tréningu.
+- Jedlá bežne dostupné na Slovensku, jednoduchá príprava.
 - Každý deň (0 = pondelok … 6 = nedeľa) má presne zadaný počet jedál; jedlá v dni zoraď chronologicky.
 - Kalórie a makrá uvádzaj realisticky pre uvedené množstvo; denný súčet nech je do ±5 % od cieľa.
 - Dni nech sa rozumne striedajú, ale opakovanie surovín je v poriadku (jednoduchší nákup).
@@ -99,6 +104,39 @@ export function buildPrompt(req: AiRequest): string {
     .join("\n");
 }
 
+const plain = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+/** Najčastejšie omyly modelu (české a skrátené tvary) → názov, ktorý pozná editor. */
+const MEAL_ALIASES: Record<string, (typeof MEALS)[number]> = {
+  svacina: "Desiata",
+  predobed: "Desiata",
+  podvecer: "Olovrant",
+  svacinka: "Olovrant",
+  vecer: "Večera",
+  snidane: "Raňajky",
+  ranajka: "Raňajky",
+  obedy: "Obed",
+  "pred treningom": "Pred tréningom",
+  "po treningu": "Po tréningu",
+};
+
+/** Poradie jedál v dni podľa ich počtu, ak model názov nezvládol. */
+const MEALS_BY_COUNT: Record<number, readonly (typeof MEALS)[number][]> = {
+  2: ["Obed", "Večera"],
+  3: ["Raňajky", "Obed", "Večera"],
+  4: ["Raňajky", "Obed", "Olovrant", "Večera"],
+  5: ["Raňajky", "Desiata", "Obed", "Olovrant", "Večera"],
+};
+
+function normalizeMeal(raw: unknown, position: number, countInDay: number): string {
+  const key = plain(String(raw ?? ""));
+  const exact = MEALS.find((name) => plain(name) === key);
+  if (exact) return exact;
+  if (MEAL_ALIASES[key]) return MEAL_ALIASES[key];
+  const order = MEALS_BY_COUNT[Math.min(5, Math.max(2, countInDay))];
+  return order[Math.min(position, order.length - 1)];
+}
+
 type RawItem = { day: number; meal: string; name: string; amount: string; kcal: number; proteinG: number; carbsG: number; fatG: number };
 type RawPlan = { title: string; note: string; targets: Record<string, number>; items: RawItem[] };
 
@@ -110,12 +148,21 @@ const clampInt = (n: unknown, min: number, max: number) =>
  * Hodnoty mimo rozsahu sa orežú, texty skrátia; nezmyselné položky vypadnú.
  */
 export function toPlanInput(raw: RawPlan, req: AiRequest): MealPlanInput {
-  const items = (Array.isArray(raw.items) ? raw.items : [])
+  const valid = (Array.isArray(raw.items) ? raw.items : [])
     .filter((i) => Number.isInteger(i?.day) && i.day >= 0 && i.day <= 6 && typeof i.name === "string" && i.name.trim())
-    .slice(0, MAX_ITEMS)
+    .slice(0, MAX_ITEMS);
+  const perDay = new Map<number, number>();
+  for (const i of valid) perDay.set(i.day, (perDay.get(i.day) ?? 0) + 1);
+  const seen = new Map<number, number>();
+  const items = valid
+    .map((i) => {
+      const position = seen.get(i.day) ?? 0;
+      seen.set(i.day, position + 1);
+      return { ...i, meal: normalizeMeal(i.meal, position, perDay.get(i.day) ?? 1) };
+    })
     .map((i) => ({
       day: i.day,
-      meal: (String(i.meal ?? "").trim() || "Jedlo").slice(0, 40),
+      meal: i.meal,
       name: i.name.trim().slice(0, 120),
       amount: String(i.amount ?? "").trim().slice(0, 60) || null,
       kcal: clampInt(i.kcal, 0, 5000) ?? 0,
