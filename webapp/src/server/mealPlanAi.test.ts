@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { HttpError } from "./errors";
 import { buildPrompt, generateMealPlan, toPlanInput, type AiRequest } from "./mealPlanAi";
 
@@ -77,11 +77,8 @@ describe("AI pomocník – odpoveď na jedálniček", () => {
   });
 });
 
-describe("AI pomocník – bez kľúča", () => {
-  afterEach(() => vi.unstubAllEnvs());
-
+describe("AI pomocník – bez väzby AI", () => {
   it("povie, že pomocník nie je zapnutý", async () => {
-    vi.stubEnv("GEMINI_API_KEY", "");
     const error = await generateMealPlan(req).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(HttpError);
     expect((error as HttpError).code).toBe("ai_not_configured");

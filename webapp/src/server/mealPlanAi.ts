@@ -1,11 +1,16 @@
-import { ApiError, GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { HttpError } from "./errors";
 import { MAX_ITEMS, parseMealPlan, type MealPlanInput, type Targets } from "./mealPlans";
 
 /** AI pomocník trénera: návrh jedálnička na týždeň (tréner ho pred odoslaním skontroluje). */
 
-/** Gemini 3.5 Flash-Lite: zadarmo v bezplatnej úrovni Gemini API, rýchly. Dá sa zmeniť cez GEMINI_MODEL. */
+/** Cloudflare Workers AI: bez API kľúča, väzba `AI` z wrangler.jsonc. Model sa dá zmeniť premennou AI_MODEL. */
+export const WORKERS_AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+
+/** Gemini model, ktorý ešte používa AI tréner (aiCoach.ts). Jedálničky ho už nepoužívajú. */
 export const DEFAULT_MODEL = "gemini-3.5-flash-lite";
+
+/** Len to, čo z väzby Workers AI používame (kvôli jednoduchému testovaniu). */
+export type AiBinding = { run(model: string, input: Record<string, unknown>): Promise<unknown> };
 
 /** Čo tréner zadá pomocníkovi. */
 export type AiRequest = {
@@ -81,7 +86,7 @@ export function buildPrompt(req: AiRequest): string {
     t.carbsG ? `${t.carbsG} g sacharidov` : null,
     t.fatG ? `${t.fatG} g tukov` : null,
   ].filter(Boolean);
-  // Meno klienta sa modelu neposiela (bezplatná úroveň Gemini môže obsah použiť na zlepšovanie služieb).
+  // Meno klienta sa modelu neposiela (model nepotrebuje osobné údaje).
   return [
     req.clientNote ? `Poznámka trénera ku klientovi: ${req.clientNote}` : null,
     `Počet jedál denne: ${req.mealsPerDay}`,
@@ -132,64 +137,57 @@ export function toPlanInput(raw: RawPlan, req: AiRequest): MealPlanInput {
   });
 }
 
-/** Najdlhšie, čo čakáme na návrh (potom radšej chyba, než visiaca stránka). */
-const TIMEOUT_MS = 90_000;
+/** Dlhý týždenný jedálniček potrebuje veľa výstupných tokenov (predvolených 256 by ho orezalo). */
+const MAX_OUTPUT_TOKENS = 7000;
 
-function client(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new HttpError(503, "ai_not_configured", "AI pomocník ešte nie je zapnutý (chýba kľúč GEMINI_API_KEY).");
+const notConfigured = () =>
+  new HttpError(503, "ai_not_configured", "AI pomocník ešte nie je zapnutý (chýba väzba AI v Cloudflare).");
+
+/** Väzba `AI` z Cloudflare Workers; mimo Workers (napr. `next dev` bez väzby) pomocník povie, že nie je zapnutý. */
+async function resolveAi(): Promise<AiBinding> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const ai = (getCloudflareContext().env as { AI?: AiBinding }).AI;
+    if (ai) return ai;
+  } catch {
+    // mimo Cloudflare Workers: spadne nižšie na ai_not_configured
   }
-  return new GoogleGenAI({ apiKey, httpOptions: { timeout: TIMEOUT_MS } });
+  throw notConfigured();
 }
 
-/** Zavolá model a vráti návrh jedálnička (neuložený). */
-export async function generateMealPlan(req: AiRequest): Promise<MealPlanInput> {
-  const ai = client();
-  let text: string | undefined;
+/** Vyčerpaná denná bezplatná kvóta Workers AI (chyba 4006) alebo limit požiadaviek. */
+const isQuotaError = (error: unknown) =>
+  /4006|allocation|rate limit|too many/i.test(error instanceof Error ? error.message : "");
+
+/** Odpoveď Workers AI: pri JSON schéme býva `response` už objekt, inokedy text. */
+function readReply(result: unknown): unknown {
+  const reply = (result as { response?: unknown } | null)?.response;
+  return typeof reply === "string" ? JSON.parse(reply) : reply;
+}
+
+/** Zavolá model a vráti návrh jedálnička (neuložený). `ai` sa dá podvrhnúť v testoch. */
+export async function generateMealPlan(req: AiRequest, ai?: AiBinding): Promise<MealPlanInput> {
+  const binding = ai ?? (await resolveAi());
+  let raw: RawPlan;
   try {
-    const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
-      contents: buildPrompt(req),
-      config: {
-        systemInstruction: SYSTEM,
-        responseMimeType: "application/json",
-        responseJsonSchema: RESPONSE_SCHEMA,
-        // Jedálniček nepotrebuje dlhé premýšľanie: rýchlejšie a v rámci bezplatných limitov.
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-        maxOutputTokens: 32_000,
-      },
+    const result = await binding.run(process.env.AI_MODEL || WORKERS_AI_MODEL, {
+      messages: [
+        { role: "system", content: SYSTEM },
+        { role: "user", content: buildPrompt(req) },
+      ],
+      response_format: { type: "json_schema", json_schema: RESPONSE_SCHEMA },
+      max_tokens: MAX_OUTPUT_TOKENS,
     });
-    if (response.promptFeedback?.blockReason) {
-      throw new HttpError(422, "ai_refused", "AI pomocník toto zadanie nespracuje. Skús ho preformulovať.");
-    }
-    const finish = response.candidates?.[0]?.finishReason;
-    if (finish === "MAX_TOKENS") {
-      throw new HttpError(422, "ai_too_long", "Návrh bol príliš dlhý. Skús menej jedál denne.");
-    }
-    if (finish && finish !== "STOP") {
-      throw new HttpError(422, "ai_refused", "AI pomocník toto zadanie nespracuje. Skús ho preformulovať.");
-    }
-    text = response.text;
+    raw = readReply(result) as RawPlan;
   } catch (error) {
-    if (error instanceof HttpError) throw error;
-    if (error instanceof ApiError) {
-      if (error.status === 429) {
-        throw new HttpError(429, "ai_busy", "Bezplatný limit AI je na chvíľu vyčerpaný. Skús to o minútu.");
-      }
-      console.error("AI pomocník: chyba Gemini API", error.status);
-      throw unavailable();
+    if (isQuotaError(error)) {
+      throw new HttpError(429, "ai_busy", "Denný limit AI je vyčerpaný. Skús to zajtra.");
     }
-    console.error("AI pomocník: Gemini neodpovedá", error instanceof Error ? error.name : "unknown");
+    console.error("AI pomocník: Workers AI zlyhalo", error instanceof Error ? error.name : "unknown");
     throw unavailable();
   }
 
-  let raw: RawPlan;
-  try {
-    raw = JSON.parse(text ?? "") as RawPlan;
-  } catch {
-    throw unavailable();
-  }
+  if (!raw || typeof raw !== "object") throw unavailable();
   const plan = toPlanInput(raw, req);
   if (plan.items.length === 0) throw unavailable();
   return plan;

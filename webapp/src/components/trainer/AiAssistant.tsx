@@ -121,7 +121,7 @@ export function AiAssistant({ clientId, targets, hasItems, onDraft }: Props) {
         </p>
       )}
       <p className="mt-3 text-[11px] text-muted">
-        Návrh vytvára AI (Google Gemini, bezplatná verzia – Google môže zadanie použiť na zlepšovanie služieb, preto doň nepíš mená ani zdravotné údaje). Pred odoslaním skontroluj množstvá aj alergény.
+        Návrh vytvára AI (Cloudflare Workers AI) a môže sa mýliť. Nepíš do zadania mená ani zdravotné údaje. Pred odoslaním skontroluj množstvá aj alergény.
       </p>
     </section>
   );
